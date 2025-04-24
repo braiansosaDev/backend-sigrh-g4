@@ -1,7 +1,7 @@
-from app import create_app
+from fastapi import FastAPI
 
-#Inicializa la aplicacion
-app = create_app()
+app = FastAPI()
 
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.get("/")
+def root():
+    return {"message": "Hello World"}

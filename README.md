@@ -1,17 +1,10 @@
-# Clasificacion de candidatos mediante Arbol de Desicion con Sci Kit Learn
+# Sistema de Gestión de RRHH con IA
 
-Este proyecto implementa un modelo de **Arbol de Desicion** utilizando la librería **Scikit-learn** en Python. El modelo predice si un candidato postulado es apto para la postulación de trabajo basandose en el entrenamiento recibido por el set de datos **candidatos.xslx**.
+Plataforma web pensada para automatizar y optimizar procesos clave de RRHH como reclutamiento, evaluación y adinistración del personal.
 
 ## Requisitos
 
-Este proyecto requiere Python 3.8 o superior. Las dependencias necesarias se pueden instalar utilizando el archivo `requirements.txt`.
-
-### Dependencias
-
-- `numpy`
-- `matplotlib`
-- `scikit-learn`
-- `pandas`
+Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pueden instalar utilizando el archivo `requirements.txt`.
 
 ## Instalación
 
@@ -26,7 +19,9 @@ Este proyecto requiere Python 3.8 o superior. Las dependencias necesarias se pue
    ```bash
    pip install -r requirements.txt
 
-3. Ejecuta el modelo
+3. Levantar el servidor por defecto en el puerto 8000
 
    ```bash
-   py clasificacion-candidatos-model.py
+   uvicorn app:main --reload
+
+4. La documentación de los endpoints se puede encontrar en http://127.0.0.1:8000/redoc
