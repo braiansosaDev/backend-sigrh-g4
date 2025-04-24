@@ -1,0 +1,51 @@
+﻿id_candidato;nombre;anios_de_experiencia;nivel_educativo;habilidades;idiomas;expectativa_salarial;es_apto
+1;juan pérez;5;secundario;python;ingles;1750000;0
+2;maría gonzález;7;universitario;java, sql, nosql;;2100000;1
+3;pedro rodríguez;2;terciario;sql;portugues;3200000;0
+4;laura lópez;2;terciario;python, java;ingles, portugues;2450000;0
+5;carlos martínez;10;universitario;python, sql;ingles;2200000;1
+6;ana fernández;3;secundario;java, sql;ingles;3600000;0
+7;josé garcía;5;terciario;javascript;ingles;2300000;0
+8;mariana díaz;3;universitario;python, javascript, sql, nosql;;2700000;1
+9;luis romero;6;universitario;java, sql, nosql;;3000000;1
+10;isabel sánchez;3;secundario;python, javascript;;3100000;0
+11;miguel torres;2;secundario;python, javascript, sql;ingles;2650000;0
+12;carolina gómez;1;universitario;javascript, sql;ingles;2850000;0
+13;andrés díaz;0;universitario;python;;2500000;0
+14;patricia martínez;0;universitario;java, nosql;;3500000;0
+15;francisco herrera;8;terciario;python, javascript, sql;ingles, portugues, aleman;2800000;0
+16;teresa ruiz;10;secundario;sql, nosql;ingles;2200000;0
+17;ricardo morales;12;secundario;java, python, nosql;ingles;2900000;0
+18;silvia jiménez;7;secundario;javascript, sql;;3400000;0
+19;alberto castro;4;terciario;python, java, nosql;;1600000;0
+20;elena vázquez;4;secundario;javascript, sql;ingles;1850000;0
+21;martín rodríguez;3;secundario;python, javascript, sql;ingles;2700000;0
+22;julia silva;3;secundario;sql;ingles;3250000;0
+23;javier gonzález;3;terciario;python, java, sql;ingles;1900000;0
+24;raquel pérez;3;secundario;javascript, python;;2800000;0
+25;guillermo garcía;2;universitario;python, sql, nosql;portugues;3150000;0
+26;susana hernández;7;terciario;javascript, sql, nosql;portugues;2400000;0
+27;roberto lópez;3;terciario;java, python, sql;ingles;2600000;0
+28;beatriz ramírez;3;secundario;python, javascript;portugues;2400000;0
+29;hugo martínez;7;terciario;java, python, sql;;2100000;0
+30;sandra díaz;3;terciario;javascript, python, sql;;3700000;0
+31;federico garcía;4;secundario;python, sql, nosql;;2900000;0
+32;claudia rodríguez;6;secundario;python, sql;ingles;3050000;0
+33;santiago fernández;10;terciario;java,sql;ingles, portugues;3250000;0
+34;carmen torres;0;universitario;javascript, sql, python;aleman;2450000;0
+35;gabriel gómez;1;terciario;python, java, sql;portugues;1800000;0
+36;marta romero;3;terciario;python, javascript;portugues;2300000;0
+37;francisco sánchez;6;secundario;sql, nosql;;2500000;0
+38;alicia ruiz;0;secundario;python, java, sql;;3400000;0
+39;esteban herrera;11;universitario;java, sql, nosql;;3100000;1
+40;inés morales;2;secundario;python, javascript, sql;;1950000;0
+41;marcos castro;0;terciario;sql, java, python;ingles, portugues;2650000;0
+42;mercedes vázquez;3;secundario;python, javascript, sql;ingles, portugues;3500000;0
+43;enrique romero;4;terciario;javascript, sql, java;ingles;2850000;0
+44;rosa jiménez;0;universitario;python, javascript, sql, nosql;ingles;1600000;0
+45;sebastián gonzález;2;universitario;java, sql, nosql;ingles;2700000;0
+46;pilar pérez;2;secundario;python, javascript, nosql;ingles;2550000;0
+47;víctor garcía;0;universitario;java, python, javascript;portugues;3000000;0
+48;lourdes fernández;14;secundario;java, sql;;2500000;0
+49;fernando lópez;7;terciario;javascrip, sql;portugues;2500000;0
+50;verónica ramírez;2;terciario;javascript;;1850000;0
