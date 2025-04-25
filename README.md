@@ -22,6 +22,6 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
 3. Levantar el servidor por defecto en el puerto 8000
 
    ```bash
-   uvicorn app:main --reload
+   uvicorn src.main:app --reload
 
 4. La documentación de los endpoints se puede encontrar en http://127.0.0.1:8000/redoc
