@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from fastapi import FastAPI
 
-url = "sqlite:///src/data/hr-management.db"
+url = "sqlite:///src/database/hr-management.db"  # MIGRAR A MYSQL Y COLOCAR LA URL EN UN .ENV
 engine = create_engine(url, connect_args={"check_same_thread": False})
 
 

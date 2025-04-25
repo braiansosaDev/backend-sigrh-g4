@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .data.session import lifespan
+from .database.core import lifespan
 
 app = FastAPI(lifespan=lifespan, title="Talent Management API", version="0.1.0")
 
