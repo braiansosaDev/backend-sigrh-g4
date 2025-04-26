@@ -3,8 +3,11 @@ from typing import Annotated
 from fastapi import Depends
 from sqlmodel import SQLModel, Session, create_engine
 from fastapi import FastAPI
+from dotenv import load_dotenv
+from os import getenv
 
-url = "sqlite:///src/database/hr-management.db"  # MIGRAR A MYSQL Y COLOCAR LA URL EN UN .ENV
+load_dotenv()
+url = getenv("DATABASE_URL")
 engine = create_engine(url, connect_args={"check_same_thread": False})
 
 
@@ -23,4 +26,4 @@ async def lifespan(app: FastAPI):
     yield
 
 
-SessionDep = Annotated[Session, Depends(get_session)]
+DatabaseSession = Annotated[Session, Depends(get_session)]
