@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.database.core import DatabaseSession
 from src.employees import service
+from src.employees.token import encode_token, TokenDependency
 from src.employees.employee_models import (
     CreateEmployee,
     EmployeeResponse,
     UpdateEmployee,
 )
-from src.employees.token import encode_token, TokenDependency
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -72,7 +72,7 @@ async def login_employee(
 
     token = encode_token(
         {
-            "username": employee.email,
+            "username": employee.id,
             "password": employee.password,
         }
     )

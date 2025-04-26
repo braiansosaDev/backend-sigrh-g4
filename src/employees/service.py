@@ -36,6 +36,35 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
         )
 
 
+def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
+    employee = db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found.",
+        )
+    return employee
+
+
+def get_employee_by_credentials(
+    db: DatabaseSession, id: str, password: str
+) -> Employee:
+    print(f"ID: {id}, Password: {password}")
+
+    employee = db.exec(
+        select(Employee).where(
+            (Employee.id == int(id)) & (Employee.password == password)
+        )
+    ).one_or_none()
+
+    if not employee:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Employee not found.",
+        )
+    return employee
+
+
 def update_employee(
     db: DatabaseSession,
     employee_id: int,
@@ -63,28 +92,5 @@ def update_employee(
         )
 
 
-def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
-    employee = db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
-    if not employee:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found.",
-        )
-    return employee
-
-
-def get_employee_by_credentials(
-    db: DatabaseSession, email: str, password: str
-) -> Employee:
-    employee = db.exec(
-        select(Employee).where(
-            (Employee.email == email) & (Employee.password == password)
-        )
-    ).one_or_none()
-
-    if not employee:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found.",
-        )
-    return employee
+def delete_employee(db: DatabaseSession, employee_id: int) -> None:
+    pass
