@@ -5,6 +5,17 @@ from sqlmodel import Session, select
 from src.schemas.entities import Employee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], decprecated="auto")
+
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def register_employee(db: Session, employee_request: CreateEmployee) -> Employee:
@@ -13,7 +24,7 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
         email=employee_request.email,
         phone=employee_request.phone,
         full_name=employee_request.full_name,
-        password=employee_request.password,  # GUARDAR LA PASS HASHEADA
+        password=get_password_hash(employee_request.password),
         department=employee_request.department,
         job_title=employee_request.job_title,
         address=employee_request.address,
@@ -57,10 +68,10 @@ def get_employee_by_credentials(
         )
     ).one_or_none()
 
-    if not employee:
+    if not employee or not verify_password(password, employee.password):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found.",
+            detail="Invalid credentials",
         )
     return employee
 
