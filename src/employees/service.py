@@ -125,4 +125,23 @@ def update_employee(
 
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:
-    pass
+    try:
+        employee = get_employee_by_id(db, employee_id)
+
+        try:
+            db.delete(employee)
+            db.commit()
+            return {"message": "Employee deleted successfully."}
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot delete employee with existing references.",
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting employee: {str(e)}",
+        )

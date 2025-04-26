@@ -104,9 +104,18 @@ async def update_employee(
         )
 
 
-@employee_router.delete("/{employee_id}", status_code=status.HTTP_200_OK)
+@employee_router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_employee(
     db: DatabaseSession,
     employee_id: int,
+    token: TokenDependency,
 ):
-    pass
+    try:
+        return service.delete_employee(db, employee_id)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
