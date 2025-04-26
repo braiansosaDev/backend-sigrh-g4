@@ -7,7 +7,7 @@ from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
 
-pwd_context = CryptContext(schemes=["bcrypt"], decprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_password_hash(password: str) -> str:
@@ -48,58 +48,79 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
 
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
-    employee = db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
-    if not employee:
+    try:
+        employee = db.exec(
+            select(Employee).where(Employee.id == employee_id)
+        ).one_or_none()
+        if not employee:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Employee not found.",
+            )
+        return employee
+    except IntegrityError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Employee with the provided ID does not exist.",
         )
-    return employee
 
 
 def get_employee_by_credentials(
-    db: DatabaseSession, id: str, password: str
+    db: DatabaseSession, id: int, password: str
 ) -> Employee:
-    print(f"ID: {id}, Password: {password}")
+    try:
+        employee = get_employee_by_id(db, id)
 
-    employee = db.exec(
-        select(Employee).where(
-            (Employee.id == int(id)) & (Employee.password == password)
-        )
-    ).one_or_none()
-
-    if not employee or not verify_password(password, employee.password):
+        if not employee or not verify_password(password, employee.password):
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Invalid credentials",
+            )
+        return employee
+    except IntegrityError:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid credentials",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Employee with the provided ID does not exist.",
         )
-    return employee
 
 
 def update_employee(
     db: DatabaseSession,
     employee_id: int,
     update_request: CreateEmployee,
-    token: TokenDependency,
 ) -> Employee:
     try:
         employee = get_employee_by_id(db, employee_id)
-        for attr, value in update_request.model_dump(exclude_unset=True).items():
-            if hasattr(employee, attr):
-                setattr(employee, attr, value)
-        db.add(employee)
-        db.commit()
-        db.refresh(employee)
-        return employee
-    except IntegrityError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Employee with the provided phonealready exists.",
-        )
-    except Exception:
+
+        try:
+            for attr, value in update_request.model_dump(exclude_unset=True).items():
+                if hasattr(employee, attr):
+                    setattr(employee, attr, value)
+
+            db.add(employee)
+            db.commit()
+            db.refresh(employee)
+            return employee
+
+        except IntegrityError:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Employee with the provided phone already exists.",
+            )
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"An unexpected error occurred: {str(e)}",
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
+            detail=f"Error retrieving employee: {str(e)}",
         )
 
 
