@@ -6,6 +6,11 @@ from datetime import date
 
 
 class EmployeeResponse(SQLModel):
+    """
+    Modelo de empleado para la respuesta de un empleado.
+    Este modelo se utiliza para serializar los datos de un empleado al enviarlos como respuesta a una solicitud.
+    """
+
     id: int
     email: EmailStr
     phone: str
@@ -22,6 +27,11 @@ class EmployeeResponse(SQLModel):
 
 
 class UpdateEmployee(SQLModel):
+    """
+    Modelo de empleado para la actualización de un empleado existente.
+    Este modelo se utiliza para validar los datos de entrada al actualizar un empleado en la base de datos.
+    """
+
     phone: Optional[str] = Field(unique=True, max_length=20)
     address: Optional[str] = Field(max_length=200)
     photo: Optional[bytes] = Field(default=None)
@@ -29,11 +39,12 @@ class UpdateEmployee(SQLModel):
     salary: Optional[Decimal] = Field(gt=0)
 
 
-# class DeleteEmployee(SQLModel):
-#     id: UUID
-
-
 class CreateEmployee(SQLModel):
+    """
+    Modelo de empleado para la creación de un nuevo empleado.
+    Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.
+    """
+
     dni: str = Field(unique=True, max_length=50)
     email: EmailStr = Field(unique=True, max_length=100)
     phone: str = Field(unique=True, max_length=20)
@@ -46,10 +57,5 @@ class CreateEmployee(SQLModel):
     photo: Optional[bytes] = Field(default=None)
     facial_register: Optional[bytes] = Field(default=None)
     hire_date: date = Field(default=date.today())
-    birth_date: date  # Agregar restricciones
+    birth_date: date
     salary: Decimal = Field(gt=0)
-
-
-# class LoginRequest(SQLModel):
-#     email: EmailStr = Field(max_length=100)
-#     password: str = Field(max_length=100)

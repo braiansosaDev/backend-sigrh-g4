@@ -12,6 +12,11 @@ from src.employees.employee_models import (
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
+"""Enpoint para buscar a un empleado por su ID. 
+Returns:
+    EmployeeResponse: Devuelve los datos del empleado.
+"""
+
 
 @employee_router.get(
     "/{employee_id}",
@@ -33,6 +38,12 @@ async def get_employee_by_id(
         )
 
 
+"""Enpoint para registrar un nuevo empleado.
+Returns:
+    EmployeeResponse: Devuelve los datos del empleado registrado.
+"""
+
+
 @employee_router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
@@ -51,6 +62,14 @@ async def register_employee(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred.",
         )
+
+
+"""Endopint para iniciar sesión como empleado.
+El empleado debe proporcionar su ID y contraseña.
+El ID debe ser un número entero positivo.
+Returns:
+EmployeeResponse: Devuelve el token de acceso.
+"""
 
 
 @employee_router.post("/login", status_code=status.HTTP_200_OK, response_model=dict)
@@ -84,6 +103,16 @@ async def login_employee(
     return {"access_token": token}
 
 
+"""Endpoint para actualizar los datos de un empleado.
+El empleado debe proporcionar su ID y los datos a actualizar.
+El ID debe ser un número entero positivo.
+El empleado debe estar autenticado para realizar esta operación.
+El token de acceso se obtiene al iniciar sesión.
+Returns:
+    EmployeeResponse: Devuelve los datos del empleado actualizado.
+"""
+
+
 @employee_router.patch(
     "/{employee_id}", status_code=status.HTTP_200_OK, response_model=EmployeeResponse
 )
@@ -102,6 +131,16 @@ async def update_employee(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="An unexpected error occurred.",
         )
+
+
+"""Endpoint para eliminar un empleado.
+El empleado debe proporcionar su ID.
+El ID debe ser un número entero positivo.
+El empleado debe estar autenticado para realizar esta operación.
+El token de acceso se obtiene al iniciar sesión.
+Returns:
+    CODE: 204
+"""
 
 
 @employee_router.delete("/{employee_id}", status_code=status.HTTP_204_NO_CONTENT)

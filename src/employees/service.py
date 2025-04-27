@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from src.employees.token import TokenDependency
 from .employee_models import CreateEmployee
 from sqlmodel import Session, select
 from src.schemas.entities import Employee
@@ -11,14 +10,37 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def get_password_hash(password: str) -> str:
+    """
+    Retorna el hash de la contraseña.
+    Args:
+        password (str): Contraseña en texto plano.
+    Returns:
+        str: Contraseña hasheada.
+    """
     return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verifica si la contraseña en texto plano coincide con el hash.
+    Args:
+        plain_password (str): Contraseña en texto plano.
+        hashed_password (str): Contraseña hasheada.
+    Returns:
+        bool: True si coinciden, False en caso contrario.
+    """
     return pwd_context.verify(plain_password, hashed_password)
 
 
 def register_employee(db: Session, employee_request: CreateEmployee) -> Employee:
+    """
+    Registra un nuevo empleado en la base de datos.
+    Args:
+        db (Session): Sesión de la base de datos.
+        employee_request (CreateEmployee): Datos del empleado a registrar.
+    Returns:
+        Employee: Empleado registrado.
+    """
     db_employee = Employee(
         dni=employee_request.dni,
         email=employee_request.email,
@@ -41,6 +63,7 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
         db.refresh(db_employee)
         return db_employee
     except IntegrityError:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee with the provided phone, email, or DNI already exists.",
@@ -48,6 +71,14 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
 
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
+    """
+    Obtiene todos los empleados de la base de datos.
+    Args:
+    db (Session): Sesión de la base de datos.
+    id (int): ID del empleado a buscar.
+    Returns:
+    Employee: Empleado encontrado.
+    """
     try:
         employee = db.exec(
             select(Employee).where(Employee.id == employee_id)
@@ -68,6 +99,15 @@ def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
 def get_employee_by_credentials(
     db: DatabaseSession, id: int, password: str
 ) -> Employee:
+    """
+    Obtiene un empleado por sus credenciales.
+        Args:
+            db (Session): Sesión de la base de datos.
+            id (int): ID del empleado a buscar.
+            password (str): Contraseña del empleado.
+        Returns:
+            Employee: Empleado encontrado.
+    """
     try:
         employee = get_employee_by_id(db, id)
 
@@ -89,6 +129,15 @@ def update_employee(
     employee_id: int,
     update_request: CreateEmployee,
 ) -> Employee:
+    """
+    Actualiza los datos de un empleado en la base de datos.
+    Args:
+        db (Session): Sesión de la base de datos.
+        employee_id (int): ID del empleado a actualizar.
+        update_request (CreateEmployee): Datos a actualizar.
+    Returns:
+        Employee: Empleado actualizado.
+    """
     try:
         employee = get_employee_by_id(db, employee_id)
 
@@ -125,13 +174,20 @@ def update_employee(
 
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:
+    """
+    Elimina un empleado de la base de datos.
+    Args:
+        db (Session): Sesión de la base de datos.
+        employee_id (int): ID del empleado a eliminar.
+    Returns:
+        None
+    """
     try:
         employee = get_employee_by_id(db, employee_id)
 
         try:
             db.delete(employee)
             db.commit()
-            return {"message": "Employee deleted successfully."}
         except IntegrityError:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

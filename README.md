@@ -24,4 +24,7 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
    ```bash
    uvicorn src.main:app --reload
 
-4. La documentación de los endpoints se puede encontrar en http://127.0.0.1:8000/redoc
+4. La documentación de los endpoints se puede encontrar en: 
+
+- http://127.0.0.1:8000/redoc con ReDoc
+- http://127.0.0.1:8000/docs#/ con Swagger

@@ -7,6 +7,10 @@ from src.employees.employee_models import CreateEmployee
 
 
 class Employee(CreateEmployee, table=True, metadata={"table_name": "employee"}):
+    """
+    Modelo de empleado para la base de datos.
+    """
+
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     work_histories: list["WorkHistory"] = Relationship(back_populates="employee")
     documents: list["Document"] = Relationship(back_populates="employee")
@@ -27,6 +31,12 @@ class Employee(CreateEmployee, table=True, metadata={"table_name": "employee"}):
 
 
 class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"}):
+    """
+    Modelo de historial laboral para la base de datos.
+    Este modelo representa el historial laboral de un empleado.
+    Se utiliza para almacenar información sobre los trabajos anteriores de un empleado,
+    """
+
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     employee_id: int = Field(foreign_key="employee.id")
     employee: Employee = Relationship(back_populates="work_histories")
@@ -38,6 +48,12 @@ class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"})
 
 
 class Document(SQLModel, table=True, metadata={"table_name": "document"}):
+    """
+    Modelo de documento para la base de datos.
+    Este modelo representa un documento asociado a un empleado.
+    Se utiliza para almacenar información sobre documentos como CV, certificados, etc.
+    """
+
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     employee_id: int = Field(foreign_key="employee.id")
     employee: Employee = Relationship(back_populates="documents")
