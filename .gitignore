@@ -2,3 +2,4 @@
 __pycache__*
 hr-management.db
 .env
+DB.md

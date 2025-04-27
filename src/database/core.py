@@ -8,7 +8,7 @@ from os import getenv
 
 load_dotenv()
 url = getenv("DATABASE_URL")
-engine = create_engine(url, connect_args={"check_same_thread": False})
+engine = create_engine(url)
 
 
 def init_db():
