@@ -1,5 +1,4 @@
 *.pyc
 __pycache__*
-hr-management.db
+sigrh.db
 .env
-DB.md
