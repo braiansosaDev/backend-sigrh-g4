@@ -2,9 +2,9 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.database.core import DatabaseSession
-from src.employees import service
+from src.employees.services import employee_service
 from src.employees.token import encode_token, TokenDependency
-from src.employees.employee_models import (
+from src.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
     UpdateEmployee,
@@ -28,7 +28,7 @@ async def get_employee_by_id(
     employee_id: int,
 ):
     try:
-        return service.get_employee_by_id(db, employee_id)
+        return employee_service.get_employee_by_id(db, employee_id)
     except HTTPException as e:
         raise e
     except Exception:
@@ -54,7 +54,7 @@ async def register_employee(
     register_employee_request: CreateEmployee,
 ):
     try:
-        return service.register_employee(db, register_employee_request)
+        return employee_service.register_employee(db, register_employee_request)
     except HTTPException as e:
         raise e
     except Exception:
@@ -78,7 +78,7 @@ async def login_employee(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
     try:
-        employee = service.get_employee_by_credentials(
+        employee = employee_service.get_employee_by_credentials(
             db, int(form_data.username), form_data.password
         )
     except ValueError:
@@ -123,7 +123,7 @@ async def update_employee(
     token: TokenDependency,
 ):
     try:
-        return service.update_employee(db, employee_id, update_request)
+        return employee_service.update_employee(db, employee_id, update_request)
     except HTTPException as e:
         raise e
     except Exception:
@@ -150,7 +150,7 @@ async def delete_employee(
     token: TokenDependency,
 ):
     try:
-        return service.delete_employee(db, employee_id)
+        return employee_service.delete_employee(db, employee_id)
     except HTTPException as e:
         raise e
     except Exception:

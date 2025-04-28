@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-from src.employees.employee_models import CreateEmployee
+from src.schemas.employee_models import CreateEmployee
 
 
 class Employee(CreateEmployee, table=True, metadata={"table_name": "employee"}):

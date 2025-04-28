@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
-from .employee_models import CreateEmployee
 from sqlmodel import Session, select
 from src.schemas.entities import Employee
+from src.schemas.employee_models import CreateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from passlib.context import CryptContext
