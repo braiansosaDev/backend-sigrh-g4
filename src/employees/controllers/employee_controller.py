@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.database.core import DatabaseSession
@@ -9,6 +9,7 @@ from src.employees.employee_models import (
     EmployeeResponse,
     UpdateEmployee,
 )
+from src.schemas.login_request import LoginRequest
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -17,6 +18,23 @@ Returns:
     EmployeeResponse: Devuelve los datos del empleado.
 """
 
+@employee_router.get(
+    "/",
+    status_code=status.HTTP_200_OK,
+    response_model=List[EmployeeResponse],
+)
+async def get_all_employees(
+    db: DatabaseSession,
+):
+    try:
+        return service.get_all_employees(db)
+    except HTTPException as e:
+        raise e
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred.",
+        )
 
 @employee_router.get(
     "/{employee_id}",
@@ -57,10 +75,10 @@ async def register_employee(
         return service.register_employee(db, register_employee_request)
     except HTTPException as e:
         raise e
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
+            detail=f"Unexpected error: {str(e)}",
         )
 
 
@@ -75,11 +93,11 @@ EmployeeResponse: Devuelve el token de acceso.
 @employee_router.post("/login", status_code=status.HTTP_200_OK, response_model=dict)
 async def login_employee(
     db: DatabaseSession,
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    login_request: LoginRequest,
 ):
     try:
         employee = service.get_employee_by_credentials(
-            db, int(form_data.username), form_data.password
+            db, int(login_request.username), login_request.password
         )
     except ValueError:
         raise HTTPException(
@@ -114,7 +132,7 @@ Returns:
 
 
 @employee_router.patch(
-    "/{employee_id}", status_code=status.HTTP_200_OK, response_model=EmployeeResponse
+    "/{employee_id}", status_code=status.HTTP_200_OK
 )
 async def update_employee(
     db: DatabaseSession,
@@ -126,10 +144,10 @@ async def update_employee(
         return service.update_employee(db, employee_id, update_request)
     except HTTPException as e:
         raise e
-    except Exception:
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
+            detail=f"An unexpected error occurred: {str(e)}",
         )
 
 

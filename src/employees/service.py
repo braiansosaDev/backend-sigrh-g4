@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from .employee_models import CreateEmployee
+from .employee_models import CreateEmployee, UpdateEmployee
 from sqlmodel import Session, select
 from src.schemas.entities import Employee
 from src.database.core import DatabaseSession
@@ -69,6 +69,9 @@ def register_employee(db: Session, employee_request: CreateEmployee) -> Employee
             detail="Employee with the provided phone, email, or DNI already exists.",
         )
 
+def get_all_employees(db: DatabaseSession):
+    employees = db.exec(select(Employee)).all()
+    return employees
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     """
@@ -127,8 +130,8 @@ def get_employee_by_credentials(
 def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: CreateEmployee,
-) -> Employee:
+    update_request: UpdateEmployee,
+):
     """
     Actualiza los datos de un empleado en la base de datos.
     Args:

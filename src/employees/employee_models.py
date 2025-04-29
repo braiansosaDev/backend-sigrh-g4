@@ -24,20 +24,23 @@ class EmployeeResponse(SQLModel):
     photo: Optional[bytes]
     hire_date: date
     birth_date: date
+    salary: Decimal
+    password: str
 
 
 class UpdateEmployee(SQLModel):
-    """
-    Modelo de empleado para la actualización de un empleado existente.
-    Este modelo se utiliza para validar los datos de entrada al actualizar un empleado en la base de datos.
-    """
-
-    phone: Optional[str] = Field(unique=True, max_length=20)
-    address: Optional[str] = Field(max_length=200)
-    photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
-    salary: Optional[Decimal] = Field(gt=0)
-
+    phone: Optional[str] = None
+    address: Optional[str] = None
+    photo: Optional[bytes] = None
+    facial_register: Optional[bytes] = None
+    salary: Optional[Decimal] = None
+    full_name: Optional[str] = None
+    job_title: Optional[str] = None
+    dni: Optional[str] = None
+    email: Optional[EmailStr] = None
+    hire_date: Optional[date] = None
+    birth_date: Optional[date] = None
+    password: Optional[str] = None
 
 class CreateEmployee(SQLModel):
     """
