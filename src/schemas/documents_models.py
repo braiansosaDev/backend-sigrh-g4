@@ -1,8 +1,8 @@
 from datetime import date
-from sqlmodel import SQLModel
+from pydantic import BaseModel
 
 
-class DocumentResponse(SQLModel):
+class DocumentResponse(BaseModel):
     id: int
     name: str
     extension: str
@@ -10,7 +10,7 @@ class DocumentResponse(SQLModel):
     file: bytes
 
 
-class DocumentRequest(SQLModel):
+class DocumentRequest(BaseModel):
     name: str
     extension: str = "pdf"
     creation_date: date

@@ -1,8 +1,8 @@
 from datetime import date
-from sqlmodel import SQLModel
+from pydantic import BaseModel
 
 
-class WorkHistoryResponse(SQLModel):
+class WorkHistoryResponse(BaseModel):
     """
     Modelo de respuesta para el historial laboral.
     Este modelo se utiliza para serializar los datos del historial laboral al enviarlos como respuesta a una solicitud.
@@ -17,7 +17,7 @@ class WorkHistoryResponse(SQLModel):
     notes: str
 
 
-class WorkHistoryRequest(SQLModel):
+class WorkHistoryRequest(BaseModel):
     """
     Modelo de creación para el historial laboral.
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo historial laboral en la base de datos.
