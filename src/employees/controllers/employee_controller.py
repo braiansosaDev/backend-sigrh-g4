@@ -1,15 +1,14 @@
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from typing import List
+from fastapi import APIRouter, HTTPException, status
 from src.database.core import DatabaseSession
-from src.employees import service
-from src.employees.token import encode_token, TokenDependency
-from src.employees.employee_models import (
+from src.employees.services import employee_service
+from src.schemas.login_request import LoginRequest
+from src.auth.token import encode_token
+from src.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
     UpdateEmployee,
 )
-from src.schemas.login_request import LoginRequest
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -17,6 +16,7 @@ employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 Returns:
     EmployeeResponse: Devuelve los datos del empleado.
 """
+
 
 @employee_router.get(
     "/",
@@ -26,15 +26,8 @@ Returns:
 async def get_all_employees(
     db: DatabaseSession,
 ):
-    try:
-        return service.get_all_employees(db)
-    except HTTPException as e:
-        raise e
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
-        )
+    return employee_service.get_all_employees(db)
+
 
 @employee_router.get(
     "/{employee_id}",
@@ -45,15 +38,7 @@ async def get_employee_by_id(
     db: DatabaseSession,
     employee_id: int,
 ):
-    try:
-        return service.get_employee_by_id(db, employee_id)
-    except HTTPException as e:
-        raise e
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
-        )
+    return employee_service.get_employee(db, employee_id)
 
 
 """Enpoint para registrar un nuevo empleado.
@@ -71,15 +56,7 @@ async def register_employee(
     db: DatabaseSession,
     register_employee_request: CreateEmployee,
 ):
-    try:
-        return service.register_employee(db, register_employee_request)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Unexpected error: {str(e)}",
-        )
+    return employee_service.create_employee(db, register_employee_request)
 
 
 """Endopint para iniciar sesión como empleado.
@@ -96,22 +73,14 @@ async def login_employee(
     login_request: LoginRequest,
 ):
     try:
-        employee = service.get_employee_by_credentials(
+        employee = employee_service.login_employee(
             db, int(login_request.username), login_request.password
         )
-    except ValueError:
+    except ValueError as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid username format. Username must be a number.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Username must be a number. Error: {e}",
         )
-    except HTTPException as e:
-        raise e
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
-        )
-
     token = encode_token(
         {
             "username": employee.id,
@@ -131,24 +100,13 @@ Returns:
 """
 
 
-@employee_router.patch(
-    "/{employee_id}", status_code=status.HTTP_200_OK
-)
+@employee_router.patch("/{employee_id}", status_code=status.HTTP_200_OK)
 async def update_employee(
     db: DatabaseSession,
     employee_id: int,
     update_request: UpdateEmployee,
-    token: TokenDependency,
 ):
-    try:
-        return service.update_employee(db, employee_id, update_request)
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred: {str(e)}",
-        )
+    return employee_service.update_employee(db, employee_id, update_request)
 
 
 """Endpoint para eliminar un empleado.
@@ -165,14 +123,5 @@ Returns:
 async def delete_employee(
     db: DatabaseSession,
     employee_id: int,
-    token: TokenDependency,
 ):
-    try:
-        return service.delete_employee(db, employee_id)
-    except HTTPException as e:
-        raise e
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="An unexpected error occurred.",
-        )
+    return employee_service.delete_employee(db, employee_id)

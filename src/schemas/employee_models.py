@@ -1,11 +1,10 @@
 from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr, Field
-from sqlmodel import SQLModel
+from pydantic import EmailStr, Field, BaseModel
 from datetime import date
 
 
-class EmployeeResponse(SQLModel):
+class EmployeeResponse(BaseModel):
     """
     Modelo de empleado para la respuesta de un empleado.
     Este modelo se utiliza para serializar los datos de un empleado al enviarlos como respuesta a una solicitud.
@@ -28,7 +27,7 @@ class EmployeeResponse(SQLModel):
     password: str
 
 
-class UpdateEmployee(SQLModel):
+class UpdateEmployee(BaseModel):
     phone: Optional[str] = None
     address: Optional[str] = None
     photo: Optional[bytes] = None
@@ -42,7 +41,8 @@ class UpdateEmployee(SQLModel):
     birth_date: Optional[date] = None
     password: Optional[str] = None
 
-class CreateEmployee(SQLModel):
+
+class CreateEmployee(BaseModel):
     """
     Modelo de empleado para la creación de un nuevo empleado.
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.

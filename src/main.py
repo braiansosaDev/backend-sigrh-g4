@@ -1,18 +1,25 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .database.core import lifespan
-from .employees.controllers.employee_controller import employee_router
+from src.database.core import lifespan
+from src.employees.controllers.employee_controller import employee_router
+from src.employees.controllers.documents_controller import documents_router
+from src.employees.controllers.work_history_controller import work_history_router
 
 app = FastAPI(
-    prefix="/api/v1/", lifespan=lifespan, title="Talent Management API", version="0.1.0"
+    root_path="/api/v1",
+    lifespan=lifespan,
+    title="Talent Management API",
+    version="0.1.0",
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Podés usar ["*"] para permitir todos (no recomendado en producción)
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # ["GET", "POST", ...] si querés limitar
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
 app.include_router(employee_router)
+app.include_router(work_history_router)
+app.include_router(documents_router)
