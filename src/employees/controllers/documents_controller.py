@@ -1,7 +1,6 @@
 from typing import List
 from fastapi import APIRouter
 from src.employees.services import documents_service
-from src.auth.token import TokenDependency
 from src.database.core import DatabaseSession
 from src.schemas.documents_models import DocumentResponse, DocumentRequest
 
@@ -13,7 +12,6 @@ documents_router = APIRouter(prefix="/documents", tags=["Documents"])
 )
 async def get_documents_of_employee(
     db: DatabaseSession,
-    token: TokenDependency,
     employee_id: int,
 ):
     return documents_service.get_documents_of_employee(
@@ -27,7 +25,6 @@ async def get_documents_of_employee(
 )
 async def create_document_of_employee(
     db: DatabaseSession,
-    token: TokenDependency,
     employee_id: int,
     document: DocumentRequest,
 ):
@@ -43,7 +40,6 @@ async def create_document_of_employee(
 )
 async def update_document_of_employee(
     db: DatabaseSession,
-    token: TokenDependency,
     employee_id: int,
     document_id: int,
     document: DocumentRequest,
@@ -59,7 +55,6 @@ async def update_document_of_employee(
 @documents_router.delete("/{employee_id}/{document_id}", status_code=204)
 async def delete_documents_of_employee(
     db: DatabaseSession,
-    token: TokenDependency,
     employee_id: int,
     document_id: int,
 ):

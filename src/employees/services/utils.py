@@ -48,3 +48,7 @@ def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     Employee: Empleado encontrado.
     """
     return db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
+
+
+def get_all_employees(db: DatabaseSession):
+    return db.exec(select(Employee)).all()

@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import HTTPException, status
 from src.schemas.entities import Employee
 from src.schemas.employee_models import CreateEmployee
@@ -5,6 +6,16 @@ from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash, verify_password
 from src.employees.services import utils
+
+
+def get_all_employees(db: DatabaseSession) -> List[Employee]:
+    employees = utils.get_all_employees(db)
+
+    if employees is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found."
+        )
+    return employees
 
 
 def get_employee(db: DatabaseSession, employee_id: int):
