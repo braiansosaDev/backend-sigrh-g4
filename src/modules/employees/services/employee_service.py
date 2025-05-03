@@ -1,12 +1,11 @@
 from typing import List
 from fastapi import HTTPException, status
-from src.schemas.entities import Employee
-from src.schemas.employee_models import CreateEmployee
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.schemas.employee_models import CreateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash, verify_password
-from src.employees.services import utils
-
+from src.modules.employees.services import utils
 
 def get_all_employees(db: DatabaseSession) -> List[Employee]:
     employees = utils.get_all_employees(db)

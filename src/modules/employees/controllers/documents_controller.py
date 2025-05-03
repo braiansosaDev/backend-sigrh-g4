@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import APIRouter
-from src.employees.services import documents_service
+from src.modules.employees.services import documents_service
 from src.database.core import DatabaseSession
-from src.schemas.documents_models import DocumentResponse, DocumentRequest
+from src.modules.employees.schemas.documents_models import DocumentResponse, DocumentRequest
 
 documents_router = APIRouter(prefix="/documents", tags=["Documents"])
 
