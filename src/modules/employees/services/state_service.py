@@ -16,6 +16,7 @@ def get_state_by_id(db: DatabaseSession, state_id: int) -> State:
 def create_state(db: DatabaseSession,create_state_request: CreateState,) -> State:
     db_state = State(
         name=create_state_request.name,
+        country_id=create_state_request.country_id
     )
     db.add(db_state)
     db.commit()
@@ -34,6 +35,7 @@ def update_state(db: DatabaseSession,update_state_request: UpdateState, state_id
         )
 
     state.name = update_state_request.name
+    state.country_id = update_state_request.country_id
     db.add(state)
     db.commit()
     db.refresh(state)
