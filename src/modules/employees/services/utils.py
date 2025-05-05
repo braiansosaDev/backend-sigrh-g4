@@ -1,8 +1,9 @@
 from typing import List
 from sqlmodel import select
 from src.database.core import DatabaseSession
-from src.schemas.entities import Document, Employee, WorkHistory
-
+from src.modules.employees.models.documents import Document
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.work_history import WorkHistory
 
 def get_single_work_history_by_id(
     db: DatabaseSession, employee_id: int, work_history_id: int
@@ -13,7 +14,6 @@ def get_single_work_history_by_id(
         .where(WorkHistory.employee_id == employee_id)
     ).one_or_none()
 
-
 def get_work_history_of_employee(
     db: DatabaseSession,
     employee_id: int,
@@ -21,7 +21,6 @@ def get_work_history_of_employee(
     return db.exec(
         select(WorkHistory).where(WorkHistory.employee_id == employee_id)
     ).all()
-
 
 def get_documents_of_employee(
     db: DatabaseSession,

@@ -1,10 +1,10 @@
 from typing import List
 from fastapi import APIRouter, HTTPException, status
 from src.database.core import DatabaseSession
-from src.employees.services import employee_service
-from src.schemas.login_request import LoginRequest
+from src.modules.employees.services import employee_service
+from src.modules.employees.schemas.login_request import LoginRequest
 from src.auth.token import encode_token
-from src.schemas.employee_models import (
+from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
     UpdateEmployee,

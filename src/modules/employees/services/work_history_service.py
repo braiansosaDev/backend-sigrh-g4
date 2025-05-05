@@ -1,9 +1,9 @@
 from typing import List
 from fastapi import HTTPException, status
 from src.database.core import DatabaseSession
-from src.schemas.entities import WorkHistory
-from src.schemas.work_history_models import WorkHistoryRequest
-import src.employees.services.utils as utils
+from src.modules.employees.models.work_history import WorkHistory
+from src.modules.employees.schemas.work_history_models import WorkHistoryRequest
+import src.modules.employees.services.utils as utils
 
 
 def get_work_history(db: DatabaseSession, employee_id: int) -> List[WorkHistory]:

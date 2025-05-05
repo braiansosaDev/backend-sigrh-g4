@@ -1,7 +1,7 @@
 from src.database.core import DatabaseSession
-from src.schemas.documents_models import DocumentRequest
-from src.schemas.entities import Document
-from src.employees.services import utils
+from src.modules.employees.schemas.documents_models import DocumentRequest
+from src.modules.employees.models.documents import Document
+from src.modules.employees.services import utils
 from fastapi import HTTPException, status
 
 

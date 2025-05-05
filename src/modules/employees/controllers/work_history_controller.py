@@ -1,8 +1,8 @@
 from typing import List
 from fastapi import APIRouter
 from src.database.core import DatabaseSession
-from src.employees.services import work_history_service
-from src.schemas.work_history_models import (
+from src.modules.employees.services import work_history_service
+from src.modules.employees.schemas.work_history_models import (
     WorkHistoryResponse,
     WorkHistoryRequest,
 )
