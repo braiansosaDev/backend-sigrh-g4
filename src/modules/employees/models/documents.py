@@ -1,8 +1,6 @@
 from datetime import date
-from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, SQLModel
 
 class Document(SQLModel, table=True, metadata={"table_name": "document"}):
     """
@@ -16,3 +14,4 @@ class Document(SQLModel, table=True, metadata={"table_name": "document"}):
     extension: str = Field(max_length=5)
     creation_date: date
     file: bytes
+    active: bool = Field(default=False)

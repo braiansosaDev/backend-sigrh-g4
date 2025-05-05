@@ -1,8 +1,9 @@
 from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr, Field, BaseModel
+from pydantic import EmailStr, Field, BaseModel, field_validator, model_validator
 from datetime import date
-
+from src.modules.employees.schemas.work_history_models import WorkHistoryResponse
+from src.modules.employees.schemas.documents_models import DocumentResponse
 
 class EmployeeResponse(BaseModel):
     """
@@ -11,35 +12,53 @@ class EmployeeResponse(BaseModel):
     """
 
     id: int
-    email: EmailStr
-    phone: str
+    user_id: str
+    first_name: str 
+    last_name: str  
     dni: str
-    full_name: str
-    nationality: str
-    job_title: str
-    department: str
-    address: str
-    job_title: str
-    photo: Optional[bytes]
-    hire_date: date
-    birth_date: date
-    salary: Decimal
+    type_dni: str 
+    personal_email: EmailStr
+    active: bool
+    role: str 
     password: str
-
+    phone: str
+    salary: Decimal
+    job_id: int
+    birth_date: date
+    hire_date: date
+    photo: Optional[bytes]
+    address_street: str
+    address_city: str
+    address_cp: str
+    address_state_id: int
+    address_country_id: int
+    work_histories: list[WorkHistoryResponse] 
+    documents: list[DocumentResponse]
 
 class UpdateEmployee(BaseModel):
+    user_id: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    dni: Optional[str] = None
+    type_dni: Optional[str] = None
+    personal_email: Optional[EmailStr] = None
+    active: Optional[bool] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
     phone: Optional[str] = None
-    address: Optional[str] = None
+    salary: Optional[Decimal] = None
+    job_id: Optional[int] = None
+    birth_date: Optional[date] = None
+    hire_date: Optional[date] = None
     photo: Optional[bytes] = None
     facial_register: Optional[bytes] = None
-    salary: Optional[Decimal] = None
-    full_name: Optional[str] = None
-    job_title: Optional[str] = None
-    dni: Optional[str] = None
-    email: Optional[EmailStr] = None
-    hire_date: Optional[date] = None
-    birth_date: Optional[date] = None
-    password: Optional[str] = None
+    address_street: Optional[str] = None
+    address_city: Optional[str] = None
+    address_cp: Optional[str] = None
+    address_state_id: Optional[int] = None
+    address_country_id: Optional[int] = None
+    work_histories: Optional[list[WorkHistoryResponse]] = None
+    documents: Optional[list[DocumentResponse]] = None
 
 
 class CreateEmployee(BaseModel):
@@ -48,17 +67,52 @@ class CreateEmployee(BaseModel):
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.
     """
 
-    dni: str = Field(unique=True, max_length=50)
-    email: EmailStr = Field(unique=True, max_length=100)
-    phone: str = Field(unique=True, max_length=20)
-    full_name: str = Field(max_length=100)
+    user_id: str = Field(max_length=100)
+    first_name: str = Field(max_length=100)
+    last_name: str = Field(max_length=100)
+    dni: str = Field(max_length=50)
+    type_dni: str = Field(max_length=10)
+    personal_email: EmailStr = Field(max_length=100)
+    active: bool = Field(default=False)
+    role: str = Field(max_length=100)
     password: str = Field(max_length=100)
-    nationality: str = Field(max_length=50, index=True)
-    job_title: str = Field(max_length=100)
-    department: str = Field(max_length=100)
-    address: str = Field(max_length=200)
+    phone: str = Field(max_length=20)
+    salary: Decimal = Field(gt=0)
+    job_id: int
+    birth_date: date
+    hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
     facial_register: Optional[bytes] = Field(default=None)
-    hire_date: date = Field(default=date.today())
-    birth_date: date
-    salary: Decimal = Field(gt=0)
+    address_street: str = Field(max_length=100)
+    address_city: str = Field(max_length=100)
+    address_cp: str = Field(max_length=100)
+    address_state_id: int
+    address_country_id: int
+    work_histories: Optional[list[WorkHistoryResponse]] = None
+    documents: Optional[list[DocumentResponse]] = None
+
+     # Edad mínima (>=16 años)
+    @field_validator("birth_date")
+    @classmethod
+    def check_minimum_age(cls, v):
+        today = date.today()
+        age = today.year - v.year - ((today.month, today.day) < (v.month, v.day))
+        if age < 16:
+            raise ValueError("El empleado debe tener al menos 16 años.")
+        return v
+
+    # Validación de teléfono: que comience con código de país
+    @field_validator("phone")
+    @classmethod
+    def validate_phone_country_code(cls, v):
+        if not v.startswith("+"):
+            raise ValueError("El número de teléfono debe incluir el código de país (ej: +54).")
+        return v
+
+    # Validación de campos vacíos
+    @field_validator("user_id", "first_name", "last_name", "dni", "type_dni","personal_email", "role", "password","phone","address_street", "address_city", "address_cp", mode="before")
+    @classmethod
+    def non_empty_strings(cls, v, field):
+        if not v.strip():
+            raise ValueError(f"El campo '{field.name}' no puede estar vacío.")
+        return v

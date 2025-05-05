@@ -4,7 +4,7 @@ from src.modules.employees.models.employee import Employee
 from src.modules.employees.schemas.employee_models import CreateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
-from src.auth.crypt import get_password_hash, verify_password
+from src.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
 
 def get_all_employees(db: DatabaseSession) -> List[Employee]:
@@ -39,20 +39,29 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     """
     try:
         db_employee = Employee(
+            user_id=employee_request.user_id,
+            first_name=employee_request.first_name,
+            last_name=employee_request.last_name,
             dni=employee_request.dni,
-            email=employee_request.email,
-            phone=employee_request.phone,
-            full_name=employee_request.full_name,
+            type_dni=employee_request.type_dni,
+            personal_email=employee_request.personal_email,
+            active=employee_request.active,
+            role=employee_request.role,
             password=get_password_hash(employee_request.password),
-            department=employee_request.department,
-            job_title=employee_request.job_title,
-            address=employee_request.address,
-            nationality=employee_request.nationality,
-            hire_date=employee_request.hire_date,
-            birth_date=employee_request.birth_date,
+            phone=employee_request.phone,
             salary=employee_request.salary,
+            job_id=employee_request.job_id,
+            birth_date=employee_request.birth_date,
+            hire_date=employee_request.hire_date,
             photo=employee_request.photo,
             facial_register=employee_request.facial_register,
+            address_street=employee_request.address_street,
+            address_city=employee_request.address_city,
+            address_cp=employee_request.address_cp,
+            address_state_id=employee_request.address_state_id,
+            address_country_id=employee_request.address_country_id,
+            work_histories=employee_request.work_histories,
+            documents=employee_request.documents,
         )
         db.add(db_employee)
         db.commit()
@@ -64,26 +73,6 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee with this DNI, phone or email already exists.",
         )
-
-
-def login_employee(db: DatabaseSession, id: int, password: str) -> Employee:
-    """
-    Obtiene un empleado por sus credenciales.
-        Args:
-            db (Session): Sesión de la base de datos.
-            id (int): ID del empleado a buscar.
-            password (str): Contraseña del empleado.
-        Returns:
-            Employee: Empleado encontrado.
-    """
-    employee = utils.get_employee_by_id(db, id)
-
-    if not employee or not verify_password(password, employee.password):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Invalid credentials",
-        )
-    return employee
 
 
 def update_employee(
