@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from typing import List
 from src.database.core import DatabaseSession
 from src.modules.employees.schemas.country_models import CountryResponse, CreateCountry, UpdateCountry

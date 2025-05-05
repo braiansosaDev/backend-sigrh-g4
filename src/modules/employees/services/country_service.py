@@ -1,7 +1,6 @@
 from src.database.core import DatabaseSession
-from src.modules.employees.schemas.country_models import CountryResponse, CreateCountry, UpdateCountry
+from src.modules.employees.schemas.country_models import CreateCountry, UpdateCountry
 from src.modules.employees.models.country import Country
-from src.modules.employees.services import utils
 from fastapi import HTTPException, status
 from sqlmodel import select
 
@@ -25,9 +24,9 @@ def create_country(db: DatabaseSession,create_country_request: CreateCountry,) -
     return db_country
 
 
-def update_country(db: DatabaseSession,update_country_request: UpdateCountry) -> Country:
+def update_country(db: DatabaseSession,update_country_request: UpdateCountry, country_id: int) -> Country:
     country = db.exec(
-        select(Country).where(Country.id == update_country_request.id)
+        select(Country).where(Country.id == country_id)
     ).one_or_none()
 
     if country is None:
