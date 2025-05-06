@@ -2,8 +2,8 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr, Field, BaseModel, field_validator, model_validator
 from datetime import date
-from src.modules.employees.schemas.work_history_models import WorkHistoryResponse
-from src.modules.employees.schemas.documents_models import DocumentResponse
+from src.modules.employees.models.documents import Document
+from src.modules.employees.models.work_history import WorkHistory
 
 class EmployeeResponse(BaseModel):
     """
@@ -32,8 +32,8 @@ class EmployeeResponse(BaseModel):
     address_cp: str
     address_state_id: int
     address_country_id: int
-    work_histories: list[WorkHistoryResponse] 
-    documents: list[DocumentResponse]
+    work_histories: list[WorkHistory] 
+    documents: list[Document]
 
 class UpdateEmployee(BaseModel):
     user_id: Optional[str] = None
@@ -57,8 +57,8 @@ class UpdateEmployee(BaseModel):
     address_cp: Optional[str] = None
     address_state_id: Optional[int] = None
     address_country_id: Optional[int] = None
-    work_histories: Optional[list[WorkHistoryResponse]] = None
-    documents: Optional[list[DocumentResponse]] = None
+    work_histories: Optional[list[WorkHistory]] = None
+    documents: Optional[list[Document]] = None
 
 
 class CreateEmployee(BaseModel):
@@ -88,8 +88,8 @@ class CreateEmployee(BaseModel):
     address_cp: str = Field(max_length=100)
     address_state_id: int
     address_country_id: int
-    work_histories: Optional[list[WorkHistoryResponse]] = None
-    documents: Optional[list[DocumentResponse]] = None
+    work_histories: Optional[list[WorkHistory]] = None
+    documents: Optional[list[Document]] = None
 
      # Edad mínima (>=16 años)
     @field_validator("birth_date")

@@ -1,6 +1,8 @@
 from typing import List
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.work_history import WorkHistory
+from src.modules.employees.models.documents import Document
 from src.modules.employees.schemas.employee_models import CreateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
@@ -37,7 +39,14 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     Returns:
         Employee: Empleado registrado.
     """
+   
     try:
+        # Convertir documentos
+        documents = [Document(**doc.model_dump()) for doc in employee_request.documents] if employee_request.documents else []
+
+        # Convertir historial laboral
+        work_histories = [WorkHistory(**history.model_dump()) for history in employee_request.work_histories] if employee_request.work_histories else []
+       
         db_employee = Employee(
             user_id=employee_request.user_id,
             first_name=employee_request.first_name,
@@ -60,8 +69,8 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             address_cp=employee_request.address_cp,
             address_state_id=employee_request.address_state_id,
             address_country_id=employee_request.address_country_id,
-            work_histories=employee_request.work_histories,
-            documents=employee_request.documents,
+            work_histories=work_histories,
+            documents=documents,
         )
         db.add(db_employee)
         db.commit()

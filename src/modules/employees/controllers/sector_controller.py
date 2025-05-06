@@ -12,14 +12,11 @@ Returns:
 """
 
 @sector_router.get("/", response_model=List[SectorResponse], status_code=status.HTTP_200_OK)
-async def get_all_sectors():
-    db: DatabaseSession
+async def get_all_sectors(db: DatabaseSession):
     return sector_service.get_all_sectors(db)
 
 @sector_router.get("/{sector_id}", response_model=SectorResponse, status_code=status.HTTP_200_OK)
-async def get_sector_by_id():
-    db: DatabaseSession
-    sector_id: int
+async def get_sector_by_id(db: DatabaseSession, sector_id: int):
     return sector_service.get_sector_by_id(db, sector_id)
 
 """Enpoint para crear un nuevo sector.

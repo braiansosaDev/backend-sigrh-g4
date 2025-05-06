@@ -1,7 +1,8 @@
 from datetime import date
-from decimal import Decimal
-from typing import Optional
-from sqlmodel import Field, SQLModel
+from typing import TYPE_CHECKING, Optional
+from sqlmodel import Field, Relationship, SQLModel
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"}):
     """
@@ -17,3 +18,4 @@ class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"})
     to_date: date
     company_name: str = Field(max_length=40, index=True)
     notes: str = Field(max_length=100)
+    employee: "Employee" = Relationship(back_populates="work_histories")

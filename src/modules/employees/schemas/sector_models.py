@@ -9,5 +9,4 @@ class CreateSector(BaseModel):
     name: str = Field(max_length=100)
 
 class UpdateSector(BaseModel):
-    id: int
     name: Optional[str] = None

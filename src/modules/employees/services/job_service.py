@@ -24,7 +24,7 @@ def create_job(db: DatabaseSession,create_job_request: CreateJob,) -> Job:
     return db_job
 
 
-def update_job(db: DatabaseSession,update_job_request: UpdateJob, job_id: int) -> Job:
+def update_job(db: DatabaseSession,job_id: int,update_job_request: UpdateJob) -> Job:
     job = db.exec(
         select(Job).where(Job.id == job_id)
     ).one_or_none()

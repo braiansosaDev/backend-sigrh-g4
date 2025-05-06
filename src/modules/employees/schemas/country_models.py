@@ -9,5 +9,4 @@ class CreateCountry(BaseModel):
     name: str = Field(max_length=100)
 
 class UpdateCountry(BaseModel):
-    id: int
     name: Optional[str] = None

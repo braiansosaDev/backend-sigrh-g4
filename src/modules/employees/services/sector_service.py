@@ -4,7 +4,7 @@ from src.modules.employees.models.sector import Sector
 from fastapi import HTTPException, status
 from sqlmodel import select
 
-def get_all_countries(db: DatabaseSession):
+def get_all_sectors(db: DatabaseSession):
     return db.exec(select(Sector)).all()
 
 def get_sector_by_id(db: DatabaseSession, sector_id: int) -> Sector:
@@ -24,7 +24,7 @@ def create_sector(db: DatabaseSession,create_sector_request: CreateSector,) -> S
     return db_sector
 
 
-def update_sector(db: DatabaseSession,update_sector_request: UpdateSector, sector_id: int) -> Sector:
+def update_sector(db: DatabaseSession,sector_id: int,update_sector_request: UpdateSector) -> Sector:
     sector = db.exec(
         select(Sector).where(Sector.id == sector_id)
     ).one_or_none()

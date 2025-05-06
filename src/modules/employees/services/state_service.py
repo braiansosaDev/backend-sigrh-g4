@@ -24,7 +24,7 @@ def create_state(db: DatabaseSession,create_state_request: CreateState,) -> Stat
     return db_state
 
 
-def update_state(db: DatabaseSession,update_state_request: UpdateState, state_id: int) -> State:
+def update_state(db: DatabaseSession,state_id: int,update_state_request: UpdateState) -> State:
     state = db.exec(
         select(State).where(State.id == state_id)
     ).one_or_none()

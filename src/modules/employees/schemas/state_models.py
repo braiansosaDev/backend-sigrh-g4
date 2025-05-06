@@ -11,6 +11,5 @@ class CreateState(BaseModel):
     country_id: int
 
 class UpdateState(BaseModel):
-    id: int
     name: Optional[str] = None
     country_id: int

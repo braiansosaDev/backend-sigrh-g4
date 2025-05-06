@@ -12,14 +12,11 @@ Returns:
 """
 
 @job_router.get("/", response_model=List[JobResponse], status_code=status.HTTP_200_OK)
-async def get_all_jobs():
-    db: DatabaseSession
+async def get_all_jobs(db: DatabaseSession):
     return job_service.get_all_jobs(db)
 
 @job_router.get("/{job_id}", response_model=JobResponse, status_code=status.HTTP_200_OK)
-async def get_job_by_id():
-    db: DatabaseSession
-    job_id: int
+async def get_job_by_id(db: DatabaseSession, job_id: int):
     return job_service.get_job_by_id(db, job_id)
 
 """Enpoint para crear unun puesto o job nuevo.

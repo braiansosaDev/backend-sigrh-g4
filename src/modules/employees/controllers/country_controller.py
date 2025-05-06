@@ -12,14 +12,11 @@ Returns:
 """
 
 @country_router.get("/", response_model=List[CountryResponse], status_code=status.HTTP_200_OK)
-async def get_all_countries():
-    db: DatabaseSession
+async def get_all_countries(db: DatabaseSession):
     return country_service.get_all_countries(db)
 
 @country_router.get("/{country_id}", response_model=CountryResponse, status_code=status.HTTP_200_OK)
-async def get_country_by_id():
-    db: DatabaseSession
-    country_id: int
+async def get_country_by_id(db: DatabaseSession,country_id: int):
     return country_service.get_country_by_id(db, country_id)
 
 """Enpoint para crear un nuevo pais.

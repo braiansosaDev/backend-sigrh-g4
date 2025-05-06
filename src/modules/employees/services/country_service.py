@@ -24,7 +24,7 @@ def create_country(db: DatabaseSession,create_country_request: CreateCountry,) -
     return db_country
 
 
-def update_country(db: DatabaseSession,update_country_request: UpdateCountry, country_id: int) -> Country:
+def update_country(db: DatabaseSession, country_id: int, update_country_request: UpdateCountry) -> Country:
     country = db.exec(
         select(Country).where(Country.id == country_id)
     ).one_or_none()

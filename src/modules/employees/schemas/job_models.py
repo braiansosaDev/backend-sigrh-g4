@@ -11,6 +11,5 @@ class CreateJob(BaseModel):
     sector_id: int
 
 class UpdateJob(BaseModel):
-    id: int
     name: Optional[str] = None
     sector_id: int

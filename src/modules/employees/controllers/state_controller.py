@@ -12,14 +12,11 @@ Returns:
 """
 
 @state_router.get("/", response_model=List[StateResponse], status_code=status.HTTP_200_OK)
-async def get_all_states():
-    db: DatabaseSession
+async def get_all_states(db: DatabaseSession):
     return state_service.get_all_states(db)
 
 @state_router.get("/{state_id}", response_model=StateResponse, status_code=status.HTTP_200_OK)
-async def get_state_by_id():
-    db: DatabaseSession
-    state_id: int
+async def get_state_by_id(db: DatabaseSession, state_id: int):    
     return state_service.get_state_by_id(db, state_id)
 
 """Enpoint para crear una provincia nueva.
