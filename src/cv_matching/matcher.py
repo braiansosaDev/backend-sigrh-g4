@@ -7,21 +7,22 @@ def normalize(text: str) -> str:
     """
     Convierte el texto a minúsculas, elimina acentos, signos de puntuación y caracteres especiales.
     """
-    # Convertir a minúsculas
     text = text.lower()
-    # Eliminar tildes: descomponer y filtrar caracteres
     text = unicodedata.normalize("NFD", text)
     text = "".join([c for c in text if unicodedata.category(c) != "Mn"])
-    # Eliminar signos de puntuación y caracteres especiales
     translator = str.maketrans("", "", string.punctuation)
     text = text.translate(translator)
-    # Se pueden eliminar espacios extras o nuevos caracteres si se desea
     return text
 
 
-def find_words(text: str, words: list, model, threshold: float = 0.6) -> bool:
+def normalize_words(words: list) -> list[str]:
+    normalized_words = [normalize(word) for word in words]
+    return normalized_words
+
+
+def find_required_words(text: str, words: list, model, threshold: float = 0.79) -> dict:
     """
-    Verifica si todas las palabras de 'lista_palabras' se encuentran en 'texto'.
+    Verifica si todas las palabras de 'words' se encuentran en 'text'.
     Primero se busca una coincidencia literal y, si no se encuentra,
     se recurre a una coincidencia semántica usando spaCy.
 
@@ -32,44 +33,74 @@ def find_words(text: str, words: list, model, threshold: float = 0.6) -> bool:
         umbral: valor mínimo de similitud para considerar una coincidencia semántica.
 
     Retorna:
+        Un diccionario con las palabras encontradas, la palabra no encontrada (si existe) y un boolean.
         True si todas las palabras se encontraron (literal o semánticamente),
         False en caso contrario.
     """
-    # Normalizar texto y palabras
-    normalized_text = normalize(text)
-    normalized_words = [normalize(word) for word in words]
-
-    # Procesamos el texto con el modelo de spaCy
-    doc = model(normalized_text)
-
-    # Convertir el documento en una lista de tokens (o palabras) para comparar literalmente.
+    doc = model(text)
     tokens_text = [token.text for token in doc]
+    result = {"WORDS_FOUND": [], "WORDS_NOT_FOUND": [], "SUITABLE": False}
 
-    # Para cada palabra de la lista, se verifica la coincidencia
-    for word in normalized_words:
-        # Coincidencia literal
+    for word in words:
         if word in tokens_text:
-            continue  # Se encontró la palabra literalmente
+            result["WORDS_FOUND"].append(word)
+            continue
         else:
-            # Coincidencia semántica:
-            # Procesamos la palabra con el modelo para obtener su vector
             word_doc = model(word)
-            # Se asume que la palabra consiste en un solo token
             if len(word_doc) == 0 or not word_doc[0].has_vector:
-                # Si la palabra no tiene representación vectorial,
-                # no podemos comparar semánticamente
                 return False
 
-            # Comparar la similitud de la palabra con cada token del texto
             similarities = [
                 token.similarity(word_doc[0]) for token in doc if token.has_vector
             ]
-            # Se verifica si alguna similitud supera el umbral
             if similarities and max(similarities) >= threshold:
+                result["WORDS_FOUND"].append(word)
                 continue
             else:
-                return False  # No se encontró coincidencia (literal ni semántica)
-    return True
+                result["WORDS_NOT_FOUND"].append(word)
+                result["SUITABLE"] = False
+                return result
+
+    result["SUITABLE"] = True
+    return result
+
+
+def find_desired_words(
+    text: str,
+    words: list,
+    model,
+    threshold: float = 0.79,
+    minimal_porcentage: float = 0.70,
+) -> dict:
+    """
+    Verifica cuántas palabras de 'words' aparecen en 'text'.
+    Retorna un diccionario con las palabras y un booleano.
+    """
+    doc = model(text)
+    tokens_texto = [t.text for t in doc]
+    result = {"WORDS_FOUND": [], "WORDS_NOT_FOUND": [], "SUITABLE": False}
+
+    for word in words:
+        if word in tokens_texto:
+            result["WORDS_FOUND"].append(word)
+            continue
+
+        word_doc = model(word)
+        if not word_doc or not word_doc[0].has_vector:
+            continue
+
+        max_sim = max(
+            (t.similarity(word_doc[0]) for t in doc if t.has_vector), default=0.0
+        )
+        if max_sim >= threshold:
+            result["WORDS_FOUND"].append(word)
+
+    for word in words:
+        if word not in result["WORDS_FOUND"]:
+            result["WORDS_NOT_FOUND"].append(word)
+
+    result["SUITABLE"] = (len(result["WORDS_FOUND"]) / len(words)) > minimal_porcentage
+    return result
 
 
 def load_spanish_model():
