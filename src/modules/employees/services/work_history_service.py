@@ -28,7 +28,7 @@ def create_work_history(
         )
     history = WorkHistory(
         employee_id=employee_id,
-        job_title=work_history.job_title,
+        job_id=work_history.job_id,
         from_date=work_history.from_date,
         to_date=work_history.to_date,
         company_name=work_history.company_name,

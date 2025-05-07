@@ -1,8 +1,8 @@
 from datetime import date
-from decimal import Decimal
-from typing import Optional
-from pydantic import EmailStr
+from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, Relationship, SQLModel
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 class Document(SQLModel, table=True, metadata={"table_name": "document"}):
     """
@@ -16,3 +16,5 @@ class Document(SQLModel, table=True, metadata={"table_name": "document"}):
     extension: str = Field(max_length=5)
     creation_date: date
     file: bytes
+    active: bool = Field(default=True)
+    employee: "Employee" = Relationship(back_populates="documents")

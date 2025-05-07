@@ -1,9 +1,8 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
-from src.modules.employees.schemas.login_request import LoginRequest
-from src.auth.token import encode_token
+from src.auth.login_request import LoginRequest
 from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
@@ -57,37 +56,6 @@ async def register_employee(
     register_employee_request: CreateEmployee,
 ):
     return employee_service.create_employee(db, register_employee_request)
-
-
-"""Endopint para iniciar sesión como empleado.
-El empleado debe proporcionar su ID y contraseña.
-El ID debe ser un número entero positivo.
-Returns:
-EmployeeResponse: Devuelve el token de acceso.
-"""
-
-
-@employee_router.post("/login", status_code=status.HTTP_200_OK, response_model=dict)
-async def login_employee(
-    db: DatabaseSession,
-    login_request: LoginRequest,
-):
-    try:
-        employee = employee_service.login_employee(
-            db, int(login_request.username), login_request.password
-        )
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Username must be a number. Error: {e}",
-        )
-    token = encode_token(
-        {
-            "username": employee.id,
-            "password": employee.password,
-        }
-    )
-    return {"access_token": token}
 
 
 """Endpoint para actualizar los datos de un empleado.

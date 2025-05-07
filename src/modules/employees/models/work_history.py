@@ -1,8 +1,8 @@
 from datetime import date
-from decimal import Decimal
-from typing import Optional
-from pydantic import EmailStr
+from typing import TYPE_CHECKING, Optional
 from sqlmodel import Field, Relationship, SQLModel
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"}):
     """
@@ -13,8 +13,9 @@ class WorkHistory(SQLModel, table=True, metadata={"table_name": "work_history"})
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     employee_id: int = Field(foreign_key="employee.id")
-    job_title: str = Field(max_length=100)
+    job_id: int = Field(foreign_key="job.id")
     from_date: date
     to_date: date
     company_name: str = Field(max_length=40, index=True)
-    notes: str = Field(max_length=1000)
+    notes: str = Field(max_length=100)
+    employee: "Employee" = Relationship(back_populates="work_histories")

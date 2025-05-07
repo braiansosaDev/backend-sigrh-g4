@@ -23,22 +23,6 @@ class JobOpportunityAbility(SQLModel, table=True):
     ability_id: int = Field(foreign_key="ability.id")
 
 
-# TODO: Eliminar cuando se haga el merge
-class Country(SQLModel, table=True):
-    __tablename__ = "country"  # type: ignore
-
-    id: int | None = Field(primary_key=True, index=True)
-    name: str = Field(max_length=100)
-
-
-# TODO: Eliminar cuando se haga el merge
-class State(SQLModel, table=True):
-    __tablename__ = "state"  # type: ignore
-
-    id: int | None = Field(primary_key=True, index=True)
-    name: str = Field(max_length=100)
-    country_id: int = Field(foreign_key="country.id")
-
 
 class Postulation(SQLModel, table=True):
     """
