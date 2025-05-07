@@ -4,6 +4,8 @@ from src.database.core import lifespan
 from src.modules.employees.controllers.employee_controller import employee_router
 from src.modules.employees.controllers.documents_controller import documents_router
 from src.modules.employees.controllers.work_history_controller import work_history_router
+from src.modules.opportunity.controllers.job_opportunity_controller import opportunity_router
+from src.modules.ability.controllers.ability_controller import ability_router
 
 app = FastAPI(
     root_path="/api/v1",
@@ -23,3 +25,5 @@ app.add_middleware(
 app.include_router(employee_router)
 app.include_router(work_history_router)
 app.include_router(documents_router)
+app.include_router(opportunity_router)
+app.include_router(ability_router)
