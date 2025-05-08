@@ -59,13 +59,16 @@ def get_all_employees(db: DatabaseSession):
 def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
     first_char = employee_request.first_name[0].lower()
     last_name = employee_request.last_name.lower()
-    dni = employee_request.dni[-3:]
-    new_user_id = f"{first_char}{last_name}{dni}"
+    dni_suffix = employee_request.dni[-3:]
 
-    if db.exec(select(Employee).where(Employee.user_id == new_user_id)).one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User ID already exists.",
-        )
+    base_user_id = f"{first_char}{last_name}{dni_suffix}"
+    candidate_user_id = base_user_id
+    counter = 0
 
-    return new_user_id
+    while db.exec(select(Employee).where(Employee.user_id == candidate_user_id)).one_or_none():
+        counter += 1
+        # Asegura que los últimos 3 sean siempre numéricos y con 3 cifras
+        new_suffix = f"{int(dni_suffix) + counter:03d}"
+        candidate_user_id = f"{first_char}{last_name}{new_suffix}"
+
+    return candidate_user_id
