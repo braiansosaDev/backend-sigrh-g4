@@ -1,8 +1,8 @@
 from fastapi import APIRouter
 
 from src.database.core import DatabaseSession
-from src.modules.ability.models.ability_models import Ability
-from src.modules.ability.schemas.ability_schemas import AbilityPublic, AbilityBase
+from src.modules.ability.models.ability_models import AbilityModel
+from src.modules.ability.schemas.ability_schemas import AbilityPublic, AbilityRequest
 from src.modules.ability.services import ability_service
 from src.modules.ability.services.ability_service import ErrorCode
 from typing import Sequence, Any
@@ -40,16 +40,16 @@ ability_router = APIRouter(prefix="/abilities", tags=["Abilities"])
 
 
 @ability_router.get("/", response_model=list[AbilityPublic])
-async def get_all_abilities(db: DatabaseSession) -> Sequence[Ability]:
+async def get_all_abilities(db: DatabaseSession) -> Sequence[AbilityModel]:
     return ability_service.get_all_abilities(db)
 
 
 @ability_router.get("/{ability_id}", response_model=AbilityPublic)
-async def get_ability_by_id(db: DatabaseSession, ability_id: int) -> Ability:
+async def get_ability_by_id(db: DatabaseSession, ability_id: int) -> AbilityModel:
     service_response = ability_service.get_ability_by_id(db, ability_id)
 
     match service_response:
-        case Ability():
+        case AbilityModel():
             return service_response
         case (ErrorCode(), str()):
             raise HTTPException(
@@ -63,11 +63,11 @@ async def get_ability_by_id(db: DatabaseSession, ability_id: int) -> Ability:
 @ability_router.post(
     "/create", status_code=status.HTTP_201_CREATED, response_model=AbilityPublic
 )
-async def create_ability(db: DatabaseSession, body: AbilityBase):
+async def create_ability(db: DatabaseSession, body: AbilityRequest):
     service_response = ability_service.create_ability(db, body)
 
     match service_response:
-        case Ability():
+        case AbilityModel():
             return service_response
         case (ErrorCode(), str()):
             raise HTTPException(

@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from datetime import datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
@@ -15,26 +15,39 @@ class JobOpportunityWorkMode(Enum):
     PRESENCIAL = "presencial"
 
 
-class JobOpportunityBase(SQLModel):
-    owner_employee_id: int = Field(foreign_key="employee.id")
+class JobOpportunityRequest(BaseModel):
+    owner_employee_id: int = Field()
     status: JobOpportunityStatus = Field()
     work_mode: JobOpportunityWorkMode = Field()
-    title: str = Field(max_length=100)
-    description: str = Field(max_length=500)
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(min_length=1, max_length=500)
     budget: int = Field(gt=0)
-    budget_currency_id: str = Field(max_length=3)
-    state_id: int = Field(foreign_key="state.id")
-    created_at: datetime = Field()
-    updated_at: datetime = Field()
-
-
-class JobOpportunityBaseId(JobOpportunityBase):
-    id: int = Field(primary_key=True, index=True)
-
-
-class JobOpportunityRequest(JobOpportunityBase):
+    budget_currency_id: str = Field(min_length=3, max_length=3)
+    state_id: int = Field()
     job_opportunity_abilities: list[AbilityPublic] = Field()
+
+    @field_validator("title", mode="before")
+    def title_validator(cls, title):
+        if type(title) is not str:
+            raise TypeError("El título no es una string.")
+        if not title.strip():
+            raise ValueError("El título no puede estar vacío.")
+        elif len(title) > 100:
+            raise ValueError("El título no puede tener más de 100 caracteres.")
+        return title
+
+    @field_validator("description", mode="before")
+    def description_validator(cls, description):
+        if type(description) is not str:
+            raise TypeError("La descripción no es una string.")
+        if not description.strip():
+            raise ValueError("La descripción no puede estar vacía.")
+        elif len(description) > 500:
+            raise ValueError("La descripción no puede tener más de 500 caracteres.")
+        return description
 
 
 class JobOpportunityResponse(JobOpportunityRequest):
-    id: int = Field(primary_key=True, index=True)
+    id: int = Field()
+    created_at: datetime = Field()
+    updated_at: datetime = Field()

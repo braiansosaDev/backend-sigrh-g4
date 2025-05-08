@@ -1,6 +1,7 @@
 from src.database.core import DatabaseSession
 from src.modules.opportunity.models.job_opportunity_models import (
-    JobOpportunity,
+    JobOpportunityModel,
+    JobOpportunityIdModel,
     JobOpportunityAbility,
 )
 from sqlmodel import select
@@ -8,9 +9,8 @@ from typing import Sequence
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityRequest,
     JobOpportunityResponse,
-    JobOpportunityBaseId,
 )
-from src.modules.ability.models.ability_models import Ability
+from src.modules.ability.models.ability_models import AbilityModel
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -20,11 +20,11 @@ import logging
 logger = logging.getLogger("uvicorn.error")
 
 
-def get_all_opportunities_with_abilities(db: DatabaseSession) -> Sequence[JobOpportunity]:
-    opportunities = db.exec(select(JobOpportunity)).all()
+def get_all_opportunities_with_abilities(db: DatabaseSession) -> Sequence[JobOpportunityModel]:
+    opportunities = db.exec(select(JobOpportunityModel)).all()
     result = []
     for opportunity in opportunities:
-        opportunity_with_id = JobOpportunityBaseId(**opportunity.dict())
+        opportunity_with_id = JobOpportunityResponse(**opportunity.dict())
         result.append(get_opportunity_with_abilities(db, opportunity_with_id.id))
     return result
 
@@ -33,25 +33,31 @@ def create_opportunity(
     db: DatabaseSession, request: JobOpportunityRequest
 ) -> JobOpportunityResponse:
     try:
-        db_opportunity = JobOpportunity(**request.dict())
+        db_opportunity = JobOpportunityModel(**request.dict())
         abilities: list[AbilityPublic] = request.job_opportunity_abilities
         if len(abilities) == 0:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="You need to provide at least one ability.",
             )
+        abilities_ids = set()
         for ability in abilities:
-            results = db.exec(
-                select(Ability)
-                .where(Ability.id == ability.id)
-                .where(Ability.name == ability.name)
-                .where(Ability.description == ability.description)
-            ).all()
-            if len(results) == 0:
+            db_ability = db.exec(
+                select(AbilityModel)
+                .where(AbilityModel.id == ability.id)
+                .where(AbilityModel.name == ability.name)
+                .where(AbilityModel.description == ability.description)
+            ).one_or_none()
+            if db_ability is None:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"The following ability does not exist: {ability.model_dump_json()}",
                 )
+            else:
+                abilities_ids.add(db_ability.id)
+
+        if len(abilities_ids) != len(abilities):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="There are duplicated abilities.")
 
         db.add(db_opportunity)
         db.commit()
@@ -72,14 +78,14 @@ def create_opportunity(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
     try:
-        opportunity = JobOpportunityBaseId(**db_opportunity.dict())
+        opportunity = JobOpportunityIdModel(**db_opportunity.dict())
         for ability in abilities:
             logger.info(
                 f"Adding JobOpportunityAbility with JobOpportunity id {db_opportunity.id}"
             )
             db.add(
                 JobOpportunityAbility(
-                    id=None, job_opportunity_id=opportunity.id, ability_id=ability.id
+                    job_opportunity_id=opportunity.id, ability_id=ability.id
                 )
             )
         db.commit()
@@ -140,13 +146,13 @@ def get_opportunity_with_abilities(
         job_opportunity_abilities = db.exec(
             select(JobOpportunityAbility.ability_id)
             .where(JobOpportunityAbility.job_opportunity_id == opportunity_id)
-            .join(Ability)
+            .join(AbilityModel)
         ).all()
         abilities = []
         for id in job_opportunity_abilities:
-            abilities.append(
-                db.exec(select(Ability).where(Ability.id == id)).one_or_none()
-            )
+            db_ability = db.exec(select(AbilityModel).where(AbilityModel.id == id)).one()
+            ability = AbilityPublic(**db_ability.dict())
+            abilities.append(ability)
         response = JobOpportunityResponse(
             **opportunity.dict(), job_opportunity_abilities=abilities
         )
@@ -158,7 +164,7 @@ def get_opportunity_with_abilities(
 
 def get_opportunity_by_id(
     db: DatabaseSession, opportunity_id: int
-) -> JobOpportunity | None:
+) -> JobOpportunityModel | None:
     return db.exec(
-        select(JobOpportunity).where(JobOpportunity.id == opportunity_id)
+        select(JobOpportunityModel).where(JobOpportunityModel.id == opportunity_id)
     ).one_or_none()
