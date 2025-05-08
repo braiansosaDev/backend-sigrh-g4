@@ -3,7 +3,10 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
+from src.modules.employees.models.country import Country
 from src.modules.employees.models.documents import Document
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 
 class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
@@ -35,3 +38,7 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     address_country_id: int = Field(foreign_key="country.id")
     work_histories: list["WorkHistory"] = Relationship(back_populates="employee")
     documents: list["Document"] = Relationship(back_populates="employee")
+    job: Optional["Job"] = Relationship(back_populates="employee")
+    state: Optional["State"] = Relationship(back_populates="employee")
+    country: Optional["Country"] = Relationship(back_populates="employee")
+

@@ -1,9 +1,13 @@
 from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr, Field, BaseModel, field_validator, model_validator
+from pydantic import EmailStr, Field, BaseModel, field_validator
 from datetime import date
+from src.modules.employees.models.country import Country
 from src.modules.employees.models.documents import Document
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
+from src.modules.employees.schemas.job_models import JobResponse
 
 class EmployeeResponse(BaseModel):
     """
@@ -34,6 +38,9 @@ class EmployeeResponse(BaseModel):
     address_country_id: int
     work_histories: list[WorkHistory] 
     documents: list[Document]
+    job: Optional[JobResponse] = None
+    state: Optional[State] = None
+    country: Optional[Country] = None
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
@@ -58,6 +65,9 @@ class UpdateEmployee(BaseModel):
     address_country_id: Optional[int] = None
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
+    job: Optional["Job"] = None
+    state: Optional["State"] = None
+    country: Optional["Country"] = None
 
 
 class CreateEmployee(BaseModel):
