@@ -141,6 +141,7 @@ def update_opportunity(db: DatabaseSession, opportunity_id: int, request: JobOpp
         return get_opportunity_with_abilities(db, opportunity.id)
 
     except IntegrityError:
+        db.rollback()
         logger.error(f"Unexpected error while updating opportunity with id {opportunity_id}")
         raise
 

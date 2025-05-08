@@ -4,6 +4,44 @@ import logging
 
 logger = logging.getLogger("uvicorn.error")
 
+def validate_name(name):
+    if name is None:
+        raise ValueError("El nombre no puede ser None")
+    if type(name) is not str:
+        raise TypeError(f"El nombre no es una string, es {type(name)}.")
+    if not name.strip():
+        raise ValueError("El nombre no puede estar vacío.")
+    if len(name) > 100:
+        raise ValueError("El nombre no puede tener más de 100 caracteres.")
+    return name
+
+
+def validate_description(description):
+    if type(description) is not str:
+        return description
+    if len(description) > 500:
+        raise ValueError("La descripción no puede tener más de 500 caracteres.")
+    return description
+
+
+class AbilityUpdate(BaseModel):
+    """
+    Utilizado para actualizar las Ability
+    """
+
+    name: str | None = Field(min_length=1, max_length=100, default=None)
+    description: str | None = Field(max_length=500, default=None)
+
+    @field_validator("name", mode="before")
+    @classmethod
+    def name_validator(cls, name) -> str:
+        return validate_name(name)
+
+    @field_validator("description", mode="before")
+    @classmethod
+    def description_validator(cls, description) -> str | None:
+        return validate_description(description)
+
 
 class AbilityRequest(BaseModel):
     """
@@ -11,29 +49,17 @@ class AbilityRequest(BaseModel):
     """
 
     name: str = Field(min_length=1, max_length=100)
-    description: str = Field(min_length=1, max_length=500)
+    description: str | None = Field(max_length=500, default=None)
 
     @field_validator("name", mode="before")
     @classmethod
-    def empty_validator(cls, name):
-        if type(name) is not str:
-            raise TypeError("El nombre no es una string.")
-        if not name.strip():
-            raise ValueError("El nombre no puede estar vacío.")
-        elif len(name) > 100:
-            raise ValueError("El nombre no puede tener más de 100 caracteres.")
-        return name
+    def name_validator(cls, name) -> str:
+        return validate_name(name)
 
     @field_validator("description", mode="before")
     @classmethod
-    def name_validator(cls, description):
-        if type(description) is not str:
-            raise TypeError("La descripción no es una string.")
-        if not description.strip():
-            raise ValueError("La descripción no puede estar vacía.")
-        if len(description) > 500:
-            raise ValueError("La descripción no puede tener más de 500 caracteres.")
-        return description
+    def description_validator(cls, description) -> str | None:
+        return validate_description(description)
 
 
 class AbilityPublic(AbilityRequest):

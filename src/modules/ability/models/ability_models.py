@@ -8,7 +8,7 @@ class AbilityBaseModel(SQLModel):
     """
 
     name: str = Field(max_length=50, unique=True)
-    description: str = Field(max_length=100)
+    description: str | None = Field(max_length=100, default=None)
 
 
 class AbilityIdModel(AbilityBaseModel):
