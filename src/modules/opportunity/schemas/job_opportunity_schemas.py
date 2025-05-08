@@ -15,6 +15,19 @@ class JobOpportunityWorkMode(Enum):
     PRESENCIAL = "presencial"
 
 
+class JobOpportunityUpdate(BaseModel):
+     owner_employee_id: int | None = Field(default=None)
+     status: JobOpportunityStatus | None = Field(default=None)
+     work_mode: JobOpportunityWorkMode | None = Field(default=None)
+     title: str | None = Field(min_length=1, max_length=100, default=None)
+     description: str | None = Field(min_length=1, max_length=500, default=None)
+     budget: int | None = Field(gt=0, default=None)
+     budget_currency_id: str | None = Field(min_length=3, max_length=3, default=None)
+     state_id: int | None = Field(default=None)
+     job_opportunity_abilities: list[AbilityPublic] | None = Field(default=None)
+
+
+
 class JobOpportunityRequest(BaseModel):
     owner_employee_id: int = Field()
     status: JobOpportunityStatus = Field()
@@ -45,7 +58,6 @@ class JobOpportunityRequest(BaseModel):
         elif len(description) > 500:
             raise ValueError("La descripción no puede tener más de 500 caracteres.")
         return description
-
 
 class JobOpportunityResponse(JobOpportunityRequest):
     id: int = Field()

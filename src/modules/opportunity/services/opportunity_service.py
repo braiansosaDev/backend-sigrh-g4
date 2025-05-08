@@ -9,6 +9,7 @@ from typing import Sequence
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityRequest,
     JobOpportunityResponse,
+    JobOpportunityUpdate
 )
 from src.modules.ability.models.ability_models import AbilityModel
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
@@ -24,9 +25,34 @@ def get_all_opportunities_with_abilities(db: DatabaseSession) -> Sequence[JobOpp
     opportunities = db.exec(select(JobOpportunityModel)).all()
     result = []
     for opportunity in opportunities:
-        opportunity_with_id = JobOpportunityResponse(**opportunity.dict())
+        opportunity_with_id = JobOpportunityIdModel(**opportunity.dict())
         result.append(get_opportunity_with_abilities(db, opportunity_with_id.id))
     return result
+
+def validate_job_opportunity_abilities(db: DatabaseSession, job_opportunity_abilities: list[AbilityPublic]):
+    if len(job_opportunity_abilities) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You need to provide at least one ability.",
+        )
+    abilities_ids = set()
+    for ability in job_opportunity_abilities:
+        db_ability = db.exec(
+            select(AbilityModel)
+            .where(AbilityModel.id == ability.id)
+            .where(AbilityModel.name == ability.name)
+            .where(AbilityModel.description == ability.description)
+        ).one_or_none()
+        if db_ability is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"The following ability does not exist: {ability.model_dump_json()}",
+            )
+        else:
+            abilities_ids.add(db_ability.id)
+
+    if len(abilities_ids) != len(job_opportunity_abilities):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="There are duplicated abilities.")
 
 
 def create_opportunity(
@@ -35,29 +61,8 @@ def create_opportunity(
     try:
         db_opportunity = JobOpportunityModel(**request.dict())
         abilities: list[AbilityPublic] = request.job_opportunity_abilities
-        if len(abilities) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="You need to provide at least one ability.",
-            )
-        abilities_ids = set()
-        for ability in abilities:
-            db_ability = db.exec(
-                select(AbilityModel)
-                .where(AbilityModel.id == ability.id)
-                .where(AbilityModel.name == ability.name)
-                .where(AbilityModel.description == ability.description)
-            ).one_or_none()
-            if db_ability is None:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"The following ability does not exist: {ability.model_dump_json()}",
-                )
-            else:
-                abilities_ids.add(db_ability.id)
 
-        if len(abilities_ids) != len(abilities):
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="There are duplicated abilities.")
+        validate_job_opportunity_abilities(db, abilities)
 
         db.add(db_opportunity)
         db.commit()
@@ -103,6 +108,42 @@ def create_opportunity(
             )
             logger.error(e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+def update_opportunity(db: DatabaseSession, opportunity_id: int, request: JobOpportunityUpdate):
+    opportunity = get_opportunity_by_id(db, opportunity_id)
+
+    if opportunity is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail=f"The opportunity with id {opportunity_id} does not exist.")
+
+    try:
+        for attr, value in request.model_dump(exclude_unset=True, exclude=set("job_opportunity_abilities")).items():
+            if hasattr(opportunity, attr):
+                setattr(opportunity, attr, value)
+
+        if "job_opportunity_abilities" in request.model_dump(exclude_unset=True):
+            validate_job_opportunity_abilities(db, request.job_opportunity_abilities)
+
+            previous_abilities = db.exec(
+                select(JobOpportunityAbility).where(JobOpportunityAbility.job_opportunity_id == opportunity_id)
+            ).all()
+
+            for previous_ability in previous_abilities:
+                db.delete(previous_ability)
+
+            for ability in request.job_opportunity_abilities:
+                db.add(JobOpportunityAbility(job_opportunity_id=opportunity_id, ability_id=ability.id))
+
+        db.add(opportunity)
+        db.commit()
+        db.refresh(opportunity)
+
+        return get_opportunity_with_abilities(db, opportunity.id)
+
+    except IntegrityError:
+        logger.error(f"Unexpected error while updating opportunity with id {opportunity_id}")
+        raise
+
 
 
 def delete_opportunity(db: DatabaseSession, opportunity_id: int):

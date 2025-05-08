@@ -3,6 +3,7 @@ from src.database.core import DatabaseSession
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
     JobOpportunityRequest,
+    JobOpportunityUpdate
 )
 from src.modules.opportunity.services import opportunity_service
 
@@ -35,6 +36,10 @@ async def create_opportunity(
     db: DatabaseSession, job_opportunity_request: JobOpportunityRequest
 ):
     return opportunity_service.create_opportunity(db, job_opportunity_request)
+
+@opportunity_router.patch("/{opportunity_id}", status_code=status.HTTP_200_OK, response_model=JobOpportunityResponse)
+async def update_opportunity(db: DatabaseSession, opportunity_id: int, patch: JobOpportunityUpdate):
+    return opportunity_service.update_opportunity(db, opportunity_id, patch)
 
 
 @opportunity_router.delete("/{opportunity_id}", status_code=status.HTTP_200_OK)
