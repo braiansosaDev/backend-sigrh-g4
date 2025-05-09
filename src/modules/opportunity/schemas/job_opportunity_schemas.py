@@ -3,6 +3,9 @@ from enum import Enum
 from datetime import datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 
+class JobOpportunityAbilityImportance(Enum):
+    REQUERIDA = "requerida"
+    DESEADA = "deseada"
 
 class JobOpportunityStatus(Enum):
     ACTIVO = "activo"
@@ -24,8 +27,8 @@ class JobOpportunityUpdate(BaseModel):
      budget: int | None = Field(gt=0, default=None)
      budget_currency_id: str | None = Field(min_length=3, max_length=3, default=None)
      state_id: int | None = Field(default=None)
-     job_opportunity_abilities: list[AbilityPublic] | None = Field(default=None)
-
+     required_abilities: list[AbilityPublic] | None = Field(default=None)
+     desirable_abilities: list[AbilityPublic] | None = Field(default=None)
 
 
 class JobOpportunityRequest(BaseModel):
@@ -37,7 +40,8 @@ class JobOpportunityRequest(BaseModel):
     budget: int = Field(gt=0)
     budget_currency_id: str = Field(min_length=3, max_length=3)
     state_id: int = Field()
-    job_opportunity_abilities: list[AbilityPublic] = Field()
+    required_abilities: list[AbilityPublic] = Field()
+    desirable_abilities: list[AbilityPublic] = Field()
 
     @field_validator("title", mode="before")
     def title_validator(cls, title):

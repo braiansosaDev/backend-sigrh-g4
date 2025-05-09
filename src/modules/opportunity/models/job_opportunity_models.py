@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import EmailStr
 from sqlalchemy import JSON, Column
 from sqlalchemy.sql import func
-from src.modules.opportunity.schemas.job_opportunity_schemas import JobOpportunityStatus, JobOpportunityWorkMode
+from src.modules.opportunity.schemas.job_opportunity_schemas import JobOpportunityStatus, JobOpportunityWorkMode, JobOpportunityAbilityImportance
 
 
 class JobOpportunityBaseModel(SQLModel):
@@ -51,7 +51,7 @@ class JobOpportunityAbility(SQLModel, table=True):
 
     job_opportunity_id: int = Field(primary_key=True, foreign_key="job_opportunity.id")
     ability_id: int = Field(primary_key=True, foreign_key="ability.id")
-
+    ability_type: JobOpportunityAbilityImportance = Field()
 
 
 class Postulation(SQLModel, table=True):
