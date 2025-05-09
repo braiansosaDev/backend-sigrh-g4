@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee
+from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
@@ -98,7 +98,7 @@ def update_employee(
     Returns:
         Employee: Empleado actualizado.
     """
-    employee = utils.get_employee_by_id(db, employee_id)
+    employee = utils.get_employee_by_id_simple(db, employee_id)
 
     if employee is None:
         raise HTTPException(

@@ -34,8 +34,8 @@ class EmployeeResponse(BaseModel):
     address_street: str
     address_city: str
     address_cp: str
-    address_state_id: int
-    address_country_id: int
+    address_state_id: Optional[int]
+    address_country_id: Optional[int]
     work_histories: list[WorkHistory] 
     documents: list[Document]
     job: Optional[JobResponse] = None
@@ -93,8 +93,8 @@ class CreateEmployee(BaseModel):
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
-    address_state_id: int
-    address_country_id: int
+    address_state_id: Optional[int]
+    address_country_id: Optional[int]
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
