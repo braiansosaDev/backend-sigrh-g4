@@ -3,6 +3,7 @@ from enum import Enum
 from datetime import datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 
+
 class JobOpportunityAbilityImportance(Enum):
     REQUERIDA = "requerida"
     DESEADA = "deseada"
@@ -23,7 +24,7 @@ class JobOpportunityUpdate(BaseModel):
      status: JobOpportunityStatus | None = Field(default=None)
      work_mode: JobOpportunityWorkMode | None = Field(default=None)
      title: str | None = Field(min_length=1, max_length=100, default=None)
-     description: str | None = Field(min_length=1, max_length=500, default=None)
+     description: str | None = Field(min_length=1, max_length=1000, default=None)
      budget: int | None = Field(gt=0, default=None)
      budget_currency_id: str | None = Field(min_length=3, max_length=3, default=None)
      state_id: int | None = Field(default=None)
@@ -36,7 +37,7 @@ class JobOpportunityRequest(BaseModel):
     status: JobOpportunityStatus = Field()
     work_mode: JobOpportunityWorkMode = Field()
     title: str = Field(min_length=1, max_length=100)
-    description: str = Field(min_length=1, max_length=500)
+    description: str = Field(min_length=1, max_length=1000)
     budget: int = Field(gt=0)
     budget_currency_id: str = Field(min_length=3, max_length=3)
     state_id: int = Field()
@@ -59,8 +60,8 @@ class JobOpportunityRequest(BaseModel):
             raise TypeError("La descripción no es una string.")
         if not description.strip():
             raise ValueError("La descripción no puede estar vacía.")
-        elif len(description) > 500:
-            raise ValueError("La descripción no puede tener más de 500 caracteres.")
+        elif len(description) > 1000:
+            raise ValueError("La descripción no puede tener más de 1000 caracteres.")
         return description
 
 class JobOpportunityResponse(JobOpportunityRequest):

@@ -2,7 +2,7 @@ from src.database.core import DatabaseSession
 from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityModel,
     JobOpportunityIdModel,
-    JobOpportunityAbility,
+    JobOpportunityAbility
 )
 from sqlmodel import select
 from typing import Sequence
