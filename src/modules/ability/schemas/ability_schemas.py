@@ -19,8 +19,8 @@ def validate_name(name):
 def validate_description(description):
     if type(description) is not str:
         return description
-    if len(description) > 500:
-        raise ValueError("La descripción no puede tener más de 500 caracteres.")
+    if len(description) > 100:
+        raise ValueError("La descripción no puede tener más de 100 caracteres.")
     return description
 
 
@@ -30,7 +30,7 @@ class AbilityUpdate(BaseModel):
     """
 
     name: str | None = Field(min_length=1, max_length=100, default=None)
-    description: str | None = Field(max_length=500, default=None)
+    description: str | None = Field(max_length=100, default=None)
 
     @field_validator("name", mode="before")
     @classmethod
@@ -49,7 +49,7 @@ class AbilityRequest(BaseModel):
     """
 
     name: str = Field(min_length=1, max_length=100)
-    description: str | None = Field(max_length=500, default=None)
+    description: str | None = Field(max_length=100, default=None)
 
     @field_validator("name", mode="before")
     @classmethod

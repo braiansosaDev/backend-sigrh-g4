@@ -15,7 +15,7 @@ class JobOpportunityBaseModel(SQLModel):
     status: JobOpportunityStatus = Field()
     work_mode: JobOpportunityWorkMode = Field()
     title: str = Field(min_length=1, max_length=100)
-    description: str = Field(min_length=1, max_length=500)
+    description: str = Field(min_length=1, max_length=1000)
     budget: int = Field(gt=0)
     budget_currency_id: str = Field(min_length=3, max_length=3)
     state_id: int = Field()
