@@ -28,6 +28,7 @@ services:
         volume:
           nocopy: false
       - '.:/root/sigrh'
+      - './.git:/root/sigrh/.git:ro'
       - './docker-compose.yaml:/root/sigrh/docker-compose.yaml:ro'
       - './dev.Dockerfile:/root/sigrh/dev.Dockerfile:ro'
       - './Dockerfile:/root/sigrh/Dockerfile:ro'
