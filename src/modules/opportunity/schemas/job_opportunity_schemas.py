@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from datetime import datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
+from pydantic import EmailStr
 
 class JobOpportunityAbilityImportance(Enum):
     REQUERIDA = "requerida"
@@ -67,3 +68,41 @@ class JobOpportunityResponse(JobOpportunityRequest):
     id: int = Field()
     created_at: datetime = Field()
     updated_at: datetime = Field()
+
+
+class PostulationStatus(Enum):
+    PENDIENTE = "pendiente"
+    ACEPTADA = "aceptada"
+    NO_ACEPTADA = "no aceptada"
+    CONTRATADO = "contratado"
+
+class PostulationCreate(BaseModel):
+    """
+    Schema de postulación utilizado para
+    crear postulaciones.
+    """
+
+    job_opportunity_id: int = Field()
+    name: str = Field(min_length=1, max_length=50)
+    surname: str = Field(min_length=1, max_length=50)
+    email: EmailStr = Field(min_length=1, max_length=100)
+    phone_number: str = Field(min_length=1, max_length=100)
+    address_country_id: int = Field()
+    address_state_id: int = Field()
+    cv_file: bytes = Field()
+
+
+class PostulationUpdate(BaseModel):
+    """
+    Schema de postulación utilizado para
+    actualizar postulaciones
+    """
+
+    job_opportunity_id: int | None = Field(default=None)
+    name: str | None = Field(min_length=1, max_length=50, default=None)
+    surname: str | None = Field(min_length=1, max_length=50, default=None)
+    email: EmailStr | None = Field(min_length=1, max_length=100, default=None)
+    phone_number: str | None = Field(min_length=1, max_length=100, default=None)
+    address_country_id: int | None = Field(default=None)
+    address_state_id: int | None = Field(default=None)
+    cv_file: bytes | None = Field(default=None)
