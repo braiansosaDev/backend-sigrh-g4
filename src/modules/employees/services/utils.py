@@ -1,9 +1,11 @@
 from typing import List
+from fastapi import HTTPException, status
 from sqlmodel import select
 from src.database.core import DatabaseSession
 from src.modules.employees.models.documents import Document
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
+from src.modules.employees.schemas.employee_models import CreateEmployee
 
 def get_single_work_history_by_id(
     db: DatabaseSession, employee_id: int, work_history_id: int
@@ -53,3 +55,20 @@ def get_employee_by_user_id(db: DatabaseSession, user_id: str) -> Employee:
 
 def get_all_employees(db: DatabaseSession):
     return db.exec(select(Employee)).all()
+
+def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
+    first_char = employee_request.first_name[0].lower()
+    last_name = employee_request.last_name.lower()
+    dni_suffix = employee_request.dni[-3:]
+
+    base_user_id = f"{first_char}{last_name}{dni_suffix}"
+    candidate_user_id = base_user_id
+    counter = 0
+
+    while db.exec(select(Employee).where(Employee.user_id == candidate_user_id)).one_or_none():
+        counter += 1
+        # Asegura que los últimos 3 sean siempre numéricos y con 3 cifras
+        new_suffix = f"{int(dni_suffix) + counter:03d}"
+        candidate_user_id = f"{first_char}{last_name}{new_suffix}"
+
+    return candidate_user_id

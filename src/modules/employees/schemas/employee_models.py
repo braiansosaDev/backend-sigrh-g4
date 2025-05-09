@@ -36,7 +36,6 @@ class EmployeeResponse(BaseModel):
     documents: list[Document]
 
 class UpdateEmployee(BaseModel):
-    user_id: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     dni: Optional[str] = None
@@ -66,8 +65,6 @@ class CreateEmployee(BaseModel):
     Modelo de empleado para la creación de un nuevo empleado.
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.
     """
-
-    user_id: str = Field(max_length=100)
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     dni: str = Field(max_length=50)
@@ -110,7 +107,7 @@ class CreateEmployee(BaseModel):
         return v
 
     # Validación de campos vacíos
-    @field_validator("user_id", "first_name", "last_name", "dni", "type_dni","personal_email", "role", "password","phone","address_street", "address_city", "address_cp", mode="before")
+    @field_validator("first_name", "last_name", "dni", "type_dni","personal_email", "role", "password","phone","address_street", "address_city", "address_cp", mode="before")
     @classmethod
     def non_empty_strings(cls, v, field):
         if not v.strip():

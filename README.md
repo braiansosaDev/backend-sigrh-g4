@@ -62,6 +62,20 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
 - http://127.0.0.1:8000/redoc con ReDoc
 - http://127.0.0.1:8000/docs#/ con Swagger
 
+7. Para ejecutar la funcionalidad de análisis de CV realizar los siguientes pasos:
+
+- Instalar spacy con
+```bash
+pip install spacy
+```
+- Instalar los modelos nlp de spacy:
+```bash
+python -m spacy download es_core_news_lg
+python -m spacy download en_core_web_lg
+```
+- Ya se puede ejecutar el archivo src/cv_matching/main ingresando la descripcion de un currículum y la lista de palabras clave a buscar.
+
+
 ---
 
 # Levantar en Docker

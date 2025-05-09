@@ -48,7 +48,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         work_histories = [WorkHistory(**history.model_dump()) for history in employee_request.work_histories] if employee_request.work_histories else []
        
         db_employee = Employee(
-            user_id=employee_request.user_id,
+            user_id=utils.create_user_id(db,employee_request),
             first_name=employee_request.first_name,
             last_name=employee_request.last_name,
             dni=employee_request.dni,
@@ -120,7 +120,6 @@ def update_employee(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Employee with this DNI, phone or email already exists.",
         )
-
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:
     """
