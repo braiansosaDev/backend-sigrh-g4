@@ -23,14 +23,14 @@ class PostulationResponse(BaseModel):
         )
 
 
-class PostulationResume(BaseModel):
-    id: int
-    cv_file: str
-    name: str
-    surname: str
+# class PostulationResume(BaseModel):
+#     id: int
+#     cv_file: str
+#     name: str
+#     surname: str
 
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True
 
 
 class MatcherResponse(BaseModel):

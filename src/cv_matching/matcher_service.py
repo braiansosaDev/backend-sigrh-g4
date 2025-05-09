@@ -15,7 +15,7 @@ import spacy
 
 def get_all_postulations(
     db: DatabaseSession, job_opportunity_id: int
-) -> List[schema.PostulationResume]:
+) -> List[schema.PostulationResponse]:
     postulations = (
         db.query(Postulation)
         .filter(Postulation.job_opportunity_id == job_opportunity_id)
