@@ -12,8 +12,8 @@ postulation_router = APIRouter(prefix="/postulations", tags=["Postulations"])
 
 
 @postulation_router.get("/", response_model=list[PostulationResponse])
-async def get_all_postulations(db: DatabaseSession):
-    return postulation_service.get_all_postulations(db)
+async def get_all_postulations(db: DatabaseSession, job_opportunity_id: int | None = None):
+    return postulation_service.get_all_postulations(db, job_opportunity_id)
 
 
 @postulation_router.get("/{postulation_id}", response_model=PostulationResponse)
