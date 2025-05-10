@@ -13,8 +13,11 @@ import logging
 logger = logging.getLogger("uvicorn.error")
 
 
-def get_all_postulations(db: DatabaseSession) -> Sequence[Postulation]:
-    return db.exec(select(Postulation)).all()
+def get_all_postulations(db: DatabaseSession, job_opportunity_id: int | None = None) -> Sequence[Postulation]:
+    query = select(Postulation)
+    if job_opportunity_id is not None:
+        query = query.where(Postulation.job_opportunity_id == job_opportunity_id)
+    return db.exec(query).all()
 
 
 def get_postulation_by_id(
