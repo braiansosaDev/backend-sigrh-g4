@@ -80,10 +80,9 @@ def evaluate_candidates(
 
     desired_abilities = extract_desirable_abilities(abilities)
     required_abilities = extract_required_abilities(abilities)
-    all_abilities = desired_abilities + required_abilities
 
-    normalized_required_words = normalize_words(desired_abilities)
-    normalized_desired_words = normalize_words(required_abilities)
+    normalized_required_words = normalize_words(required_abilities)
+    normalized_desired_words = normalize_words(desired_abilities)
 
     response = []
 
@@ -96,6 +95,10 @@ def evaluate_candidates(
             normalized_text, normalized_desired_words, model
         )
 
+        ability_match = (
+            required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
+        )
+
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
         matcher = schema.MatcherResponse(
@@ -103,7 +106,7 @@ def evaluate_candidates(
             name=postulation["name"],
             surname=postulation["surname"],
             suitable=suitable,
-            ability_match=all_abilities,
+            ability_match=ability_match,
         )
 
         response.append(matcher)
@@ -120,7 +123,7 @@ def extract_desirable_abilities(abilities):
 
 def extract_required_abilities(abilities):
     required_abilities = []
-    for ability in abilities.desirable_abilities:
+    for ability in abilities.required_abilities:
         required_abilities.append(ability.name)
     return required_abilities
 
