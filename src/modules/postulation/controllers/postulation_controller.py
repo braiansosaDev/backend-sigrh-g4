@@ -16,6 +16,11 @@ async def get_all_postulations(db: DatabaseSession, job_opportunity_id: int | No
     return postulation_service.get_all_postulations(db, job_opportunity_id)
 
 
+@postulation_router.get("/can_create", response_model=bool)
+async def can_create(db: DatabaseSession, job_opportunity_id: int):
+    return postulation_service.can_create(db, job_opportunity_id)
+
+
 @postulation_router.get("/{postulation_id}", response_model=PostulationResponse)
 async def get_postulation(db: DatabaseSession, postulation_id: int):
     return postulation_service.get_postulation_by_id_or_bad_request(db, postulation_id)

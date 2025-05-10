@@ -82,7 +82,7 @@ def create_opportunity(
         detail = "Bad request"
         if e.orig is not None:
             logger.info(e.orig)
-            if "violates foreign key constraint " in str(e.orig):
+            if "foreign key constraint " in str(e.orig).lower():
                 detail = "Some of the provided IDs do not exist."
             else:
                 logger.info(e.orig)
