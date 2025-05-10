@@ -6,7 +6,7 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
 )
 from src.modules.opportunity.services import opportunity_service
-from src.modules.opportunity.models.job_opportunity_models import Postulation
+from src.modules.postulation.models.postulation_models import Postulation
 from typing import List
 import unicodedata
 import string
