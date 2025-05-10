@@ -23,7 +23,7 @@ class PostulationCreate(BaseModel):
     phone_number: str = Field(min_length=1, max_length=100)
     address_country_id: int = Field()
     address_state_id: int = Field()
-    cv_file: bytes = Field()
+    cv_file: str = Field()
 
 
 class PostulationResponse(PostulationCreate):
@@ -54,4 +54,4 @@ class PostulationUpdate(BaseModel):
     phone_number: str | None = Field(min_length=1, max_length=100, default=None)
     address_country_id: int | None = Field(default=None)
     address_state_id: int | None = Field(default=None)
-    cv_file: bytes | None = Field(default=None)
+    cv_file: str | None = Field(default=None)

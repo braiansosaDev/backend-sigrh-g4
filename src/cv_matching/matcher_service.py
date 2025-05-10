@@ -1,4 +1,3 @@
-from base64 import b64encode
 from fastapi import HTTPException
 from src.cv_matching import schema
 from src.database.core import DatabaseSession
@@ -11,6 +10,32 @@ from typing import List
 import unicodedata
 import string
 import spacy
+import base64
+
+
+# def get_all_postulations(
+#     db: DatabaseSession, job_opportunity_id: int
+# ) -> List[schema.PostulationResponse]:
+#     postulations = (
+#         db.query(Postulation)
+#         .filter(Postulation.job_opportunity_id == job_opportunity_id)
+#         .all()
+#     )
+
+#     if not postulations:
+#         raise HTTPException(status_code=404, detail="Postulation not found")
+
+#     formatted_postulations = []
+#     for postulation in postulations:
+#         postulation_dict = postulation.dict()
+#         try:
+#             postulation_dict["cv_file"] = postulation.cv_file.decode("utf-8")
+#             formatted_postulations.append(postulation_dict)
+#         except UnicodeDecodeError:
+#             postulation_dict["cv_file"] = b64encode(postulation.cv_file).decode()
+#             formatted_postulations.append(postulation_dict)
+
+#     return formatted_postulations
 
 
 def get_all_postulations(
@@ -29,11 +54,13 @@ def get_all_postulations(
     for postulation in postulations:
         postulation_dict = postulation.dict()
         try:
-            postulation_dict["cv_file"] = postulation.cv_file.decode("utf-8")
-            formatted_postulations.append(postulation_dict)
-        except UnicodeDecodeError:
-            postulation_dict["cv_file"] = b64encode(postulation.cv_file).decode()
-            formatted_postulations.append(postulation_dict)
+            # Decodifica base64 a bytes, luego a utf-8
+            postulation_dict["cv_file"] = base64.b64decode(postulation.cv_file).decode(
+                "utf-8"
+            )
+        except Exception:
+            postulation_dict["cv_file"] = ""
+        formatted_postulations.append(postulation_dict)
 
     return formatted_postulations
 

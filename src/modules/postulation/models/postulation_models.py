@@ -21,7 +21,7 @@ class Postulation(SQLModel, table=True):
     phone_number: str = Field(min_length=1, max_length=100)
     address_country_id: int = Field(foreign_key="country.id")
     address_state_id: int = Field(foreign_key="state.id")
-    cv_file: bytes = Field()
+    cv_file: str = Field()
     evaluated_at: datetime | None = Field(default=None)
     suitable: bool = Field(default=False)
     ability_match: dict = Field(sa_column=Column(JSON), default_factory=dict)
