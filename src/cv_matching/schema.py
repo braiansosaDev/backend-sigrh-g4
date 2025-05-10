@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
+from typing import List
 
 
 class PostulationResponse(BaseModel):
@@ -38,4 +39,4 @@ class MatcherResponse(BaseModel):
     name: str
     surname: str
     suitable: bool
-    ability_match: dict
+    ability_match: List[str]

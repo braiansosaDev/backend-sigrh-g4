@@ -1,7 +1,3 @@
-DROP DATABASE sigrh;
-GRANT ALL PRIVILEGES ON DATABASE sigrh TO admin;
-
-
 -- Cargar países
 INSERT INTO country (id, name) VALUES
 (1, 'Argentina'),
@@ -43,7 +39,9 @@ INSERT INTO ability (id, name, description) VALUES
 (3, 'SQL', 'Lenguaje de consulta estructurado'),
 (4, 'Diseño Gráfico', 'Habilidad en diseño visual'),
 (5, 'Gestión de Proyectos', 'Habilidad en planificación y ejecución de proyectos'),
-(6, 'Comunicación', 'Habilidad para transmitir información efectivamente');
+(6, 'Comunicación', 'Habilidad para transmitir información efectivamente'),
+(7, 'PostgreSQL', 'Motor de bases de datos relacionales'),
+(8, 'MongoDB', 'Motor de bases de datos no relacionales');
 
 -- Cargar empleados
 INSERT INTO employee (
@@ -54,4 +52,3 @@ INSERT INTO employee (
 (1, 'fbarra138', 'Franco', 'Barraza', '42194138', 'dni', 'franco@sigrh.com', False, 'dev', 'hash123', '+541123234343', 1000.00, 1, '1999-05-05', '2025-05-05', 'Mitre 123', 'Polvorines', '1613', 1, 1),
 (2, 'nsoza258', 'Nilda', 'Sosa', '42194258', 'dni', 'nilda@sigrh.com', False, 'rrhh', 'hashabc', '+541122334455', 1500.00, 2, '1980-10-15', '2020-01-10', 'Belgrano 456', 'Tigre', '1648', 1, 1),
 (3, 'jrodriguez369', 'Joaquín', 'Rodríguez', '42194369', 'dni', 'jrodri@sigrh.com', False, 'dev', 'hashxyz', '+541134567890', 1200.00, 3, '1995-03-20', '2022-06-15', 'Rivadavia 789', 'San Fernando', '1670', 1, 1);
-

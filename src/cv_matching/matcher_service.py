@@ -61,7 +61,7 @@ def evaluate_candidates(
     response = []
 
     for postulation in postulations:
-        normalized_text = normalize(postulation.cv_file)
+        normalized_text = normalize(postulation["cv_file"])
         required_words_match = find_required_words(
             normalized_text, normalized_required_words, model
         )
@@ -72,9 +72,9 @@ def evaluate_candidates(
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
         matcher = schema.MatcherResponse(
-            postulation_id=postulation.id,
-            name=postulation.name,
-            surname=postulation.surname,
+            postulation_id=postulation["id"],
+            name=postulation["name"],
+            surname=postulation["surname"],
             suitable=suitable,
             ability_match=all_abilities,
         )
