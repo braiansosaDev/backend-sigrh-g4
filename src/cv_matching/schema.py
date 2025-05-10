@@ -17,21 +17,12 @@ class PostulationResponse(BaseModel):
     suitable: bool
     ability_match: dict
     created_at: datetime
+    status: str
 
     class Config:
         from_attributes = (
             True  # Allows the model to read from SQLModel/SQLAlchemy models
         )
-
-
-# class PostulationResume(BaseModel):
-#     id: int
-#     cv_file: str
-#     name: str
-#     surname: str
-
-#     class Config:
-#         from_attributes = True
 
 
 class MatcherResponse(BaseModel):

@@ -11,31 +11,7 @@ import unicodedata
 import string
 import spacy
 import base64
-
-
-# def get_all_postulations(
-#     db: DatabaseSession, job_opportunity_id: int
-# ) -> List[schema.PostulationResponse]:
-#     postulations = (
-#         db.query(Postulation)
-#         .filter(Postulation.job_opportunity_id == job_opportunity_id)
-#         .all()
-#     )
-
-#     if not postulations:
-#         raise HTTPException(status_code=404, detail="Postulation not found")
-
-#     formatted_postulations = []
-#     for postulation in postulations:
-#         postulation_dict = postulation.dict()
-#         try:
-#             postulation_dict["cv_file"] = postulation.cv_file.decode("utf-8")
-#             formatted_postulations.append(postulation_dict)
-#         except UnicodeDecodeError:
-#             postulation_dict["cv_file"] = b64encode(postulation.cv_file).decode()
-#             formatted_postulations.append(postulation_dict)
-
-#     return formatted_postulations
+from sqlalchemy import func
 
 
 def get_all_postulations(
@@ -71,10 +47,63 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
+# def evaluate_candidates(
+#     db: DatabaseSession, job_opportunity_id: int
+# ) -> List[schema.MatcherResponse]:
+#     postulations = get_all_postulations(db, job_opportunity_id)
+#     abilities = get_all_abilities(db, job_opportunity_id)
+#     model = load_spanish_model()
+
+#     desired_abilities = extract_desirable_abilities(abilities)
+#     required_abilities = extract_required_abilities(abilities)
+
+#     normalized_required_words = normalize_words(required_abilities)
+#     normalized_desired_words = normalize_words(desired_abilities)
+
+#     response = []
+
+#     for postulation in postulations:
+#         normalized_text = normalize(postulation["cv_file"])
+#         required_words_match = find_required_words(
+#             normalized_text, normalized_required_words, model
+#         )
+#         desired_words_match = find_desired_words(
+#             normalized_text, normalized_desired_words, model
+#         )
+
+#         ability_match = (
+#             required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
+#         )
+
+#         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
+
+#         matcher = schema.MatcherResponse(
+#             postulation_id=postulation["id"],
+#             name=postulation["name"],
+#             surname=postulation["surname"],
+#             suitable=suitable,
+#             ability_match=ability_match,
+#         )
+
+#         response.append(matcher)
+
+#         postulation["evaluated_at"] = func.now()
+#         postulation["suitable"] = suitable
+#         postulation["ability_match"] = ability_match
+#         postulation["status"] = "ACEPTADA" if suitable else "NO_ACEPTADA"
+
+#     return response
+
+
 def evaluate_candidates(
     db: DatabaseSession, job_opportunity_id: int
 ) -> List[schema.MatcherResponse]:
-    postulations = get_all_postulations(db, job_opportunity_id)
+    # Obtén los objetos originales
+    postulation_objs = (
+        db.query(Postulation)
+        .filter(Postulation.job_opportunity_id == job_opportunity_id)
+        .all()
+    )
     abilities = get_all_abilities(db, job_opportunity_id)
     model = load_spanish_model()
 
@@ -86,8 +115,13 @@ def evaluate_candidates(
 
     response = []
 
-    for postulation in postulations:
-        normalized_text = normalize(postulation["cv_file"])
+    for postulation_obj in postulation_objs:
+        # Decodifica el CV
+        try:
+            cv_text = base64.b64decode(postulation_obj.cv_file).decode("utf-8")
+        except Exception:
+            cv_text = ""
+        normalized_text = normalize(cv_text)
         required_words_match = find_required_words(
             normalized_text, normalized_required_words, model
         )
@@ -98,18 +132,27 @@ def evaluate_candidates(
         ability_match = (
             required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
         )
-
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
         matcher = schema.MatcherResponse(
-            postulation_id=postulation["id"],
-            name=postulation["name"],
-            surname=postulation["surname"],
+            postulation_id=postulation_obj.id,
+            name=postulation_obj.name,
+            surname=postulation_obj.surname,
             suitable=suitable,
             ability_match=ability_match,
         )
-
         response.append(matcher)
+
+        # Actualiza los campos del objeto
+        postulation_obj.evaluated_at = func.now()
+        postulation_obj.suitable = suitable
+        postulation_obj.ability_match = {
+            "required_words": required_words_match["WORDS_FOUND"],
+            "desired_words": desired_words_match["WORDS_FOUND"],
+        }
+        postulation_obj.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
+
+    db.commit()  # Guarda todos los cambios en la base de datos
 
     return response
 
