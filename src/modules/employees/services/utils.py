@@ -65,7 +65,7 @@ def get_employee_by_user_id(db: DatabaseSession, user_id: str) -> Employee:
     return db.exec(select(Employee).where(Employee.user_id == user_id)).one_or_none()
 
 def get_all_employees(db: DatabaseSession):
-    return db.exec(select(Employee)).all()
+    return db.exec(select(Employee).order_by(Employee.id)).all()
 
 def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
     first_char = employee_request.first_name[0].lower()
