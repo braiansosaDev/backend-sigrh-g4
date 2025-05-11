@@ -1,9 +1,13 @@
 from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr, Field, BaseModel, field_validator, model_validator
+from pydantic import EmailStr, Field, BaseModel, field_validator
 from datetime import date
+from src.modules.employees.models.country import Country
 from src.modules.employees.models.documents import Document
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
+from src.modules.employees.schemas.job_models import JobResponse
 
 class EmployeeResponse(BaseModel):
     """
@@ -19,21 +23,24 @@ class EmployeeResponse(BaseModel):
     type_dni: str 
     personal_email: EmailStr
     active: bool
-    role: str 
-    password: str
+    role: Optional[str] 
+    password: Optional[str]
     phone: str
     salary: Decimal
-    job_id: int
+    job_id: Optional[int]
     birth_date: date
     hire_date: date
     photo: Optional[bytes]
     address_street: str
     address_city: str
     address_cp: str
-    address_state_id: int
-    address_country_id: int
+    address_state_id: Optional[int]
+    address_country_id: Optional[int]
     work_histories: list[WorkHistory] 
     documents: list[Document]
+    job: Optional[JobResponse] = None
+    state: Optional[State] = None
+    country: Optional[Country] = None
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
@@ -58,6 +65,9 @@ class UpdateEmployee(BaseModel):
     address_country_id: Optional[int] = None
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
+    job: Optional["Job"] = None
+    state: Optional["State"] = None
+    country: Optional["Country"] = None
 
 
 class CreateEmployee(BaseModel):
@@ -71,11 +81,12 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: str = Field(max_length=100)
-    password: str = Field(max_length=100)
+    role: Optional[str] = None
+    password: Optional[str] = None
+    user_id: Optional[str] = None
     phone: str = Field(max_length=20)
     salary: Decimal = Field(gt=0)
-    job_id: int
+    job_id: Optional[int] = None
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
@@ -83,8 +94,8 @@ class CreateEmployee(BaseModel):
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
-    address_state_id: int
-    address_country_id: int
+    address_state_id: Optional[int] = None
+    address_country_id: Optional[int] = None
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
@@ -107,9 +118,9 @@ class CreateEmployee(BaseModel):
         return v
 
     # Validación de campos vacíos
-    @field_validator("first_name", "last_name", "dni", "type_dni","personal_email", "role", "password","phone","address_street", "address_city", "address_cp", mode="before")
+    @field_validator("first_name", "last_name", "dni", "type_dni","personal_email","phone","address_street", "address_city", "address_cp", mode="before")
     @classmethod
     def non_empty_strings(cls, v, field):
         if not v.strip():
-            raise ValueError(f"El campo '{field.name}' no puede estar vacío.")
+            raise ValueError(f"El campo '{field.field_name}' no puede estar vacío.")
         return v

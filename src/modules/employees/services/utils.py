@@ -4,8 +4,10 @@ from sqlmodel import select
 from src.database.core import DatabaseSession
 from src.modules.employees.models.documents import Document
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.employee_models import CreateEmployee
+from sqlalchemy.orm import selectinload
 
 def get_single_work_history_by_id(
     db: DatabaseSession, employee_id: int, work_history_id: int
@@ -41,20 +43,29 @@ def get_document(db: DatabaseSession, document_id: int, employee_id: int):
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     """
-    Obtiene todos los empleados de la base de datos.
-    Args:
-    db (Session): Sesión de la base de datos.
-    id (int): ID del empleado a buscar.
-    Returns:
-    Employee: Empleado encontrado.
+    Obtiene un empleado por su ID, incluyendo sus relaciones.
     """
+    stmt = (
+        select(Employee)
+        .where(Employee.id == employee_id)
+        .options(
+            selectinload(Employee.job).selectinload(Job.sector),
+            selectinload(Employee.state),
+            selectinload(Employee.country),
+            selectinload(Employee.work_histories),
+            selectinload(Employee.documents),
+        )
+    )
+    return db.exec(stmt).one_or_none()
+
+def get_employee_by_id_simple(db: DatabaseSession, employee_id: int) -> Employee:
     return db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
 
 def get_employee_by_user_id(db: DatabaseSession, user_id: str) -> Employee:
     return db.exec(select(Employee).where(Employee.user_id == user_id)).one_or_none()
 
 def get_all_employees(db: DatabaseSession):
-    return db.exec(select(Employee)).all()
+    return db.exec(select(Employee).order_by(Employee.id)).all()
 
 def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
     first_char = employee_request.first_name[0].lower()
