@@ -46,35 +46,26 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
     ```bash
     pip install -r requirements.txt
     ```
+4. Instalar los modelos nlp de spacy:
+    ```bash
+    python -m spacy download es_core_news_lg
+    python -m spacy download en_core_web_lg
+    ```
 
-4. Instalar PostgreSQL, configurar usuario/contraseña y crear base de datos `sigrh`. Opcionalmente se puede instalar DBEAVER (recomendado), si no desde la SQL Shell se puede trabajar.
+5. Instalar PostgreSQL, configurar usuario/contraseña y crear base de datos `sigrh`. Opcionalmente se puede instalar DBEAVER (recomendado), si no desde la SQL Shell se puede trabajar.
 
-5. Agregar `.env` utilizando de copia `.env.example`, modificar según datos de inicio de sesión y base de datos de máquina local.
+6. Agregar `.env` utilizando de copia `.env.example`, modificar según datos de inicio de sesión y base de datos de máquina local.
 
-6. Levantar el servidor por defecto en el puerto 8000
+7. Levantar el servidor por defecto en el puerto 8000
 
     ```bash
     uvicorn src.main:app --reload
     ```
 
-6. La documentación de los endpoints se puede encontrar en:
+8. La documentación de los endpoints se puede encontrar en:
 
 - http://127.0.0.1:8000/redoc con ReDoc
 - http://127.0.0.1:8000/docs#/ con Swagger
-
-7. Para ejecutar la funcionalidad de análisis de CV realizar los siguientes pasos:
-
-- Instalar spacy con
-```bash
-pip install spacy
-```
-- Instalar los modelos nlp de spacy:
-```bash
-python -m spacy download es_core_news_lg
-python -m spacy download en_core_web_lg
-```
-- Ya se puede ejecutar el archivo src/cv_matching/main ingresando la descripcion de un currículum y la lista de palabras clave a buscar.
-
 
 ---
 
