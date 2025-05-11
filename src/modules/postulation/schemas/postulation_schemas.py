@@ -55,3 +55,4 @@ class PostulationUpdate(BaseModel):
     address_country_id: int | None = Field(default=None)
     address_state_id: int | None = Field(default=None)
     cv_file: str | None = Field(default=None)
+    status: PostulationStatus = Field()
