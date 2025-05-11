@@ -3,7 +3,10 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
+from src.modules.employees.models.country import Country
 from src.modules.employees.models.documents import Document
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 
 class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
@@ -19,8 +22,8 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(unique=True, max_length=100)
     active: bool = Field(default=False)
-    role: str = Field(max_length=100)
-    password: str = Field(max_length=100)
+    role: str = Field(max_length=100, nullable=True)
+    password: str = Field(max_length=100, nullable=True)
     phone: str = Field(unique=True, max_length=20)
     salary: Decimal = Field(gt=0)
     job_id: int = Field(foreign_key="job.id")
@@ -35,3 +38,7 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     address_country_id: int = Field(foreign_key="country.id")
     work_histories: list["WorkHistory"] = Relationship(back_populates="employee")
     documents: list["Document"] = Relationship(back_populates="employee")
+    job: Optional["Job"] = Relationship(back_populates="employee")
+    state: Optional["State"] = Relationship(back_populates="employee")
+    country: Optional["Country"] = Relationship(back_populates="employee")
+

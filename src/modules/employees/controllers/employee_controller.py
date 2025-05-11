@@ -72,7 +72,7 @@ Returns:
 async def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: UpdateEmployee,
+    update_request: CreateEmployee,
 ):
     return employee_service.update_employee(db, employee_id, update_request)
 

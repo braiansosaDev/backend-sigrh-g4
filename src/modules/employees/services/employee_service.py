@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee
+from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
@@ -46,6 +46,8 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
 
         # Convertir historial laboral
         work_histories = [WorkHistory(**history.model_dump()) for history in employee_request.work_histories] if employee_request.work_histories else []
+
+        hashed_password = get_password_hash(employee_request.password) if employee_request.password else None
        
         db_employee = Employee(
             user_id=utils.create_user_id(db,employee_request),
@@ -56,7 +58,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             personal_email=employee_request.personal_email,
             active=employee_request.active,
             role=employee_request.role,
-            password=get_password_hash(employee_request.password),
+            password=hashed_password,
             phone=employee_request.phone,
             salary=employee_request.salary,
             job_id=employee_request.job_id,
@@ -76,11 +78,18 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         db.commit()
         db.refresh(db_employee)
         return db_employee
-    except IntegrityError:
+    except IntegrityError as e:
         db.rollback()
+        # Podés refinar el mensaje si querés analizar `str(e.orig)`
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Employee with this DNI, phone or email already exists.",
+            detail="Ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc)."
+        )
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
         )
 
 
@@ -98,7 +107,7 @@ def update_employee(
     Returns:
         Employee: Empleado actualizado.
     """
-    employee = utils.get_employee_by_id(db, employee_id)
+    employee = utils.get_employee_by_id_simple(db, employee_id)
 
     if employee is None:
         raise HTTPException(
@@ -106,7 +115,13 @@ def update_employee(
         )
 
     try:
-        for attr, value in update_request.model_dump(exclude_unset=True).items():
+        update_data = update_request.model_dump(exclude_unset=True)
+
+        # Si se actualiza la contraseña, se rehashea
+        if "password" in update_data:
+            update_data["password"] = get_password_hash(update_data["password"])
+
+        for attr, value in update_data.items():
             if hasattr(employee, attr):
                 setattr(employee, attr, value)
 
@@ -118,7 +133,7 @@ def update_employee(
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Employee with this DNI, phone or email already exists.",
+            detail="Error de validación: Usuario, DNI, Mail o Telefono ya está siendo utilizado",
         )
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:

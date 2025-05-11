@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 from typing import Optional
 
 class Job(SQLModel, table=True, metadata={"table_name": "job"}):
@@ -7,4 +7,7 @@ class Job(SQLModel, table=True, metadata={"table_name": "job"}):
     """
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     name: str = Field(max_length=100, index=True)
-    sector_id: int = Field(foreign_key="sector.id")
+    sector_id: int = Field(foreign_key="sector.id")  
+
+    employee: "Employee" = Relationship(back_populates="job")
+    sector: Optional["Sector"] = Relationship(back_populates="job")
