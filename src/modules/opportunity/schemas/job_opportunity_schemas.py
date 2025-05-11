@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from datetime import datetime
@@ -33,7 +34,7 @@ class JobOpportunityUpdate(BaseModel):
 
 
 class JobOpportunityRequest(BaseModel):
-    owner_employee_id: int = Field()
+    owner_employee_id: Optional[int] = Field()
     status: JobOpportunityStatus = Field()
     work_mode: JobOpportunityWorkMode = Field()
     title: str = Field(min_length=1, max_length=100)

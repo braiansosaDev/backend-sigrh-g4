@@ -6,6 +6,7 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityUpdate
 )
 from src.modules.opportunity.services import opportunity_service
+from src.auth.token import TokenDependency
 
 
 opportunity_router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
@@ -27,15 +28,38 @@ async def get_opportunity_with_abilities(db: DatabaseSession, opportunity_id: in
     return opportunity_service.get_opportunity_with_abilities(db, opportunity_id)
 
 
+# @opportunity_router.post(
+#     "/create",
+#     status_code=status.HTTP_201_CREATED,
+#     response_model=JobOpportunityResponse,
+# )
+# async def create_opportunity(
+#     db: DatabaseSession, job_opportunity_request: JobOpportunityRequest
+# ):
+#     return opportunity_service.create_opportunity(db, job_opportunity_request)
+
+
+
 @opportunity_router.post(
     "/create",
     status_code=status.HTTP_201_CREATED,
     response_model=JobOpportunityResponse,
 )
 async def create_opportunity(
-    db: DatabaseSession, job_opportunity_request: JobOpportunityRequest
+    db: DatabaseSession,
+    job_opportunity_request: JobOpportunityRequest,
+    payload: TokenDependency,  # ⬅️ obtenemos el token decodificado
 ):
-    return opportunity_service.create_opportunity(db, job_opportunity_request)
+    employee_id = payload.get("employee_id")
+    print(f">>>>>>>>>>Employee ID de token: {employee_id}")
+
+    # Si tu modelo permite modificar el diccionario directamente
+    job_opportunity_request_data = job_opportunity_request.dict()
+    job_opportunity_request_data["owner_employee_id"] = employee_id
+
+    return opportunity_service.create_opportunity(
+        db, JobOpportunityRequest(**job_opportunity_request_data)
+    )
 
 @opportunity_router.patch("/{opportunity_id}", status_code=status.HTTP_200_OK, response_model=JobOpportunityResponse)
 async def update_opportunity(db: DatabaseSession, opportunity_id: int, patch: JobOpportunityUpdate):
