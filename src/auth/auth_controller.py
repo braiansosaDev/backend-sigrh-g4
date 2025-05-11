@@ -28,8 +28,9 @@ async def auth_login(
         )
     token = encode_token(
         {
-            "username": employee.user_id,
-            "password": employee.password,
+            "employee_id": employee.id,  # 👈 este es el dato clave
+            "user_id": employee.user_id,
         }
     )
+
     return {"access_token": token}

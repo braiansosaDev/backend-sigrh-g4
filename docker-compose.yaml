@@ -1,0 +1,41 @@
+services:
+  backend:
+    build: .
+    ports:
+      - '8000:8000'
+    volumes:
+      - './.env:/home/sigrh/.env:ro'
+  db:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD_FILE: '/run/secrets/postgres-password'
+      POSTGRES_DB: 'sigrh'
+    volumes:
+      - './.postgres-password:/run/secrets/postgres-password:ro'
+      - 'postgres-data:/var/lib/postgresql/data'
+  dev:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    ports:
+      - '8001:22'
+      - '8002:8000'
+    volumes:
+      - type: volume
+        source: dev-data
+        target: /etc/ssh
+        volume:
+          nocopy: false
+      - '.:/root/sigrh'
+      - './.git:/root/sigrh/.git:ro'
+      - './docker-compose.yaml:/root/sigrh/docker-compose.yaml:ro'
+      - './dev.Dockerfile:/root/sigrh/dev.Dockerfile:ro'
+      - './Dockerfile:/root/sigrh/Dockerfile:ro'
+      - '~/.ssh/dev_id_ed25519.pub:/root/.ssh/authorized_keys:ro'
+      - './.zed/server-settings.json:/root/.config/zed/settings.json'
+
+volumes:
+  dev-data:
+  postgres-data:
+

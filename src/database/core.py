@@ -1,14 +1,39 @@
 from contextlib import asynccontextmanager
 from typing import Annotated
 from fastapi import Depends
+from sqlalchemy.event import listen
 from sqlmodel import SQLModel, Session, create_engine
 from fastapi import FastAPI
 from dotenv import load_dotenv
 from os import getenv
+import logging
+
+logger = logging.getLogger('uvicorn.info')
 
 load_dotenv()
-url = getenv("DATABASE_URL")
+use_test_database: str | None = getenv("USE_TEST_DATABASE")
+if use_test_database is None:
+    logger.info("USE_TEST_DATABASE not found, using postgresql database...")
+    url: str = str(getenv("DATABASE_URL"))
+elif use_test_database.lower() == 'true':
+    logger.info('Using test database')
+    url: str = str(getenv("TEST_DATABASE_URL"))
+else:
+    logger.info('Using PostgreSQL database')
+    url = str(getenv("DATABASE_URL"))
 engine = create_engine(url)
+logger.info(f"Engine name: {engine.name}")
+
+
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
+
+if engine.name == "sqlite":
+    logger.info("Enabling sqlite foreign key support")
+    listen(engine, "connect", set_sqlite_pragma)
 
 
 def init_db():
