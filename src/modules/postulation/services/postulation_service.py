@@ -48,7 +48,7 @@ def get_all_postulations(
     query = select(Postulation)
     if job_opportunity_id is not None:
         query = query.where(Postulation.job_opportunity_id == job_opportunity_id)
-    return db.exec(query).all()
+    return db.exec(query.order_by(Postulation.id)).all()
 
 
 def get_postulation_by_id(
