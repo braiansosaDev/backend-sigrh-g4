@@ -1,4 +1,5 @@
 from fastapi import HTTPException
+import fitz
 from src.cv_matching import schema
 from src.database.core import DatabaseSession
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
@@ -47,6 +48,19 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
+def extract_text_from_pdf(base64_pdf: str):
+    try:
+        pdf_bytes = base64.b64decode(base64_pdf)
+        doc = fitz.open("pdf", pdf_bytes)
+        texto = ""
+        for pagina in doc:
+            texto += pagina.get_text()
+        return texto
+    except Exception as e:
+        print(f"Error al procesar el PDF: {e}")
+        return ""
+
+
 def evaluate_candidates(
     db: DatabaseSession, job_opportunity_id: int
 ) -> List[schema.MatcherResponse]:
@@ -67,7 +81,7 @@ def evaluate_candidates(
     response = []
 
     for postulation in postulations:
-        normalized_text = normalize(postulation.cv_file)
+        normalized_text = normalize(extract_text_from_pdf(postulation.cv_file))
         required_words_match = find_required_words(
             normalized_text, normalized_required_words, model
         )

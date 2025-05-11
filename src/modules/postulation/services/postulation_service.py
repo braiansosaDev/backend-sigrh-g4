@@ -71,19 +71,6 @@ def get_postulation_by_id_or_bad_request(db: DatabaseSession, postulation_id: in
     return postulation
 
 
-def extract_text_from_pdf(base64_pdf: str):
-    try:
-        pdf_bytes = base64.b64decode(base64_pdf)
-        doc = fitz.open("pdf", pdf_bytes)
-        texto = ""
-        for pagina in doc:
-            texto += pagina.get_text()
-        return texto
-    except Exception as e:
-        print(f"Error al procesar el PDF: {e}")
-        return ""
-
-
 def create_postulation(db: DatabaseSession, request: PostulationCreate) -> Postulation:
     try:
         if not can_create(db, request.job_opportunity_id):
@@ -93,7 +80,6 @@ def create_postulation(db: DatabaseSession, request: PostulationCreate) -> Postu
             )
 
         request.cv_file = request.cv_file.replace("\n", "").strip()
-        request.cv_file = extract_text_from_pdf(request.cv_file)
         postulation = Postulation(**request.dict())
 
         db.add(postulation)
