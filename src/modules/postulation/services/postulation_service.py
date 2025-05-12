@@ -1,5 +1,3 @@
-import base64
-import fitz
 from src.database.core import DatabaseSession
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.postulation.schemas.postulation_schemas import (
@@ -79,7 +77,6 @@ def create_postulation(db: DatabaseSession, request: PostulationCreate) -> Postu
                 detail=f"Se alcanzó el límite de postulaciones ({MAX_POSTULATIONS_PER_OPPORTUNITY}) para esta convocatoria",
             )
 
-        request.cv_file = request.cv_file.replace("\n", "").strip()
         postulation = Postulation(**request.dict())
 
         db.add(postulation)

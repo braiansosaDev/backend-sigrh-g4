@@ -81,7 +81,9 @@ def evaluate_candidates(
     response = []
 
     for postulation in postulations:
-        normalized_text = normalize(extract_text_from_pdf(postulation.cv_file))
+        normalized_text = normalize(
+            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
+        )
         required_words_match = find_required_words(
             normalized_text, normalized_required_words, model
         )
