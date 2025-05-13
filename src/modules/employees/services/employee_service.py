@@ -9,6 +9,11 @@ from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
 
+
+def count_active_employees(db: DatabaseSession) -> int:
+    result = utils.count_active_employees(db)
+    return result
+
 def get_all_employees(db: DatabaseSession) -> List[Employee]:
     employees = utils.get_all_employees(db)
 

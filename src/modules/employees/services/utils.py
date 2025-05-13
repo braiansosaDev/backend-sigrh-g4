@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import func, select
 from src.database.core import DatabaseSession
 from src.modules.employees.models.documents import Document
 from src.modules.employees.models.employee import Employee
@@ -40,6 +40,9 @@ def get_document(db: DatabaseSession, document_id: int, employee_id: int):
         .where(Document.employee_id == employee_id)
     ).one_or_none()
 
+def count_active_employees(db: DatabaseSession) -> int:
+    result = db.exec(select(func.count()).select_from(Employee).where(Employee.active == True))
+    return result.one()
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     """

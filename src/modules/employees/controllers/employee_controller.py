@@ -11,6 +11,17 @@ from src.modules.employees.schemas.employee_models import (
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
+@employee_router.post(
+    "/active-count",
+    status_code=status.HTTP_200_OK,
+    summary="Cantidad de empleados activos",
+)
+async def count_active_employees(
+    db: DatabaseSession,
+):
+    return {"active_count": employee_service.count_active_employees(db)}
+
+
 """Enpoint para buscar a un empleado por su ID. 
 Returns:
     EmployeeResponse: Devuelve los datos del empleado.

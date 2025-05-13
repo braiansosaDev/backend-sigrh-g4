@@ -11,6 +11,13 @@ from src.auth.token import TokenDependency
 
 opportunity_router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
 
+@opportunity_router.post(
+    "/active-count",
+    status_code=status.HTTP_200_OK,
+    summary="Cantidad de oportunidades activas",
+)
+async def count_active_opportunities(db: DatabaseSession):
+    return {"active_count": opportunity_service.count_active_opportunities(db)}
 
 @opportunity_router.get(
     "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityResponse]
@@ -26,19 +33,6 @@ async def get_all_opportunities_with_abilities(db: DatabaseSession):
 )
 async def get_opportunity_with_abilities(db: DatabaseSession, opportunity_id: int):
     return opportunity_service.get_opportunity_with_abilities(db, opportunity_id)
-
-
-# @opportunity_router.post(
-#     "/create",
-#     status_code=status.HTTP_201_CREATED,
-#     response_model=JobOpportunityResponse,
-# )
-# async def create_opportunity(
-#     db: DatabaseSession, job_opportunity_request: JobOpportunityRequest
-# ):
-#     return opportunity_service.create_opportunity(db, job_opportunity_request)
-
-
 
 @opportunity_router.post(
     "/create",

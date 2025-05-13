@@ -42,6 +42,37 @@ class EmployeeResponse(BaseModel):
     state: Optional[State] = None
     country: Optional[Country] = None
 
+
+class MeResponse(BaseModel):
+    """
+    Modelo de empleado para la respuesta de un empleado.
+    Este modelo se utiliza para serializar los datos de un empleado al enviarlos como respuesta a una solicitud.
+    """
+
+    id: int
+    user_id: str
+    first_name: str 
+    last_name: str  
+    dni: str
+    type_dni: str 
+    personal_email: EmailStr
+    active: bool
+    role: Optional[str]
+    phone: str
+    salary: Decimal
+    job_id: Optional[int]
+    birth_date: date
+    hire_date: date
+    photo: Optional[bytes]
+    address_street: str
+    address_city: str
+    address_cp: str
+    address_state_id: Optional[int]
+    address_country_id: Optional[int]
+    job: Optional[JobResponse] = None
+    state: Optional[State] = None
+    country: Optional[Country] = None
+
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None

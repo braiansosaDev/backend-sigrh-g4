@@ -4,11 +4,12 @@ from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityIdModel,
     JobOpportunityAbility
 )
-from sqlmodel import select
+from sqlmodel import func, select
 from typing import Sequence
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityRequest,
     JobOpportunityResponse,
+    JobOpportunityStatus,
     JobOpportunityUpdate,
     JobOpportunityAbilityImportance
 )
@@ -21,6 +22,13 @@ import logging
 
 logger = logging.getLogger("uvicorn.error")
 
+def count_active_opportunities(db: DatabaseSession) -> int:
+    result = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
+    )
+    return result.one()
 
 def get_all_opportunities_with_abilities(db: DatabaseSession) -> Sequence[JobOpportunityModel]:
     opportunities = db.exec(select(JobOpportunityModel)).all()
