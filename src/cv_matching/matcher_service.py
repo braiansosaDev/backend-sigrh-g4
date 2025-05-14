@@ -151,20 +151,8 @@ def normalize_words(words: list) -> list[str]:
 
 def find_required_words(text: str, words: list, model, threshold: float = 0.79) -> dict:
     """
-    Verifica si todas las palabras de 'words' se encuentran en 'text'.
-    Primero se busca una coincidencia literal y, si no se encuentra,
-    se recurre a una coincidencia semántica usando spaCy.
-
-    Parámetros:
-        texto: el texto donde buscar.
-        lista_palabras: lista de palabras a buscar.
-        modelo: modelo spaCy (por ejemplo, es_core_news_lg o en_core_web_lg).
-        umbral: valor mínimo de similitud para considerar una coincidencia semántica.
-
-    Retorna:
-        Un diccionario con las palabras encontradas, la palabra no encontrada (si existe) y un boolean.
-        True si todas las palabras se encontraron (literal o semánticamente),
-        False en caso contrario.
+    Verifica si todas las palabras de 'words' se encuentran en 'text',
+    ya sea de forma literal o semántica usando spaCy.
     """
     doc = model(text)
     tokens_text = [token.text for token in doc]
@@ -173,24 +161,22 @@ def find_required_words(text: str, words: list, model, threshold: float = 0.79) 
     for word in words:
         if word in tokens_text:
             result["WORDS_FOUND"].append(word)
-            continue
         else:
             word_doc = model(word)
-            if len(word_doc) == 0 or not word_doc[0].has_vector:
-                return False
+            if not word_doc or not word_doc[0].has_vector:
+                result["WORDS_NOT_FOUND"].append(word)
+                continue
 
             similarities = [
                 token.similarity(word_doc[0]) for token in doc if token.has_vector
             ]
             if similarities and max(similarities) >= threshold:
                 result["WORDS_FOUND"].append(word)
-                continue
             else:
                 result["WORDS_NOT_FOUND"].append(word)
-                result["SUITABLE"] = False
-                return result
 
-    result["SUITABLE"] = True
+    # Solo es apto si TODAS las palabras requeridas fueron encontradas
+    result["SUITABLE"] = len(result["WORDS_NOT_FOUND"]) == 0
     return result
 
 

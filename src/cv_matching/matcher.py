@@ -70,7 +70,7 @@ def find_desired_words(
     words: list,
     model,
     threshold: float = 0.79,
-    minimal_porcentage: float = 0.70,
+    minimal_porcentage: float = 0.50,
 ) -> dict:
     """
     Verifica cuántas palabras de 'words' aparecen en 'text'.
