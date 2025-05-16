@@ -8,18 +8,37 @@ from dotenv import load_dotenv
 from os import getenv
 import logging
 
-logger = logging.getLogger('uvicorn.info')
+# IMPORTAR LAS TABLAS
+from src.modules.ability.models.ability_models import AbilityModel
+from src.modules.clock_events.models.models import ClockEvents
+from src.modules.concept.models.models import Concept
+from src.modules.employee_hours.models.models import EmployeeHours
+from src.modules.employees.models.country import Country
+from src.modules.employees.models.documents import Document
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.sector import Sector
+from src.modules.employees.models.state import State
+from src.modules.employees.models.work_history import WorkHistory
+from src.modules.postulation.models.postulation_models import Postulation
+from src.modules.shift.models.models import Shift
+from src.modules.opportunity.models.job_opportunity_models import (
+    JobOpportunityAbility,
+    JobOpportunityModel,
+)
+
+logger = logging.getLogger("uvicorn.info")
 
 load_dotenv()
 use_test_database: str | None = getenv("USE_TEST_DATABASE")
 if use_test_database is None:
     logger.info("USE_TEST_DATABASE not found, using postgresql database...")
     url: str = str(getenv("DATABASE_URL"))
-elif use_test_database.lower() == 'true':
-    logger.info('Using test database')
+elif use_test_database.lower() == "true":
+    logger.info("Using test database")
     url: str = str(getenv("TEST_DATABASE_URL"))
 else:
-    logger.info('Using PostgreSQL database')
+    logger.info("Using PostgreSQL database")
     url = str(getenv("DATABASE_URL"))
 engine = create_engine(url)
 logger.info(f"Engine name: {engine.name}")
