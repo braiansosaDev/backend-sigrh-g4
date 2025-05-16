@@ -22,7 +22,7 @@ async def create_employee_hours():
 
 
 @employee_hours_router.patch("/{employee_hours_id}")
-async def update_employee_hours():
+async def update_employee_hours(employee_hours_id: int):
     """
     docstring
     """
@@ -30,7 +30,7 @@ async def update_employee_hours():
 
 
 @employee_hours_router.delete("/{employee_hours_id}")
-async def delete_employee_hours():
+async def delete_employee_hours(employee_hours_id: int):
     """
     docstring
     """
