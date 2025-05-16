@@ -4,4 +4,4 @@ sigrh.db
 .env
 .venv
 .postgres-password
-
+.vscode
