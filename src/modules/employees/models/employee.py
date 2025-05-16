@@ -38,9 +38,10 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     address_cp: str = Field(max_length=100)
     address_state_id: int = Field(foreign_key="state.id", nullable=True)
     address_country_id: int = Field(foreign_key="country.id", nullable=True)
+
     work_histories: list["WorkHistory"] = Relationship(back_populates="employee")
     documents: list["Document"] = Relationship(back_populates="employee")
     job: Optional["Job"] = Relationship(back_populates="employee")
     state: Optional["State"] = Relationship(back_populates="employee")
     country: Optional["Country"] = Relationship(back_populates="employee")
-    employee_hours: "EmployeeHours" = Relationship(back_populates="employee")
+    employee_hours: Optional["EmployeeHours"] = Relationship(back_populates="employee")
