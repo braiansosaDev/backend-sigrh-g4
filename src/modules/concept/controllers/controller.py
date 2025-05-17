@@ -1,37 +1,49 @@
-from fastapi import APIRouter
-import logging
+from typing import List
+from fastapi import APIRouter, status
+from src.database.core import DatabaseSession
+from src.modules.concept.schemas import schemas
+from src.modules.concept.services import service
 
-logger = logging.getLogger("uvicorn.error")
 concept_router = APIRouter(prefix="/concept", tags=["Concept"])
 
 
-@concept_router.get("/")
-async def read_concepts():
+@concept_router.get(
+    "/", response_model=List[schemas.ConceptResponse], status_code=status.HTTP_200_OK
+)
+async def read_concepts(db: DatabaseSession):
     """
     docstring
     """
-    pass
+    return service.get_concepts(db)
 
 
-@concept_router.post("/")
-async def create_concept():
+@concept_router.post(
+    "/", response_model=schemas.ConceptResponse, status_code=status.HTTP_201_CREATED
+)
+async def create_concept(db: DatabaseSession, request: schemas.ConceptRequest):
     """
     docstring
     """
-    pass
+    return service.post_concept(db, request)
 
 
-@concept_router.patch("/{concept_id}")
-async def update_concept(concept_id: int):
+@concept_router.patch(
+    "/{concept_id}",
+    response_model=schemas.ConceptResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_concept(
+    db: DatabaseSession, concept_id: int, request: schemas.ConceptRequest
+):
     """
     docstring
     """
-    pass
+    return service.patch_concept(db, concept_id, request)
 
 
-@concept_router.delete("/{concept_id}")
-async def delete_concept(concept_id: int):
+@concept_router.delete("/{concept_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_concept(db: DatabaseSession, concept_id: int):
     """
     docstring
     """
-    pass
+    return service.delete_concept(db, concept_id)
