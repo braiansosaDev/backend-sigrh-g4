@@ -7,6 +7,6 @@ class ClockEvents(SQLModel, table=True):
     id: int = Field(primary_key=True)
     employee_id: int = Field(foreign_key="employee.id", nullable=True)
     event_date: datetime
-    event_type: datetime
+    event_type: str
     source: str
     device_id: int
