@@ -1,54 +1,119 @@
--- Cargar países
+-- Script de inserción de datos de ejemplo para PostgreSQL
+
+BEGIN;
+
+-- 1. Paises
 INSERT INTO country (id, name) VALUES
-(1, 'Argentina'),
-(2, 'Brasil'),
-(3, 'Chile');
+  (1, 'Argentina'),
+  (2, 'Chile');
 
--- Cargar provincias/estados
-INSERT INTO state (id, name, country_id) VALUES
-(1, 'Buenos Aires', 1),
-(2, 'Córdoba', 1),
-(3, 'Santa Fe', 1),
-(4, 'Rio de Janeiro', 2),
-(5, 'Sao Paulo', 2),
-(6, 'Valparaíso', 3),
-(7, 'Santiago', 3);
+-- 2. Provincias / Estados
+INSERT INTO state (id, country_id, name) VALUES
+  (1, 1, 'Buenos Aires'),
+  (2, 1, 'Córdoba'),
+  (3, 2, 'Región Metropolitana');
 
--- Sectores
+-- 3. Sectores
 INSERT INTO sector (id, name) VALUES
-(1, 'Desarrollo'),
-(2, 'Recursos Humanos'),
-(3, 'Administración'),
-(4, 'Diseño'),
-(5, 'Contabilidad'),
-(6, 'Proyectos');
+  (1, 'Tecnología'),
+  (2, 'Finanzas');
 
--- Cargar puestos
-INSERT INTO job (id, name, sector_id) VALUES
-(1, 'Desarrollador', 1),
-(2, 'Analista de Recursos Humanos', 2),
-(3, 'Contador', 5),
-(4, 'Diseñador Gráfico', 4),
-(5, 'Gerente de Proyectos', 6),
-(6, 'Asistente Administrativo', 3);
+-- 4. Puestos (job)
+INSERT INTO job (id, sector_id, name) VALUES
+  (1, 1, 'Desarrollador Backend'),
+  (2, 1, 'Desarrollador Frontend'),
+  (3, 2, 'Analista Financiero');
 
--- Cargar habilidades
-INSERT INTO ability (id, name, description) VALUES
-(1, 'Java', 'Lenguaje de programación orientado a objetos'),
-(2, 'Python', 'Lenguaje de programación interpretado'),
-(3, 'SQL', 'Lenguaje de consulta estructurado'),
-(4, 'Diseño Gráfico', 'Habilidad en diseño visual'),
-(5, 'Gestión de Proyectos', 'Habilidad en planificación y ejecución de proyectos'),
-(6, 'Comunicación', 'Habilidad para transmitir información efectivamente'),
-(7, 'PostgreSQL', 'Motor de bases de datos relacionales'),
-(8, 'MongoDB', 'Motor de bases de datos no relacionales');
-
--- Cargar empleados
+-- 5. Empleados
 INSERT INTO employee (
-    id, user_id, first_name, last_name, dni, type_dni, personal_email, active,
-    role, password, phone, salary, job_id, birth_date, hire_date, address_street,
-    address_city, address_cp, address_state_id, address_country_id
+  id, job_id, address_state_id, address_country_id, user_id,
+  first_name, last_name, dni, type_dni, personal_email,
+  password, phone, address_street, address_city, address_cp,
+  salary, active, birth_date, hire_date, photo, facial_register
 ) VALUES
-(1, 'fbarra138', 'Franco', 'Barraza', '42194138', 'dni', 'franco@sigrh.com', False, 'dev', 'hash123', '+541123234343', 1000.00, 1, '1999-05-05', '2025-05-05', 'Mitre 123', 'Polvorines', '1613', 1, 1),
-(2, 'nsoza258', 'Nilda', 'Sosa', '42194258', 'dni', 'nilda@sigrh.com', False, 'rrhh', 'hashabc', '+541122334455', 1500.00, 2, '1980-10-15', '2020-01-10', 'Belgrano 456', 'Tigre', '1648', 1, 1),
-(3, 'jrodriguez369', 'Joaquín', 'Rodríguez', '42194369', 'dni', 'jrodri@sigrh.com', False, 'dev', 'hashxyz', '+541134567890', 1200.00, 3, '1995-03-20', '2022-06-15', 'Rivadavia 789', 'San Fernando', '1670', 1, 1);
+  (1, 1, 1, 1, 'emp001', 'María', 'Gómez', '12345678', 'DNI', 'maria.gomez@example.com',
+   'hashed_pwd1', '+5491112345678', 'Calle Falsa 123', 'Buenos Aires', '1000',
+   150000, TRUE, '1988-05-10 00:00:00', '2022-01-15 09:00:00', NULL, NULL),
+  (2, 2, 2, 1, 'emp002', 'Juan', 'Pérez', '87654321', 'DNI', 'juan.perez@example.com',
+   'hashed_pwd2', '+5493518765432', 'Av. Siempre Viva 742', 'Córdoba', '5000',
+   130000, TRUE, '1990-11-20 00:00:00', '2023-06-01 08:30:00', NULL, NULL);
+
+-- 6. Habilidades (ability)
+INSERT INTO ability (id, name, description) VALUES
+  (1, 'Python', 'Programación backend'),
+  (2, 'JavaScript', 'Programación frontend'),
+  (3, 'SQL', 'Gestión de bases de datos relacionales'),
+  (4, 'Trabajo en equipo', 'Habilidad blanda de colaboración');
+
+-- 7. Ofertas de trabajo (job_opportunity)
+INSERT INTO job_opportunity (
+  id, owner_employee_id, state_id, budget, budget_currency_id,
+  status, work_mode, title, description, created_at, updated_at
+) VALUES
+  (1, 1, 1, 120000, 'USD', 'ACTIVO', 'REMOTO',
+   'Backend Developer Senior', 'Desarrollo de APIs REST en Python y PostgreSQL.',
+   '2025-05-01 10:00:00', '2025-05-01 10:00:00'),
+  (2, 2, 2, 90000, 'USD', 'ACTIVO', 'HIBRIDO',
+   'Frontend Developer', 'Maquetación y dinámicas con React.js.',
+   '2025-04-20 09:30:00', '2025-04-20 09:30:00');
+
+-- 8. Habilidades por oferta (job_opportunity_ability)
+INSERT INTO job_opportunity_ability (job_opportunity_id, ability_id, ability_type) VALUES
+  (1, 1, 'REQUERIDA'),
+  (1, 3, 'REQUERIDA'),
+  (1, 4, 'DESEADA'),
+  (2, 2, 'REQUERIDA'),
+  (2, 3, 'REQUERIDA');
+
+-- 9. Documentos (document)
+-- INSERT INTO document (id, employee_id, name, extension, creation_date, file, active) VALUES
+--   (1, 1, 'Certificado Python', 'pdf', '2023-03-10 14:00:00', NULL, TRUE),
+--   (2, 2, 'Portafolio Frontend', 'pdf', '2024-01-05 11:15:00', NULL, TRUE);
+
+-- 10. Historial laboral (work_history)
+-- INSERT INTO work_history (id, employee_id, job_id, from_date, to_date, company_name, notes) VALUES
+--   (1, 1, 3, '2018-07-01 00:00:00', '2022-01-14 23:59:59', 'Finanzas SA', 'Analista de datos financieros'),
+--   (2, 2, 1, '2019-09-01 00:00:00', '2023-05-31 23:59:59', 'Tech Solutions', 'Desarrollador frontend');
+
+-- 11. Conceptos de horas (concept)
+INSERT INTO concept (id, arca_concept_id, description) VALUES
+  (1, 100, 'Horas normales'),
+  (2, 101, 'Horas extras');
+
+-- 12. Turnos (shift)
+INSERT INTO shift (id, description, type) VALUES
+  (1, 'Mañana', 'diurno'),
+  (2, 'Tarde', 'vespertino');
+
+-- 13. Registro de horas trabajadas (employee_hours)
+INSERT INTO employee_hours (
+  id, employee_id, concept_id, shift_id, weekday, date,
+  register_type, first_check_in, last_check_out, check_count,
+  amount, hours, pay, notes
+) VALUES
+  (1, 1, 1, 1, 1, '2025-05-12', 'ingreso', '08:00:00', '17:00:00', 2,
+   8.0, '09:00:00', TRUE, 'Día habitual'),
+  (2, 2, 2, 2, 2, '2025-05-13', 'ingreso', '10:00:00', '19:00:00', 2,
+   9.0, '09:00:00', TRUE, 'Hora extra incluida');
+
+-- 14. Eventos de reloj (clock_events)
+INSERT INTO clock_events (id, employee_id, event_date, event_type, source, device_id) VALUES
+  (1, 1, '2025-05-12 08:00:00', 'check_in', 'app', 1),
+  (2, 2, '2025-05-13 10:00:00', 'check_in', 'biométrico', 2);
+
+-- 15. Postulaciones (postulation)
+INSERT INTO postulation (
+  id, job_opportunity_id, address_country_id, address_state_id,
+  name, surname, email, phone_number, cv_file,
+  status, suitable, ability_match, evaluated_at, created_at, updated_at
+) VALUES
+  (1, 1, 1, 1, 'Ana', 'López', 'ana.lopez@example.com', '+549116001234',
+   'ana_lopez_cv.pdf', 'PENDIENTE', FALSE,
+   '{"Python": 0.80, "SQL": 0.70, "Trabajo en equipo": 0.95}',
+   NULL, '2025-05-15 13:45:00', '2025-05-15 13:45:00'),
+  (2, 2, 1, 2, 'Luis', 'Martínez', 'luis.martinez@example.com', '+549115005678',
+   'luis_martinez_cv.pdf', 'ACEPTADA', TRUE,
+   '{"JavaScript": 0.85, "SQL": 0.75}',
+   '2025-05-16 11:20:00', '2025-05-14 09:00:00', '2025-05-16 11:20:00');
+
+COMMIT;
