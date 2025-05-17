@@ -98,8 +98,8 @@ INSERT INTO employee_hours (
 
 -- 14. Eventos de reloj (clock_events)
 INSERT INTO clock_events (id, employee_id, event_date, event_type, source, device_id) VALUES
-  (1, 1, '2025-05-12 08:00:00', 'check_in', 'app', 1),
-  (2, 2, '2025-05-13 10:00:00', 'check_in', 'biométrico', 2);
+  (1, 1, '2025-05-12 08:00:00', 'IN', 'app', 'dev123'),
+  (2, 2, '2025-05-13 10:00:00', 'OUT', 'biométrico', 'dev321');
 
 -- 15. Postulaciones (postulation)
 INSERT INTO postulation (
