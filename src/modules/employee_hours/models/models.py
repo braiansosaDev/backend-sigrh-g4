@@ -1,21 +1,24 @@
-from sqlmodel import Field, Relationship, SQLModel
-import datetime
+from sqlmodel import Field, Relationship, SQLModel, CheckConstraint
+from datetime import time, date
 
 
 class EmployeeHours(SQLModel, table=True):
     __tablename__ = "employee_hours"  # type: ignore
+    __table_args__ = (
+        CheckConstraint("weekday >= 1 AND weekday <= 7", name="chk_weekday_range"),
+    )
     id: int = Field(primary_key=True)
-    employee_id: int = Field(foreign_key="employee.id", nullable=True)
-    concept_id: int = Field(foreign_key="concept.id", nullable=True)
-    shift_id: int = Field(foreign_key="shift.id", nullable=True)
+    employee_id: int = Field(foreign_key="employee.id")
+    concept_id: int = Field(foreign_key="concept.id")
+    shift_id: int = Field(foreign_key="shift.id")
     weekday: int
-    date: datetime.date
-    register_type: str
-    first_check_in: datetime.time
-    last_check_out: datetime.time
+    date: date
+    register_type: str  # ESCIFICAR!
+    first_check_in: time
+    last_check_out: time
     check_count: int
     amount: float
-    hours: datetime.time
+    hours: time
     pay: bool
     notes: str
 
