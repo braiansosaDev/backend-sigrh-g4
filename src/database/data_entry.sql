@@ -91,7 +91,7 @@ INSERT INTO employee_hours (
   register_type, first_check_in, last_check_out, check_count,
   amount, hours, pay, notes
 ) VALUES
-  (1, 1, 1, 1, 1, '2025-05-12', 'ingreso', '08:00:00', '17:00:00', 2,
+  (1, 1, 1, 1, 3, '2025-05-12', 'ingreso', '08:00:00', '17:00:00', 2,
    8.0, '09:00:00', TRUE, 'Día habitual'),
   (2, 2, 2, 2, 2, '2025-05-13', 'ingreso', '10:00:00', '19:00:00', 2,
    9.0, '09:00:00', TRUE, 'Hora extra incluida');
