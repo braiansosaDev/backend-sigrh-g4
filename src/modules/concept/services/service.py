@@ -8,8 +8,13 @@ from src.modules.concept.schemas.schemas import ConceptRequest
 import logging
 
 
-def get_concept_by_id(db: DatabaseSession, id: int) -> Concept | None:
-    return db.exec(select(Concept).where(Concept.id == id)).first()
+def get_concept_by_id(db: DatabaseSession, id: int) -> Concept:
+    concept = db.exec(select(Concept).where(Concept.id == id)).first()
+    if not concept:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Concept id was not found"
+        )
+    return concept
 
 
 def get_concepts(db: DatabaseSession) -> Sequence[Concept]:

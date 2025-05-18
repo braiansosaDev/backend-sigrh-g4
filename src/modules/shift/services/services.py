@@ -8,8 +8,14 @@ from src.modules.shift.models.models import Shift
 import logging
 
 
-def get_shift_by_id(db: DatabaseSession, id: int) -> Shift | None:
-    return db.exec(select(Shift).where(Shift.id == id)).first()
+def get_shift_by_id(db: DatabaseSession, id: int) -> Shift:
+    shift = db.exec(select(Shift).where(Shift.id == id)).first()
+    if not shift:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Shift id was not found",
+        )
+    return shift
 
 
 def get_shifts(db: DatabaseSession) -> Sequence[Shift]:
