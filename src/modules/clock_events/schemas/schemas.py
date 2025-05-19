@@ -13,16 +13,16 @@ class ClockEventTypes(str, Enum):
 
 class ClockEventRequest(BaseModel):
     employee_id: int
-    device_id: str
-    source: str
+    device_id: Optional[str] = None
+    source: Optional[str] = None
     event_type: ClockEventTypes
     event_date: datetime
 
 
 class ClockEventResponse(BaseModel):
     employee_id: int
-    device_id: str
-    source: str
+    device_id: Optional[str] = None
+    source: Optional[str] = None
     event_type: ClockEventTypes
     event_date: datetime
     employee: Employee

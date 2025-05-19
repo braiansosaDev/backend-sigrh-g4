@@ -1,5 +1,5 @@
-from datetime import date
-from typing import Sequence
+from datetime import date, datetime
+from typing import Optional, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select, text
@@ -41,12 +41,25 @@ def get_clock_event_summary_by_date_sql(db: DatabaseSession, fecha: date):
 def get_clock_event_by_id(db: DatabaseSession, id: int) -> ClockEvents | None:
     return db.exec(select(ClockEvents).where(ClockEvents.id == id)).first()
 
-def get_clock_events(db: DatabaseSession) -> Sequence[ClockEvents]:
-    return db.exec(
-        select(ClockEvents).options(
-            selectinload(ClockEvents.employee).selectinload(Employee.job)
+def get_clock_events(
+    db: DatabaseSession,
+    employee_id: Optional[int] = None,
+    fecha: Optional[date] = None
+) -> Sequence[ClockEvents]:
+    stmt = select(ClockEvents)
+
+    if employee_id:
+        stmt = stmt.where(ClockEvents.employee_id == employee_id)
+
+    if fecha:
+        stmt = stmt.where(
+            ClockEvents.event_date.between(
+                datetime.combine(fecha, datetime.min.time()),
+                datetime.combine(fecha, datetime.max.time())
+            )
         )
-    ).all()
+
+    return db.exec(stmt.order_by(ClockEvents.event_date)).all()
 
 def post_clock_event(db: DatabaseSession, request: ClockEventRequest) -> ClockEvents:
     try:
