@@ -30,7 +30,8 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     birth_date: date  # Agregar restricciones
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
+    # facial_register: Optional[bytes] = Field(default=None)
+    face_recognition: Optional[int] = Field(foreign_key="face_recognition.id", nullable=True)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)

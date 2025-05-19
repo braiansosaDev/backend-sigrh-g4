@@ -12,5 +12,5 @@ class FaceRecognition(SQLModel, table=True, metadata={"table_name": "face_recogn
     id: Optional[int] = Field(primary_key=True, index=True)
     employee_id: int = Field(foreign_key="employee.id")
     embedding: Optional[list[float]] = Field(sa_column=Column(JSON))
-    employee: "Employee" = Relationship(back_populates="face_recognition")
+    # employee: "Employee" = Relationship(back_populates="face_recognition")
     
