@@ -1,21 +1,52 @@
+from datetime import date
 from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import select
+from sqlmodel import select, text
 from src.database.core import DatabaseSession
 from src.modules.clock_events.schemas.schemas import ClockEventRequest
 from src.modules.clock_events.models.models import ClockEvents
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
 from src.modules.employees.services.utils import get_employee_by_id
 import logging
+from sqlalchemy.orm import selectinload
+
+def get_attendance_resume(db: DatabaseSession, fecha: date):
+    return get_clock_event_summary_by_date_sql(db, fecha)
+
+def get_clock_event_summary_by_date_sql(db: DatabaseSession, fecha: date):
+    query = text("""
+        SELECT
+            e.id AS employee_id,
+            e.first_name,
+            e.last_name,
+            j.name AS job,
+            MIN(CASE WHEN c.event_type = 'IN' THEN c.event_date END) AS first_in,
+            MAX(c.event_date) AS last_out,
+            COUNT(*) AS total_events
+        FROM clock_events c
+        JOIN employee e ON c.employee_id = e.id
+        LEFT JOIN job j ON e.job_id = j.id
+        WHERE e.active = TRUE
+          AND DATE(c.event_date) = :fecha
+        GROUP BY e.id, e.first_name, e.last_name, j.name
+        ORDER BY e.id
+    """)
+
+    result = db.execute(query, {"fecha": fecha})
+    return [dict(row._mapping) for row in result]
 
 
 def get_clock_event_by_id(db: DatabaseSession, id: int) -> ClockEvents | None:
     return db.exec(select(ClockEvents).where(ClockEvents.id == id)).first()
 
-
 def get_clock_events(db: DatabaseSession) -> Sequence[ClockEvents]:
-    return db.exec(select(ClockEvents)).all()
-
+    return db.exec(
+        select(ClockEvents).options(
+            selectinload(ClockEvents.employee).selectinload(Employee.job)
+        )
+    ).all()
 
 def post_clock_event(db: DatabaseSession, request: ClockEventRequest) -> ClockEvents:
     try:

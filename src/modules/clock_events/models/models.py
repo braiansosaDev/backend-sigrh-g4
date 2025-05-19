@@ -1,6 +1,8 @@
-from sqlmodel import Field, SQLModel
+from typing import Optional
+from sqlmodel import Field, Relationship, SQLModel
 from datetime import datetime
 from src.modules.clock_events.schemas.schemas import ClockEventTypes
+from src.modules.employees.models.employee import Employee
 
 
 class ClockEvents(SQLModel, table=True):
@@ -11,3 +13,5 @@ class ClockEvents(SQLModel, table=True):
     event_type: ClockEventTypes
     source: str
     device_id: str
+
+    employee: Optional["Employee"] = Relationship()
