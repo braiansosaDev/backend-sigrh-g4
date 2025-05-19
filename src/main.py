@@ -20,6 +20,8 @@ from src.modules.postulation.controllers.postulation_controller import (
 from src.auth.auth_controller import auth_router
 from src.cv_matching.controller import matcher_router
 
+from src.modules.face_recognition.controllers.face_recognition_controller import face_recognition_router
+
 
 app = FastAPI(
     root_path="/api/v1",
@@ -48,3 +50,4 @@ app.include_router(job_router)
 app.include_router(postulation_router)
 app.include_router(auth_router)
 app.include_router(matcher_router)
+app.include_router(face_recognition_router)
