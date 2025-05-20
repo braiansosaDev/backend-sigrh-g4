@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.employees.models.employee import Employee
 from src.modules.face_recognition.models.face_recognition import FaceRecognition
 from src.modules.face_recognition.schemas.face_recognition_models import (
     CreateFaceRegistration,
@@ -40,13 +41,29 @@ def create_face_register(
                 )
 
     # Crear el nuevo registro
+    employee_id = create_face_register_request.employee_id
     db_face_register = FaceRecognition(
-        employee_id=create_face_register_request.employee_id,
+        employee_id=employee_id,
         embedding=new_embedding,
     )
     db.add(db_face_register)
     db.commit()
     db.refresh(db_face_register)
+
+    employee = db.exec(
+        select(Employee).where(Employee.id == employee_id)
+    ).one_or_none()
+
+    if employee is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found."
+        )
+
+    employee.face_recognition_id = db_face_register.id
+    db.add(employee)
+    db.commit()
+    db.refresh(employee)
+
     return db_face_register
 
 
@@ -68,6 +85,7 @@ def verify_face(
             distance = euclidean_distance(face.embedding, input_embedding)
             if distance < THRESHOLD:
                 print(f"Verified: employee_id {face.employee_id}")
+                print(f"Verified: id de face {face.id}")
                 return True
 
     print("Not verified: no match found")

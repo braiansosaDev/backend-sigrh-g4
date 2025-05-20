@@ -89,7 +89,7 @@ class UpdateEmployee(BaseModel):
     hire_date: Optional[date] = None
     photo: Optional[bytes] = None
     # facial_register: Optional[bytes] = None
-    face_recognition: Optional[int] = None
+    face_recognition_id: Optional[int] = None
     address_street: Optional[str] = None
     address_city: Optional[str] = None
     address_cp: Optional[str] = None
@@ -123,7 +123,7 @@ class CreateEmployee(BaseModel):
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
     # facial_register: Optional[bytes] = Field(default=None)
-    face_recognition: Optional[int] = None
+    face_recognition_id: Optional[int] = None
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)

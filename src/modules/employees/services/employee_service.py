@@ -71,7 +71,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             hire_date=employee_request.hire_date,
             photo=employee_request.photo,
             # facial_register=employee_request.facial_register,
-            face_recognition=employee_request.face_recognition,
+            face_recognition_id=employee_request.face_recognition_id,
             address_street=employee_request.address_street,
             address_city=employee_request.address_city,
             address_cp=employee_request.address_cp,
