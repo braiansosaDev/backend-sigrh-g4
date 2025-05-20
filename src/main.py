@@ -17,6 +17,8 @@ from src.modules.employees.controllers.job_controller import job_router
 from src.modules.postulation.controllers.postulation_controller import (
     postulation_router,
 )
+from src.modules.role.controllers.role_controller import role_router
+from src.modules.role.controllers.permission_controller import permission_router
 from src.auth.auth_controller import auth_router
 from src.cv_matching.controller import matcher_router
 
@@ -48,3 +50,5 @@ app.include_router(job_router)
 app.include_router(postulation_router)
 app.include_router(auth_router)
 app.include_router(matcher_router)
+app.include_router(role_router)
+app.include_router(permission_router)
