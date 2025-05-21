@@ -22,14 +22,14 @@ def get_clock_event_summary_by_date_sql(db: DatabaseSession, fecha: date):
             e.first_name,
             e.last_name,
             j.name AS job,
+            :fecha AS date,
             MIN(CASE WHEN c.event_type = 'IN' THEN c.event_date END) AS first_in,
-            MAX(c.event_date) AS last_out,
-            COUNT(*) AS total_events
-        FROM clock_events c
-        JOIN employee e ON c.employee_id = e.id
+            MAX(CASE WHEN c.event_type = 'OUT' THEN c.event_date END) AS last_out,
+            COUNT(c.id) AS total_events
+        FROM employee e
         LEFT JOIN job j ON e.job_id = j.id
+        LEFT JOIN clock_events c ON e.id = c.employee_id AND DATE(c.event_date) = :fecha
         WHERE e.active = TRUE
-          AND DATE(c.event_date) = :fecha
         GROUP BY e.id, e.first_name, e.last_name, j.name
         ORDER BY e.id
     """)

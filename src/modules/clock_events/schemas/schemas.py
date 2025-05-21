@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 from enum import Enum
 
 from src.modules.employees.models.employee import Employee
@@ -50,6 +50,7 @@ class ClockEventAttendanceSummary(BaseModel):
     first_name: str
     last_name: str
     job: Optional[str] = None
+    date: Optional[date]
     first_in: Optional[datetime] = None
     last_out: Optional[datetime] = None
     total_events: int
