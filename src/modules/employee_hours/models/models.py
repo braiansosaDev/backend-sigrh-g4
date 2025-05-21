@@ -1,5 +1,12 @@
 from sqlmodel import Field, Relationship, SQLModel, CheckConstraint
 from datetime import time, date
+from enum import Enum
+
+
+class RegisterType(str, Enum):
+    AUSENCIA = "AUSENCIA"
+    PRESENCIA = "PRESENCIA"
+    TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
 
 
 class EmployeeHours(SQLModel, table=True):
@@ -13,7 +20,7 @@ class EmployeeHours(SQLModel, table=True):
     shift_id: int = Field(foreign_key="shift.id")
     weekday: int
     date: date
-    register_type: str  # ESCIFICAR!
+    register_type: RegisterType
     first_check_in: time
     last_check_out: time
     check_count: int
