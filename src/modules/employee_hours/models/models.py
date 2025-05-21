@@ -30,3 +30,5 @@ class EmployeeHours(SQLModel, table=True):
     notes: str
 
     employee: "Employee" = Relationship(back_populates="employee_hours")
+    concept: "Concept" = Relationship(back_populates="employee_hours")
+    shift: "Shift" = Relationship(back_populates="employee_hours")
