@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
 
 class Shift(SQLModel, table=True):
@@ -8,3 +8,5 @@ class Shift(SQLModel, table=True):
     type: str
     working_hours: float
     working_days: int
+
+    employee_hours: "EmployeeHours" = Relationship(back_populates="shift")

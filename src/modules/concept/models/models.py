@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Concept(SQLModel, table=True):
@@ -6,3 +6,5 @@ class Concept(SQLModel, table=True):
     id: int = Field(primary_key=True)
     arca_concept_id: int
     description: str
+
+    employee_hours: "EmployeeHours" = Relationship(back_populates="concept")
