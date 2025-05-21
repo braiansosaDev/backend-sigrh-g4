@@ -15,10 +15,11 @@ class Document(SQLModel, table=True):
 
     __tablename__ = "document"  # type: ignore
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
-    employee_id: int = Field(foreign_key="employee.id")
+    employee_id: int = Field(foreign_key="employee.id", ondelete="CASCADE")
     name: str = Field(max_length=50)
     extension: str = Field(max_length=5)
     creation_date: date
     file: bytes
     active: bool = Field(default=True)
+
     employee: "Employee" = Relationship(back_populates="documents")

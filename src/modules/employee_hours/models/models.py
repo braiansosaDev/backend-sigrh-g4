@@ -8,7 +8,7 @@ class EmployeeHours(SQLModel, table=True):
         CheckConstraint("weekday >= 1 AND weekday <= 7", name="chk_weekday_range"),
     )
     id: int = Field(primary_key=True)
-    employee_id: int = Field(foreign_key="employee.id")
+    employee_id: int = Field(foreign_key="employee.id", ondelete="CASCADE")
     concept_id: int = Field(foreign_key="concept.id")
     shift_id: int = Field(foreign_key="shift.id")
     weekday: int
