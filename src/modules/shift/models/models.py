@@ -6,3 +6,5 @@ class Shift(SQLModel, table=True):
     id: int = Field(primary_key=True)
     description: str
     type: str
+    working_hours: float
+    working_days: int
