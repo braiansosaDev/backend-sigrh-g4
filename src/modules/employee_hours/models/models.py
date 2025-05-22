@@ -19,15 +19,15 @@ class EmployeeHours(SQLModel, table=True):
     concept_id: int = Field(foreign_key="concept.id")
     shift_id: int = Field(foreign_key="shift.id")
     weekday: int
-    date: date
-    register_type: RegisterType
-    first_check_in: time
-    last_check_out: time
-    check_count: int
-    amount: float
-    hours: time
-    pay: bool
-    notes: str
+    check_count: int = Field(default=0)
+    work_date: date = Field(default=date.today)  # antes: date
+    register_type: RegisterType = Field(default=None)
+    first_check_in: time = Field(default=None)
+    last_check_out: time = Field(default=None)
+    time_worked: time = Field(default=None)  # antes: hours
+    daily_salary: float = Field(default=0.0)  # antes: amount
+    pay: bool = Field(default=False)
+    notes: str = Field(default="")
 
     employee: "Employee" = Relationship(back_populates="employee_hours")
     concept: "Concept" = Relationship(back_populates="employee_hours")

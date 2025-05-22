@@ -19,9 +19,8 @@ class EmployeeHoursRequest(BaseModel):
     register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    hours: time
-    date: date
-    amount: float
+    time_worked: time
+    work_date: date
     pay: bool
 
 
@@ -36,7 +35,6 @@ class EmployeeHoursResponse(BaseModel):
     register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    hours: time
-    date: date
-    amount: float
+    time_worked: time
+    work_date: date
     pay: bool
