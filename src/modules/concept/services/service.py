@@ -69,6 +69,11 @@ def delete_concept(db: DatabaseSession, concept_id: int):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="Concept not found"
             )
+        if db_concept.is_deletable is False:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Concept cannot be deleted",
+            )
         db.delete(db_concept)
         db.commit()
     except IntegrityError as e:
