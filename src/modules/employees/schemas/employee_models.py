@@ -23,7 +23,7 @@ class EmployeeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: str
+    role: int
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -57,7 +57,7 @@ class MeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: str
+    role: int
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -80,7 +80,7 @@ class UpdateEmployee(BaseModel):
     type_dni: Optional[str] = None
     personal_email: Optional[EmailStr] = None
     active: Optional[bool] = None
-    role: Optional[str] = None
+    role: Optional[int] = None
     password: Optional[str] = None
     phone: Optional[str] = None
     salary: Optional[Decimal] = None
@@ -112,7 +112,7 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: str = Field()
+    role: int = Field()
     password: Optional[str] = None
     user_id: Optional[str] = None
     phone: str = Field(max_length=20)
