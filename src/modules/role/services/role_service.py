@@ -28,12 +28,12 @@ def get_all_roles(db: DatabaseSession) -> Sequence[Role]:
 
 
 def create_role(db: DatabaseSession, request: RoleCreate) -> Role:
-    permission_service.validate_permission_list(db, request.permissions)
+    permissions: list[Permission] = permission_service.validate_permission_list(db, request.permissions)
 
     try:
-        db_role = Role(**request.dict(exclude=set("permissions")))
-        for permission in request.permissions:
-            db_role.permissions.append(Permission(**permission.dict()))
+        db_role = Role(**request.dict(exclude={"permissions"}))
+        for permission in permissions:
+            db_role.permissions.append(permission)
         db.add(db_role)
         db.commit()
         return db_role
