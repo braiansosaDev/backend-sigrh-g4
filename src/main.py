@@ -22,6 +22,10 @@ from src.cv_matching.controller import matcher_router
 
 from src.modules.face_recognition.controllers.face_recognition_controller import face_recognition_router
 
+from src.modules.employee_hours.controllers.controller import employee_hours_router
+from src.modules.clock_events.controllers.controller import clock_events_router
+from src.modules.concept.controllers.controller import concept_router
+from src.modules.shift.controllers.controller import shift_router
 
 app = FastAPI(
     root_path="/api/v1",
@@ -51,3 +55,7 @@ app.include_router(postulation_router)
 app.include_router(auth_router)
 app.include_router(matcher_router)
 app.include_router(face_recognition_router)
+app.include_router(employee_hours_router)
+app.include_router(clock_events_router)
+app.include_router(concept_router)
+app.include_router(shift_router)
