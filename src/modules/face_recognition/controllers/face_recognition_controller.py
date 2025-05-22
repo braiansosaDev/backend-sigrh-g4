@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from src.database.core import DatabaseSession
 
@@ -48,24 +48,22 @@ async def update_face(
     return face_recognition_service.update_face_register(db, face_recognition)
 
 
-@face_recognition_router.post("/in", response_model=FaceRecognitionBaseModel, status_code=status.HTTP_202_OK)
-async def check_in(
+@face_recognition_router.post("/{event_type}", response_model=OperationStatus, status_code=status.HTTP_202_ACCEPTED)
+async def register_attendance(
+    event_type: str,
     db: DatabaseSession,
     face_recognition: VerifyFaceRegistration,
 ) -> OperationStatus:
     """
-    Verifica el rostro de un empleado y lo registra como presente.
+    Verifica el rostro de un empleado y lo registra como presente o egreso, según el tipo.
     """
-    logger.info("Registrando entrada...")
-    return face_recognition_service.check_in(db, face_recognition)
+    logger.info(f"Registrando {event_type}...")
 
-@face_recognition_router.post("/out", response_model=FaceRecognitionBaseModel, status_code=status.HTTP_202_OK)
-async def check_out(
-    db: DatabaseSession,
-    face_recognition: VerifyFaceRegistration,
-) -> OperationStatus:
-    """
-    Verifica el rostro de un empleado y lo registra como egreso.
-    """
-    logger.info("Registrando salida...")
-    return face_recognition_service.check_out(db, face_recognition)
+    # Validar el tipo recibido (para evitar errores de tipeo)
+    if event_type not in {"in", "out"}:
+        raise HTTPException(status_code=400, detail="Tipo de evento inválido. Usar 'in' o 'out'.")
+
+    # Asignar device según el tipo
+    device_id = "Totem de reconocimiento facial ingreso." if event_type == "in" else "Totem de reconocimiento facial egreso."
+
+    return face_recognition_service.register_attendance(db, face_recognition, event_type=event_type, device_id=device_id)

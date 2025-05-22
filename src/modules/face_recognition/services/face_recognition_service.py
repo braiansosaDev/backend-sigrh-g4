@@ -1,6 +1,8 @@
+from datetime import datetime
 from fastapi import HTTPException, status
 from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.clock_events.services.services import post_clock_event
 from src.modules.employees.models.employee import Employee
 from src.modules.face_recognition.models.face_recognition import FaceRecognition
 from src.modules.face_recognition.schemas.face_recognition_models import (
@@ -129,43 +131,47 @@ def delete_face_register(db: DatabaseSession, employee_id: int) -> None:
     db.commit()
 
 
-# def check_in(
-#     db: DatabaseSession, verify_face_recognition_request: VerifyFaceRegistration
-# ) -> OperationStatus:
-#     db_faces = get_all_faces(db)
+def register_attendance(
+    db: DatabaseSession, verify_face_recognition_request: VerifyFaceRegistration, event_type: str, device_id: str
+) -> OperationStatus:
+    db_faces = get_all_faces(db)
 
-#     if not db_faces:
-#         raise HTTPException(
-#             status_code=status.HTTP_404_NOT_FOUND,
-#             detail="No registered faces to compare with."
-#         )
+    if not db_faces:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No registered faces to compare with."
+        )
 
-#     input_embedding = verify_face_recognition_request.embedding
+    input_embedding = verify_face_recognition_request.embedding
 
-#     for face in db_faces:
-#         if face.embedding:
-#             distance = euclidean_distance(face.embedding, input_embedding)
-#             if distance < THRESHOLD:
-#                 employee = db.exec(
-#                     select(Employee).where(Employee.id == face.employee_id)
-#                 ).one_or_none()
+    for face in db_faces:
+        if face.embedding:
+            distance = euclidean_distance(face.embedding, input_embedding)
+            if distance < THRESHOLD:
+                employee = db.exec(
+                    select(Employee).where(Employee.id == face.employee_id)
+                ).one_or_none()
 
-#                 if employee is None:
-#                     raise HTTPException(
-#                         status_code=status.HTTP_404_NOT_FOUND,
-#                         detail="Employee not found."
-#                     )
+                if employee is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Employee not found."
+                    )
+                
+                post_clock_event(db,
+                    {
+                        "employee_id": employee.id,
+                        "event_type": event_type,
+                        "event_date": datetime.now(),
+                        "device_id": device_id,
+                        "source": "face_recognition",
+                    },
+                )
 
-#                 fichada = db.exec(
-#                     select(Employee).where(Employee.id == face.employee_id)
-#                 ).one_or_none()
-#                 db.add(employee)
-#                 db.commit()
-#                 db.refresh(employee)
+                return OperationStatus(
+                    success=True,
+                    message=f"Check-in successful. Employee ID: {employee.id}",
+                    employee_id=employee.id,
+                )
 
-#                 return OperationStatus(
-#                     success=True,
-#                     message=f"Check-in successful. Employee ID: {employee.id}",
-#                 )
-
-#     return OperationStatus(success=False, message="No match found.")
+    return OperationStatus(success=False, message="No match found.")
