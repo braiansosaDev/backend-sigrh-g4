@@ -8,7 +8,6 @@ class FaceRecognitionBaseModel(BaseModel):
     """
     id: int | None
     employee_id: int 
-    # image_base64: str | None = Field(max_length=1000)
 
 class CreateFaceRegistration(BaseModel):
     """
@@ -22,6 +21,7 @@ class UpdateFaceRegistration(BaseModel):
     """
     Modelo para actualizar un registro facial.
     """
+    employee_id: int
     embedding: Optional[list[float]] 
 
 class VerifyFaceRegistration(BaseModel):
@@ -30,3 +30,11 @@ class VerifyFaceRegistration(BaseModel):
     """
     embedding: Optional[list[float]] 
 
+class OperationStatus(BaseModel):
+    """
+    Modelo para el estado de la operación.
+    """
+    success: bool
+    message: str
+    id: Optional[int]
+    employee_id: Optional[int]

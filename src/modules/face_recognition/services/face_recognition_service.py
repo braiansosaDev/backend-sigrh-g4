@@ -5,6 +5,7 @@ from src.modules.employees.models.employee import Employee
 from src.modules.face_recognition.models.face_recognition import FaceRecognition
 from src.modules.face_recognition.schemas.face_recognition_models import (
     CreateFaceRegistration,
+    OperationStatus,
     UpdateFaceRegistration,
     VerifyFaceRegistration,
     FaceRecognitionBaseModel,
@@ -40,7 +41,7 @@ def create_face_register(
                     detail="A similar face already exists in the system.",
                 )
 
-    # Crear el nuevo registro
+    # Crear el nuevo registro\
     employee_id = create_face_register_request.employee_id
     db_face_register = FaceRecognition(
         employee_id=employee_id,
@@ -69,7 +70,7 @@ def create_face_register(
 
 def verify_face(
     db: DatabaseSession, verify_face_recognition_request: VerifyFaceRegistration
-) -> bool:
+) -> OperationStatus:
     db_faces = get_all_faces(db)
 
     if not db_faces:
@@ -84,12 +85,15 @@ def verify_face(
         if face.embedding:
             distance = euclidean_distance(face.embedding, input_embedding)
             if distance < THRESHOLD:
-                print(f"Verified: employee_id {face.employee_id}")
-                print(f"Verified: id de face {face.id}")
-                return True
+                return OperationStatus(
+                    success=True,
+                    message=f"Face verified successfully. Employee ID: {face.employee_id}",
+                    employee_id=face.employee_id,
+                    id=face.id,
+                )
 
-    print("Not verified: no match found")
-    return False
+    return OperationStatus(success=False, message="No match found.")
+
 
 
 def update_face_register(
@@ -123,3 +127,45 @@ def delete_face_register(db: DatabaseSession, employee_id: int) -> None:
 
     db.delete(db_face_register)
     db.commit()
+
+
+# def check_in(
+#     db: DatabaseSession, verify_face_recognition_request: VerifyFaceRegistration
+# ) -> OperationStatus:
+#     db_faces = get_all_faces(db)
+
+#     if not db_faces:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="No registered faces to compare with."
+#         )
+
+#     input_embedding = verify_face_recognition_request.embedding
+
+#     for face in db_faces:
+#         if face.embedding:
+#             distance = euclidean_distance(face.embedding, input_embedding)
+#             if distance < THRESHOLD:
+#                 employee = db.exec(
+#                     select(Employee).where(Employee.id == face.employee_id)
+#                 ).one_or_none()
+
+#                 if employee is None:
+#                     raise HTTPException(
+#                         status_code=status.HTTP_404_NOT_FOUND,
+#                         detail="Employee not found."
+#                     )
+
+#                 fichada = db.exec(
+#                     select(Employee).where(Employee.id == face.employee_id)
+#                 ).one_or_none()
+#                 db.add(employee)
+#                 db.commit()
+#                 db.refresh(employee)
+
+#                 return OperationStatus(
+#                     success=True,
+#                     message=f"Check-in successful. Employee ID: {employee.id}",
+#                 )
+
+#     return OperationStatus(success=False, message="No match found.")
