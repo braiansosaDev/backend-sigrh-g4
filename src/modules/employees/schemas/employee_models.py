@@ -9,6 +9,7 @@ from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
 
+
 class EmployeeResponse(BaseModel):
     """
     Modelo de empleado para la respuesta de un empleado.
@@ -17,13 +18,13 @@ class EmployeeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str] 
+    role: Optional[str]
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -36,7 +37,7 @@ class EmployeeResponse(BaseModel):
     address_cp: str
     address_state_id: Optional[int]
     address_country_id: Optional[int]
-    work_histories: list[WorkHistory] 
+    work_histories: list[WorkHistory]
     documents: list[Document]
     job: Optional[JobResponse] = None
     state: Optional[State] = None
@@ -51,10 +52,10 @@ class MeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
     role: Optional[str]
@@ -72,6 +73,7 @@ class MeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
+
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
@@ -106,6 +108,7 @@ class CreateEmployee(BaseModel):
     Modelo de empleado para la creación de un nuevo empleado.
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.
     """
+
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     dni: str = Field(max_length=50)
@@ -118,6 +121,7 @@ class CreateEmployee(BaseModel):
     phone: str = Field(max_length=20)
     salary: Decimal = Field(gt=0)
     job_id: Optional[int] = None
+    shift_id: int
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
@@ -130,7 +134,7 @@ class CreateEmployee(BaseModel):
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
-     # Edad mínima (>=16 años)
+    # Edad mínima (>=16 años)
     @field_validator("birth_date")
     @classmethod
     def check_minimum_age(cls, v):
@@ -145,11 +149,24 @@ class CreateEmployee(BaseModel):
     @classmethod
     def validate_phone_country_code(cls, v):
         if not v.startswith("+"):
-            raise ValueError("El número de teléfono debe incluir el código de país (ej: +54).")
+            raise ValueError(
+                "El número de teléfono debe incluir el código de país (ej: +54)."
+            )
         return v
 
     # Validación de campos vacíos
-    @field_validator("first_name", "last_name", "dni", "type_dni","personal_email","phone","address_street", "address_city", "address_cp", mode="before")
+    @field_validator(
+        "first_name",
+        "last_name",
+        "dni",
+        "type_dni",
+        "personal_email",
+        "phone",
+        "address_street",
+        "address_city",
+        "address_cp",
+        mode="before",
+    )
     @classmethod
     def non_empty_strings(cls, v, field):
         if not v.strip():

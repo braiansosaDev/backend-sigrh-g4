@@ -13,7 +13,6 @@ class EmployeeHoursRequest(BaseModel):
     employee_id: int
     concept_id: int
     shift_id: int
-    weekday: int = Field(ge=1, le=7)
     check_count: int
     notes: str
     register_type: RegisterType
@@ -29,7 +28,6 @@ class EmployeeHoursResponse(BaseModel):
     employee_id: int
     concept_id: int
     shift_id: int
-    weekday: int = Field(ge=1, le=7)
     check_count: int
     notes: str
     register_type: RegisterType

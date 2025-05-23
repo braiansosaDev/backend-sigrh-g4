@@ -8,6 +8,6 @@ class ConceptRequest(BaseModel):
 
 class ConceptResponse(BaseModel):
     id: int
-    exportation_id: int
+    # exportation_id: int
     description: str
     is_deletable: bool

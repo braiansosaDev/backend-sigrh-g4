@@ -1,4 +1,4 @@
-from sqlmodel import Field, Relationship, SQLModel, CheckConstraint
+from sqlmodel import Field, Relationship, SQLModel
 from datetime import time, date
 from enum import Enum
 
@@ -11,14 +11,13 @@ class RegisterType(str, Enum):
 
 class EmployeeHours(SQLModel, table=True):
     __tablename__ = "employee_hours"  # type: ignore
-    __table_args__ = (
-        CheckConstraint("weekday >= 1 AND weekday <= 7", name="chk_weekday_range"),
+
+    id: int | None = Field(default=None, primary_key=True)
+    employee_id: int | None = Field(
+        default=None, foreign_key="employee.id", ondelete="CASCADE"
     )
-    id: int = Field(primary_key=True)
-    employee_id: int = Field(foreign_key="employee.id", ondelete="CASCADE")
-    concept_id: int = Field(foreign_key="concept.id")
+    concept_id: int | None = Field(default=None, foreign_key="concept.id")
     shift_id: int = Field(foreign_key="shift.id")
-    weekday: int
     check_count: int = Field(default=0)
     work_date: date = Field(default=date.today)  # antes: date
     register_type: RegisterType = Field(default=None)
