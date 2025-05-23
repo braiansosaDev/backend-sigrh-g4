@@ -9,4 +9,5 @@ class Shift(SQLModel, table=True):
     working_hours: float
     working_days: int
 
-    employee_hours: "EmployeeHours" = Relationship(back_populates="shift")
+    employee: "Employee" = Relationship(back_populates="shift")
+    employee_hours: list["EmployeeHours"] = Relationship(back_populates="shift")
