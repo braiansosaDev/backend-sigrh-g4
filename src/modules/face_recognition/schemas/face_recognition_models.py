@@ -36,5 +36,4 @@ class OperationStatus(BaseModel):
     """
     success: bool
     message: str
-    id: Optional[int]
-    employee_id: Optional[int]
+    employee_id: Optional[int] | None

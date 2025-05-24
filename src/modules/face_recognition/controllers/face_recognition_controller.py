@@ -24,7 +24,7 @@ async def register_face(
     return face_recognition_service.create_face_register(db, face_recognition)
 
 
-@face_recognition_router.get("/", response_model=FaceRecognitionBaseModel, status_code=status.HTTP_200_OK)
+@face_recognition_router.post("/", response_model=FaceRecognitionBaseModel, status_code=status.HTTP_200_OK)
 async def verify_face(
     db: DatabaseSession,
     face_recognition: VerifyFaceRegistration,

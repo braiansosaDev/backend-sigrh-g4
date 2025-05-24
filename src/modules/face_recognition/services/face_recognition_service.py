@@ -2,6 +2,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.clock_events.schemas.schemas import ClockEventRequest
 from src.modules.clock_events.services.services import post_clock_event
 from src.modules.employees.models.employee import Employee
 from src.modules.face_recognition.models.face_recognition import FaceRecognition
@@ -52,20 +53,6 @@ def create_face_register(
     db.add(db_face_register)
     db.commit()
     db.refresh(db_face_register)
-
-    employee = db.exec(
-        select(Employee).where(Employee.id == employee_id)
-    ).one_or_none()
-
-    if employee is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found."
-        )
-
-    employee.face_recognition_id = db_face_register.id
-    db.add(employee)
-    db.commit()
-    db.refresh(employee)
 
     return db_face_register
 
@@ -158,15 +145,13 @@ def register_attendance(
                         detail="Employee not found."
                     )
                 
-                post_clock_event(db,
-                    {
-                        "employee_id": employee.id,
-                        "event_type": event_type,
-                        "event_date": datetime.now(),
-                        "device_id": device_id,
-                        "source": "face_recognition",
-                    },
-                )
+                post_clock_event(db,ClockEventRequest(
+                        employee_id= employee.id,
+                        event_type= event_type,
+                        event_date= datetime.now(),
+                        device_id= device_id,
+                        source= "face_recognition"
+                ))
 
                 return OperationStatus(
                     success=True,
