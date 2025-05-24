@@ -21,10 +21,10 @@ class EmployeeHours(SQLModel, table=True):
     check_count: int = Field(default=0)
     work_date: date = Field(default=date.today)  # antes: date
     register_type: RegisterType = Field(default=None)
-    first_check_in: time = Field(default=None)
-    last_check_out: time = Field(default=None)
-    time_worked: time = Field(default=None)  # antes: hours
-    daily_salary: float = Field(default=0.0)  # antes: amount
+    first_check_in: time | None = Field(default=None)
+    last_check_out: time | None = Field(default=None)
+    time_worked: time | None = Field(default=None)  # antes: hours
+    extra_hours: time | None = Field(default=None)  # antes: amount
     pay: bool = Field(default=False)
     notes: str = Field(default="")
 
