@@ -303,7 +303,8 @@ CREATE TABLE public.employee (
     address_city character varying(100) NOT NULL,
     address_cp character varying(100) NOT NULL,
     address_state_id integer,
-    address_country_id integer
+    address_country_id integer,
+    shift_id integer
 );
 
 
@@ -321,10 +322,10 @@ CREATE TABLE public.employee_hours (
     check_count integer NOT NULL,
     work_date date NOT NULL,
     register_type public.registertype NOT NULL,
-    first_check_in time without time zone NOT NULL,
-    last_check_out time without time zone NOT NULL,
-    time_worked time without time zone NOT NULL,
-    daily_salary double precision NOT NULL,
+    first_check_in time without time zone,
+    last_check_out time without time zone,
+    time_worked time without time zone,
+    extra_hours time without time zone,
     pay boolean NOT NULL,
     notes character varying NOT NULL
 );
@@ -1084,6 +1085,14 @@ ALTER TABLE ONLY public.employee_hours
 
 ALTER TABLE ONLY public.employee
     ADD CONSTRAINT employee_job_id_fkey FOREIGN KEY (job_id) REFERENCES public.job(id);
+
+
+--
+-- Name: employee employee_shift_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.employee
+    ADD CONSTRAINT employee_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id);
 
 
 --
