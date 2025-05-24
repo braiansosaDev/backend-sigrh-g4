@@ -1,5 +1,8 @@
 from fastapi import HTTPException
 import fitz
+from spacy.language import Language
+from spacy.tokens import Doc
+from spacy.tokens.span import Span
 from src.cv_matching import schema
 from src.database.core import DatabaseSession
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
@@ -12,8 +15,12 @@ import unicodedata
 import string
 import spacy
 import base64
+import logging
+import re
 from sqlalchemy import func
 
+
+logger = logging.getLogger("uvicorn.error")
 
 def get_all_postulations(
     db: DatabaseSession, job_opportunity_id: int
@@ -84,6 +91,7 @@ def evaluate_candidates(
         normalized_text = normalize(
             extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
         )
+        logger.info(f"Normalized PDF text:\n{normalized_text}")
         required_words_match = find_required_words(
             normalized_text, normalized_required_words, model
         )
@@ -137,6 +145,8 @@ def normalize(text: str) -> str:
     Convierte el texto a minúsculas, elimina acentos, signos de puntuación y caracteres especiales.
     """
     text = text.lower()
+    text = text.replace("\n", " ")
+    text = re.sub(r' +', ' ', text)
     text = unicodedata.normalize("NFD", text)
     text = "".join([c for c in text if unicodedata.category(c) != "Mn"])
     translator = str.maketrans("", "", string.punctuation)
@@ -149,31 +159,59 @@ def normalize_words(words: list) -> list[str]:
     return normalized_words
 
 
-def find_required_words(text: str, words: list, model, threshold: float = 0.79) -> dict:
+def create_token_groups(doc: Doc, word_amount: int) -> list[Span]:
+    token_groups: list[Span] = []
+    for i in range(len(doc) - word_amount + 1):
+        token_group = doc[i : i + word_amount]
+        token_groups.append(token_group)
+    logger.info(f"Token groups ({len(token_groups)}): {[token_group.text for token_group in token_groups]}")
+    return token_groups
+
+
+def find_required_words(text: str, words: list[str], model: Language, threshold: float = 0.79) -> dict:
     """
     Verifica si todas las palabras de 'words' se encuentran en 'text',
     ya sea de forma literal o semántica usando spaCy.
     """
-    doc = model(text)
-    tokens_text = [token.text for token in doc]
+    logger.info(f"Finding required words {words} with threshold {threshold}")
+    doc: Doc = model(text)
+    tokens_text = [token.text for token in doc if token.text.strip()]
+    doc = model(" ".join(tokens_text))
+    logger.info(f"Tokens: {tokens_text}")
     result = {"WORDS_FOUND": [], "WORDS_NOT_FOUND": [], "SUITABLE": False}
 
     for word in words:
+        logger.info(f"Finding word {word}")
+
         if word in tokens_text:
             result["WORDS_FOUND"].append(word)
+            logger.info(f"Found word {word} in tokens")
         else:
             word_doc = model(word)
-            if not word_doc or not word_doc[0].has_vector:
+            if len(word_doc) == 0 or not word_doc[0].has_vector:
                 result["WORDS_NOT_FOUND"].append(word)
+                logger.info(f"Skipping word {word} because it is empty or does not have vector")
                 continue
 
-            similarities = [
-                token.similarity(word_doc[0]) for token in doc if token.has_vector
-            ]
-            if similarities and max(similarities) >= threshold:
+            token_groups: list[Span] = create_token_groups(doc, len(word_doc))
+            similarities = []
+            for token in token_groups:
+                if not token.text.strip():
+                    logger.info(f"Tried to evaluate similarity of empty token {token}")
+                    continue
+                elif not token.has_vector:
+                    logger.info(f"Tried to evaluate similarity of token without vector: {token}")
+                    continue
+                similarities.append(token.similarity(word_doc))
+            logger.info(f"Similarities: {similarities}")
+
+            max_similarity: float = max(similarities)
+            if similarities and max_similarity >= threshold:
                 result["WORDS_FOUND"].append(word)
+                logger.info(f"Found word {word} with max similarity {max_similarity}")
             else:
                 result["WORDS_NOT_FOUND"].append(word)
+                logger.info(f"Didn't find word {word} with max similarity {max_similarity}")
 
     # Solo es apto si TODAS las palabras requeridas fueron encontradas
     result["SUITABLE"] = len(result["WORDS_NOT_FOUND"]) == 0
