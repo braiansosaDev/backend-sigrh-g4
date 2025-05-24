@@ -3,14 +3,17 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-from src.modules.employee_hours.models.models import EmployeeHours
-from src.modules.employees.models.country import Country
-from src.modules.employees.models.documents import Document
-from src.modules.employees.models.job import Job
-from src.modules.employees.models.state import State
-from src.modules.employees.models.work_history import WorkHistory
-from src.modules.clock_events.models.models import ClockEvents
-from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.clock_events.models.models import ClockEvents
+    from src.modules.employee_hours.models.models import EmployeeHours
+    from src.modules.employees.models.country import Country
+    from src.modules.employees.models.documents import Document
+    from src.modules.employees.models.job import Job
+    from src.modules.employees.models.state import State
+    from src.modules.employees.models.work_history import WorkHistory
+    from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 
 
 class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
