@@ -78,7 +78,6 @@ def verify_face(
                     success=True,
                     message=f"Face verified successfully. Employee ID: {face.employee_id}",
                     employee_id=face.employee_id,
-                    id=face.id,
                 )
 
     return OperationStatus(success=False, message="No match found.")
