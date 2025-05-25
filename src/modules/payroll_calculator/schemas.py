@@ -36,7 +36,7 @@ class EmployeeHoursSchema(BaseModel):
     register_type: str
     first_check_in: time | None
     last_check_out: time | None
-    time_worked: time | None
+    sumary_time: time | None
     extra_hours: time | None
     pay: bool
     notes: str

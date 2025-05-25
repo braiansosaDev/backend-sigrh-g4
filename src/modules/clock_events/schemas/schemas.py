@@ -1,6 +1,6 @@
 from typing import Optional
 from pydantic import BaseModel
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, timezone
 from enum import Enum
 
 class ClockEventTypes(str, Enum):
@@ -13,7 +13,9 @@ class ClockEventRequest(BaseModel):
     device_id: Optional[str] = None
     source: Optional[str] = None
     event_type: ClockEventTypes
-    event_date: datetime
+    event_date: datetime = datetime.now(timezone.utc).astimezone(
+        timezone(timedelta(hours=-3))
+    )
 
 class JobRead(BaseModel):
     id: int
