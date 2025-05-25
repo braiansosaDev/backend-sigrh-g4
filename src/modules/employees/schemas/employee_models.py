@@ -17,13 +17,13 @@ class EmployeeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str] 
+    role: int
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -36,7 +36,7 @@ class EmployeeResponse(BaseModel):
     address_cp: str
     address_state_id: Optional[int]
     address_country_id: Optional[int]
-    work_histories: list[WorkHistory] 
+    work_histories: list[WorkHistory]
     documents: list[Document]
     job: Optional[JobResponse] = None
     state: Optional[State] = None
@@ -51,13 +51,13 @@ class MeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str]
+    role: int
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -80,7 +80,7 @@ class UpdateEmployee(BaseModel):
     type_dni: Optional[str] = None
     personal_email: Optional[EmailStr] = None
     active: Optional[bool] = None
-    role: Optional[str] = None
+    role: Optional[int] = None
     password: Optional[str] = None
     phone: Optional[str] = None
     salary: Optional[Decimal] = None
@@ -111,7 +111,7 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: Optional[str] = None
+    role: int = Field()
     password: Optional[str] = None
     user_id: Optional[str] = None
     phone: str = Field(max_length=20)
@@ -128,7 +128,7 @@ class CreateEmployee(BaseModel):
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
-     # Edad mínima (>=16 años)
+    # Edad mínima (>=16 años)
     @field_validator("birth_date")
     @classmethod
     def check_minimum_age(cls, v):
