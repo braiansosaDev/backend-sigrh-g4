@@ -154,6 +154,30 @@ def process_night_hours(
             concepts_to_add.append(concept)
             employee_hours_to_add.append(employee_hour)
 
+        # CASO 1.1 – No hubo IN el día anterior, y hoy solo hay un IN suelto → ausencia
+        if (
+            not any(ev.event_type == ClockEventTypes.IN for ev in yesterday_events) and
+            first_event_today and first_event_today.event_type == ClockEventTypes.IN and
+            not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
+        ):
+            print(f"{day} → AUSENTE (sólo IN suelto hoy sin OUT y sin IN previo)")
+
+            concept = Concept(description="Ausencia en turno nocturno (entrada inválida)")
+            employee_hour = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                work_date=day,
+                register_type=RegisterType.AUSENCIA,
+                notes="Entrada aislada sin continuidad de turno nocturno.",
+                check_count=1,
+                sumary_time=time(0, 0, 0),
+                pay=False,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hour)
+            continue  # cortamos aquí para no entrar en los casos normales
+
         # CASO 2 – Olvidó hacer salida (último evento ayer fue IN, pero hoy no hay OUT)
         elif (
             last_event_yesterday
@@ -171,7 +195,7 @@ def process_night_hours(
                 register_type=RegisterType.PRESENCIA,
                 notes="Entrada registrada el día anterior pero falta salida.",
                 check_count=1,
-                sumary_time=time(0, 0, 0),
+                sumary_time=time(int(employee.shift.working_hours), 0, 0),
                 pay=True,
             )
             concepts_to_add.append(concept)
@@ -195,7 +219,7 @@ def process_night_hours(
                 register_type=RegisterType.PRESENCIA,
                 notes="Entrada el día anterior y nueva entrada hoy, sin salida intermedia.",
                 check_count=2,
-                sumary_time=time(0, 0, 0),
+                sumary_time=time(int(employee.shift.working_hours), 0, 0),
                 pay=True,
             )
             concepts_to_add.append(concept)
@@ -221,16 +245,41 @@ def process_night_hours(
 
             summary_time = time(hour=hours, minute=minutes, second=seconds)
 
-            concept = Concept(description="Turno nocturno trabajado")
+            # Comparar con la jornada laboral esperada
+            worked_hours = hours + (minutes / 60)
+            expected_hours = employee.shift.working_hours
+            extra_hours_float = worked_hours - expected_hours
+
+            # Cálculo de extra o faltante
+            if extra_hours_float > 0:
+                extra_h = int(extra_hours_float)
+                extra_m = int((extra_hours_float - extra_h) * 60)
+                extra_time = time(hour=extra_h, minute=extra_m, second=0)
+
+                concept = Concept(description="Turno nocturno con horas extra")
+                notes = f"Turno completo con {extra_h}h {extra_m}m extra."
+            elif extra_hours_float < 0:
+                faltante_h = int(abs(extra_hours_float))
+                faltante_m = int((abs(extra_hours_float) - faltante_h) * 60)
+                extra_time = time(hour=faltante_h, minute=faltante_m, second=0)
+
+                concept = Concept(description="Turno nocturno incompleto")
+                notes = f"Turno incompleto. Faltaron {faltante_h}h {faltante_m}m."
+            else:
+                extra_time = time(0, 0, 0)
+                concept = Concept(description="Turno nocturno completo")
+                notes = "Turno completo según jornada esperada."
+
             employee_hour = EmployeeHours(
                 employee_id=employee.id,
                 concept_id=concept.id,
                 shift_id=employee.shift.id,
                 work_date=day,
                 register_type=RegisterType.PRESENCIA,
-                notes="Turno nocturno completo.",
+                notes=notes,
                 check_count=2,
                 sumary_time=summary_time,
+                extra_hours=extra_time,
                 pay=True,
             )
             concepts_to_add.append(concept)
@@ -244,11 +293,6 @@ def calculate_interval_time(
     employee: Employee,
     day: date,
 ):
-    if len(events_list) < 3:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Not enough events to calculate interval time",
-        )
 
     total_duration = timedelta()
 
@@ -347,50 +391,70 @@ def process_daily_hours(
             )
             concepts_to_add.append(concept)
             employee_hours_to_add.append(employee_hours)
+            continue
 
         last_check = max(outs, key=lambda ev: ev.event_date).event_date.time()
 
-        # seleccionar los ins y los outs que no sean el primero y el último
-        first_check_hour = datetime.combine(day, first_check).hour
-        last_check_hour = datetime.combine(day, last_check).hour
-        worked_hours_difference = last_check_hour - first_check_hour
-        extra_hours = worked_hours_difference - employee.shift.working_hours
+
+        check_in_dt = datetime.combine(day, first_check)
+        check_out_dt = datetime.combine(day, last_check)
+
+        # Diferencia real
+        worked_duration = check_out_dt - check_in_dt
+        total_seconds = int(worked_duration.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) % 3600 // 60
+        seconds = total_seconds % 60
+
+        summary_time = time(hour=hours, minute=minutes, second=seconds)
+
+        # Cálculo contra jornada esperada
+        worked_hours_float = hours + minutes / 60
+        expected_hours = employee.shift.working_hours
+        extra_hours_float = worked_hours_float - expected_hours
 
         # EL EMPLEADO HIZO HORAS EXTRA
-        if extra_hours > 0:
+        if extra_hours_float > 0:
+            extra_h = int(extra_hours_float)
+            extra_m = int((extra_hours_float - extra_h) * 60)
+            extra_time = time(hour=extra_h, minute=extra_m, second=0)
+            
             concept = Concept(description="Horas extra")
             employee_hours = EmployeeHours(
                 employee_id=employee.id,
                 concept_id=concept.id,
                 shift_id=employee.shift.id,
                 check_count=len(daily_events),
-                notes=f"El empleado completó su jornada laboral y realizó {worked_hours_difference - employee.shift.working_hours} horas extra",
+                notes=f"El empleado completó su jornada laboral y realizó {extra_time} horas extra",
                 register_type=RegisterType.PRESENCIA,
                 first_check_in=first_check,
                 last_check_out=last_check,
-                sumary_time=time(hour=worked_hours_difference, minute=0, second=0),
+                sumary_time=summary_time,
                 work_date=day,
-                extra_hours=time(hour=int(extra_hours), minute=0, second=0),
+                extra_hours=extra_time,
                 pay=True,
             )
             concepts_to_add.append(concept)
             employee_hours_to_add.append(employee_hours)
 
         # EL EMPLEADO NO COMPLETÓ SU JORNADA LABORAL
-        elif extra_hours < 0:
+        elif extra_hours_float < 0:
+            faltante_h = int(abs(extra_hours_float))
+            faltante_m = int((abs(extra_hours_float) - faltante_h) * 60)
+            extra_time = time(hour=faltante_h, minute=faltante_m, second=0)
             concept = Concept(description="Horas faltantes")
             employee_hours = EmployeeHours(
                 employee_id=employee.id,
                 concept_id=concept.id,
                 shift_id=employee.shift.id,
                 check_count=len(daily_events),
-                notes=f"El empleado no completó su jornada laboral, le faltaron {abs(extra_hours)} horas",
+                notes=f"Le faltaron {faltante_h}h {faltante_m}m para completar la jornada",
                 register_type=RegisterType.PRESENCIA,
                 first_check_in=first_check,
                 last_check_out=last_check,
-                sumary_time=time(hour=worked_hours_difference, minute=0, second=0),
+                sumary_time=summary_time,
                 work_date=day,
-                extra_hours=time(hour=abs(int(extra_hours)), minute=0, second=0),
+                extra_hours=extra_time,
                 pay=True,
             )
             concepts_to_add.append(concept)
@@ -408,7 +472,7 @@ def process_daily_hours(
                 register_type=RegisterType.PRESENCIA,
                 first_check_in=first_check,
                 last_check_out=last_check,
-                sumary_time=time(hour=worked_hours_difference, minute=0, second=0),
+                sumary_time=summary_time,
                 work_date=day,
                 extra_hours=time(hour=0, minute=0, second=0),
                 pay=True,
@@ -416,7 +480,8 @@ def process_daily_hours(
             concepts_to_add.append(concept)
             employee_hours_to_add.append(employee_hours)
 
-        calculate_interval_time(
+        if len(daily_events) > 2:
+            calculate_interval_time(
             daily_events, concepts_to_add, employee_hours_to_add, employee, day
         )
 
