@@ -290,7 +290,7 @@ CREATE TABLE public.employee (
     type_dni character varying(10) NOT NULL,
     personal_email character varying(100) NOT NULL,
     active boolean NOT NULL,
-    role character varying(100),
+    role integer NOT NULL,
     password character varying(100),
     phone character varying(20) NOT NULL,
     salary numeric NOT NULL,
@@ -298,7 +298,6 @@ CREATE TABLE public.employee (
     birth_date date NOT NULL,
     hire_date date NOT NULL,
     photo bytea,
-    facial_register bytea,
     address_street character varying(100) NOT NULL,
     address_city character varying(100) NOT NULL,
     address_cp character varying(100) NOT NULL,
@@ -324,7 +323,7 @@ CREATE TABLE public.employee_hours (
     register_type public.registertype NOT NULL,
     first_check_in time without time zone,
     last_check_out time without time zone,
-    time_worked time without time zone,
+    sumary_time time without time zone,
     extra_hours time without time zone,
     pay boolean NOT NULL,
     notes character varying NOT NULL
@@ -375,6 +374,41 @@ ALTER SEQUENCE public.employee_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.employee_id_seq OWNED BY public.employee.id;
+
+
+--
+-- Name: face_recognition; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.face_recognition (
+    id integer NOT NULL,
+    employee_id integer NOT NULL,
+    embedding json
+);
+
+
+ALTER TABLE public.face_recognition OWNER TO postgres;
+
+--
+-- Name: face_recognition_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.face_recognition_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.face_recognition_id_seq OWNER TO postgres;
+
+--
+-- Name: face_recognition_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.face_recognition_id_seq OWNED BY public.face_recognition.id;
 
 
 --
@@ -469,6 +503,19 @@ ALTER SEQUENCE public.job_opportunity_id_seq OWNED BY public.job_opportunity.id;
 
 
 --
+-- Name: permission; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.permission (
+    id character varying(100) NOT NULL,
+    name character varying(50) NOT NULL,
+    description character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.permission OWNER TO postgres;
+
+--
 -- Name: postulation; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -514,6 +561,53 @@ ALTER SEQUENCE public.postulation_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.postulation_id_seq OWNED BY public.postulation.id;
 
+
+--
+-- Name: role; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.role (
+    id integer NOT NULL,
+    name character varying(50) NOT NULL,
+    description character varying(100) NOT NULL
+);
+
+
+ALTER TABLE public.role OWNER TO postgres;
+
+--
+-- Name: role_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.role_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.role_id_seq OWNER TO postgres;
+
+--
+-- Name: role_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.role_id_seq OWNED BY public.role.id;
+
+
+--
+-- Name: role_permission; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.role_permission (
+    role_id integer NOT NULL,
+    permission_id character varying NOT NULL
+);
+
+
+ALTER TABLE public.role_permission OWNER TO postgres;
 
 --
 -- Name: sector; Type: TABLE; Schema: public; Owner: postgres
@@ -710,6 +804,13 @@ ALTER TABLE ONLY public.employee_hours ALTER COLUMN id SET DEFAULT nextval('publ
 
 
 --
+-- Name: face_recognition id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.face_recognition ALTER COLUMN id SET DEFAULT nextval('public.face_recognition_id_seq'::regclass);
+
+
+--
 -- Name: job id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -728,6 +829,13 @@ ALTER TABLE ONLY public.job_opportunity ALTER COLUMN id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.postulation ALTER COLUMN id SET DEFAULT nextval('public.postulation_id_seq'::regclass);
+
+
+--
+-- Name: role id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role ALTER COLUMN id SET DEFAULT nextval('public.role_id_seq'::regclass);
 
 
 --
@@ -855,6 +963,14 @@ ALTER TABLE ONLY public.employee
 
 
 --
+-- Name: face_recognition face_recognition_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.face_recognition
+    ADD CONSTRAINT face_recognition_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: job_opportunity_ability job_opportunity_ability_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -879,11 +995,35 @@ ALTER TABLE ONLY public.job
 
 
 --
+-- Name: permission permission_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.permission
+    ADD CONSTRAINT permission_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: postulation postulation_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.postulation
     ADD CONSTRAINT postulation_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: role_permission role_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role_permission
+    ADD CONSTRAINT role_permission_pkey PRIMARY KEY (role_id, permission_id);
+
+
+--
+-- Name: role role_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role
+    ADD CONSTRAINT role_pkey PRIMARY KEY (id);
 
 
 --
@@ -954,6 +1094,13 @@ CREATE INDEX ix_employee_id ON public.employee USING btree (id);
 
 
 --
+-- Name: ix_face_recognition_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_face_recognition_id ON public.face_recognition USING btree (id);
+
+
+--
 -- Name: ix_job_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -975,10 +1122,38 @@ CREATE INDEX ix_job_opportunity_id ON public.job_opportunity USING btree (id);
 
 
 --
+-- Name: ix_permission_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_permission_id ON public.permission USING btree (id);
+
+
+--
 -- Name: ix_postulation_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
 CREATE INDEX ix_postulation_id ON public.postulation USING btree (id);
+
+
+--
+-- Name: ix_role_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_role_id ON public.role USING btree (id);
+
+
+--
+-- Name: ix_role_permission_permission_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_role_permission_permission_id ON public.role_permission USING btree (permission_id);
+
+
+--
+-- Name: ix_role_permission_role_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_role_permission_role_id ON public.role_permission USING btree (role_id);
 
 
 --
@@ -1088,11 +1263,27 @@ ALTER TABLE ONLY public.employee
 
 
 --
+-- Name: employee employee_role_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.employee
+    ADD CONSTRAINT employee_role_fkey FOREIGN KEY (role) REFERENCES public.role(id);
+
+
+--
 -- Name: employee employee_shift_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.employee
     ADD CONSTRAINT employee_shift_id_fkey FOREIGN KEY (shift_id) REFERENCES public.shift(id);
+
+
+--
+-- Name: face_recognition face_recognition_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.face_recognition
+    ADD CONSTRAINT face_recognition_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES public.employee(id);
 
 
 --
@@ -1149,6 +1340,22 @@ ALTER TABLE ONLY public.postulation
 
 ALTER TABLE ONLY public.postulation
     ADD CONSTRAINT postulation_job_opportunity_id_fkey FOREIGN KEY (job_opportunity_id) REFERENCES public.job_opportunity(id);
+
+
+--
+-- Name: role_permission role_permission_permission_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role_permission
+    ADD CONSTRAINT role_permission_permission_id_fkey FOREIGN KEY (permission_id) REFERENCES public.permission(id) ON DELETE CASCADE;
+
+
+--
+-- Name: role_permission role_permission_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.role_permission
+    ADD CONSTRAINT role_permission_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.role(id) ON DELETE CASCADE;
 
 
 --

@@ -1,66 +1,109 @@
 -- Script de inserción de datos de ejemplo para PostgreSQL
 
--- BEGIN;
+BEGIN;
 
--- 1) PAISES Y ESTADOS
-INSERT INTO public.country (name) VALUES
-  ('Argentina'),
-  ('Brasil');
+-- Cargar países
+INSERT INTO country (id, name) VALUES
+(1, 'Argentina'),
+(2, 'Brasil'),
+(3, 'Chile')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 
-INSERT INTO public.state (name, country_id) VALUES
-  ('Córdoba', 1),
-  ('Buenos Aires', 1),
-  ('São Paulo', 2);
 
--- 2) SECTORES Y PUESTOS
-INSERT INTO public.sector (name) VALUES
-  ('Tecnología'),
-  ('Recursos Humanos');
+-- Cargar provincias/estados
+INSERT INTO state (id, name, country_id) VALUES
+(1, 'Buenos Aires', 1),
+(2, 'Córdoba', 1),
+(3, 'Santa Fe', 1),
+(4, 'Rio de Janeiro', 2),
+(5, 'Sao Paulo', 2),
+(6, 'Valparaíso', 3),
+(7, 'Santiago', 3)
+ON CONFLICT (id) DO UPDATE 
+SET name = EXCLUDED.name,
+    country_id = EXCLUDED.country_id;
 
-INSERT INTO public.job (name, sector_id) VALUES
-  ('Desarrollador Backend', 1),
-  ('Analista RRHH', 2);
 
--- 3) TURNOS
-INSERT INTO public.shift (description, type, working_hours, working_days) VALUES
-  ('Turno mañana',      'Diurno', 8, 5),
-  ('Turno noche',       'Nocturno',  8, 7);
+-- Sectores
+INSERT INTO sector (id, name) VALUES
+(1, 'Desarrollo'),
+(2, 'Recursos Humanos'),
+(3, 'Administración'),
+(4, 'Diseño'),
+(5, 'Contabilidad'),
+(6, 'Proyectos')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 
--- 4) EMPLEADO
--- INSERT INTO public.employee (
---   user_id, first_name, last_name, dni, type_dni,
---   personal_email, active, role, password, phone,
---   salary, job_id, birth_date, hire_date,
---   address_street, address_city, address_cp, address_state_id, address_country_id
--- ) VALUES (
---   'juan.perez', 'Juan', 'Pérez', '30.123.456', 'DNI',
---   'juan.perez@empresa.com', TRUE, 'Developer', 'secret123', '+5493512345678',
---   150.00, 1, '1985-04-15', '2024-01-02',
---   'Av. Colón 123', 'Córdoba', '5000', 1, 1
--- );
 
--- 5) EVENTOS DE RELOJ (CLOCK EVENTS)
--- Juan Pérez entra y sale durante dos días:
--- INSERT INTO public.clock_events (employee_id, event_date, event_type, source, device_id) VALUES
---   -- Día 1
---   (1, '2025-05-01 08:15:00', 'IN',  'App móvil', 'DEV-A1'),
---   (1, '2025-05-01 12:30:00', 'OUT', 'App móvil', 'DEV-A1'),
---   (1, '2025-05-01 13:45:00', 'IN',  'App móvil', 'DEV-A1'),
---   (1, '2025-05-01 18:05:00', 'OUT', 'App móvil', 'DEV-A1'),
---   -- Día 2
---   (1, '2025-05-02 08:05:00', 'IN',  'Terminal',  'TER-01'),
---   (1, '2025-05-02 12:00:00', 'OUT', 'Terminal',  'TER-01'),
---   (1, '2025-05-02 13:00:00', 'IN',  'Terminal',  'TER-01'),
---   (1, '2025-05-02 17:55:00', 'OUT', 'Terminal',  'TER-01');
+-- Cargar puestos
+INSERT INTO job (id, name, sector_id) VALUES
+(1, 'Desarrollador', 1),
+(2, 'Analista de Recursos Humanos', 2),
+(3, 'Contador', 5),
+(4, 'Diseñador Gráfico', 4),
+(5, 'Gerente de Proyectos', 6),
+(6, 'Asistente Administrativo', 3)
+ON CONFLICT (id) DO UPDATE 
+SET name = EXCLUDED.name,
+    sector_id = EXCLUDED.sector_id;
 
--- 6) EMPLEADO_HOURS (Cálculo diario de salario)
--- Supongamos que el turno asignado es 1 (Turno mañana):
--- INSERT INTO public.employee_hours (
---   employee_id, concept_id, shift_id, check_count, work_date,
---   register_type, first_check_in, last_check_out, time_worked,
---   daily_salary, pay, notes
--- ) VALUES
---   (1, NULL, 1, 4, '2025-05-01', 'PRESENCIA', '08:15:00', '18:05:00', '09:35:00', 150.00 * 9.5833, FALSE, ''),
---   (1, NULL, 1, 4, '2025-05-02', 'PRESENCIA', '08:05:00', '17:55:00', '08:50:00', 150.00 * 8.8333, FALSE, '');
 
--- COMMIT;
+-- Cargar habilidades
+INSERT INTO ability (id, name, description) VALUES
+(1, 'Java', 'Lenguaje de programación orientado a objetos'),
+(2, 'Python', 'Lenguaje de programación interpretado'),
+(3, 'SQL', 'Lenguaje de consulta estructurado'),
+(4, 'Diseño Gráfico', 'Habilidad en diseño visual'),
+(5, 'Gestión de Proyectos', 'Habilidad en planificación y ejecución de proyectos'),
+(6, 'Comunicación', 'Habilidad para transmitir información efectivamente'),
+(7, 'PostgreSQL', 'Motor de bases de datos relacionales'),
+(8, 'MongoDB', 'Motor de bases de datos no relacionales')
+ON CONFLICT (id) DO UPDATE 
+SET name = EXCLUDED.name,
+    description = EXCLUDED.description;
+
+
+-- Cargar permisos
+INSERT INTO permission (id, name, description) VALUES
+(1, 'ABM Empleados', 'El usuario puede ingresar y accionar en ABM Empleados'),
+(2, 'ABM Roles', 'El usuario puede operar con el ABM de roles'),
+(3, 'ABM Postulaciones - Carga', 'El usuario puede Generar solicitudes en ABM postulaciones'),
+(4, 'ABM Postulaciones - Aprobaciones', 'El usuario puede Generar autorizar en ABM postulaciones'),
+(5, 'Asignacion de Roles - Carga', 'El usuario puede Asignar Roles a los empleados'),
+(6, 'ABM Turnos', 'El usuario puede Generar turnos de trabajo'),
+(7, 'Gestion Nomina empleados - Cargas', 'El usuario puede operar sobre la nomina de empleados'),
+(8, 'Personalizacion del sistema', 'El usuario puede personalizar el sistema, logo, foto, colores,ect'),
+(9, 'Gestion de licencias - Carga', 'El usuario puede Gestionar las licencias de los empleados'),
+(10, 'Gestion de licencias - Aprobaciones', 'El usuario puede Aprobar las solicitudes licencias de los empleados'),
+(11, 'Gestion Nomina empleados - Aprobaciones', 'El usuario puede aprobar operaciones sobre la nomina de empleados'),
+(12, 'Asignacion de Roles - Aprobaciones', 'El usuario puede Aprobar las asignaciones de  Roles a los empleados')
+ON CONFLICT (id) DO UPDATE 
+SET name = EXCLUDED.name,
+    description = EXCLUDED.description;
+
+
+-- Cargar roles
+INSERT INTO role (id, name, description) VALUES
+(1, 'Analista RRHH', 'Analista de Recursos humanos'),
+(2, 'Administrador Root', 'Usuario de Administrador ROOT IT'),
+(3, 'Supervisor - RRHH', 'Supervisor del área de Recursos Humanos'),
+(4, 'Empleado', 'Empleado de la empresa'),
+(5, 'Supervisor - Empleados', 'Supervisor de los empleados'),
+(6, 'Gerente RRHH', 'Gerente del área de Recursos Humanos'),
+(7, 'Reclutador', 'Analista de RRHH que es Reclutador de talento')
+ON CONFLICT (id) DO UPDATE 
+SET name = EXCLUDED.name,
+    description = EXCLUDED.description;
+
+-- Cargar roles por permiso
+INSERT INTO role_permission (role_id, permission_id) VALUES
+(1,1), (1,7), (1,5), (1,9),
+(2,8), (2,1), (2,2), (2,6),
+(3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4),
+(4,9),
+(5,7), (5,11), (5,9), (5,10),
+(6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4),
+(7,4)
+ON CONFLICT DO NOTHING;
+
+COMMIT;
