@@ -75,118 +75,15 @@ def calculate_salary(
         )
         events_by_day[event_day].append(event)
 
-    # 2) Para cada día hábil, procesar según tenga o no eventos
-    for day in date_range:
-        # saltar sábados y domingos
-        if day.weekday() in (5, 6):
-            continue
-
-        daily_events = events_by_day.get(day, [])
-        if not daily_events:
-            log_employee_absence(
-                employee, concepts_to_add, employee_hours_to_add, day, None, None, 0
-            )
-            continue
-
-        # No hubo eventos → marcar como ausente
-
-        # for day in date_range:
-        #     if day.weekday() in (5, 6):
-        #         continue
-        #     for event in sorted_events:
-        #         event_date = date(
-        #             event.event_date.year, event.event_date.month, event.event_date.day
-        #         )
-        #         if event_date == day:
-        #             events_by_day[day].append(event)
-        #             break
-        #     add_missing_event(
-        #         employee, concepts_to_add, employee_hours_to_add, day, None, None, 0
-        #     )
-
-        # for day in date_range:
-        #     flag = True
-        #     if day.weekday() in (5, 6):
-        #         continue
-        #     for event in sorted_events:
-        #         event_date = date(
-        #             event.event_date.year, event.event_date.month, event.event_date.day
-        #         )
-        #         if event_date != day:
-        #             flag = flag and True
-        #             break
-        #         flag = flag and False
-        #     if flag:
-        #         add_missing_event(
-        #             employee, concepts_to_add, employee_hours_to_add, day, None, None, 0
-        #         )
-
-        ins = [ev for ev in daily_events if ev.event_type == ClockEventTypes.IN]
-        outs = [ev for ev in daily_events if ev.event_type == ClockEventTypes.OUT]
-
-        first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
-        last_check = max(outs, key=lambda ev: ev.event_date).event_date.time()
-        first_check_hour = datetime.combine(day, first_check).hour
-        last_check_hour = datetime.combine(day, last_check).hour
-        worked_hours_difference = last_check_hour - first_check_hour
-        extra_hours = worked_hours_difference - employee.shift.working_hours
-
-        if extra_hours > 0:
-            concept = Concept(description="Horas extra")
-            employee_hours = EmployeeHours(
-                employee_id=employee.id,
-                concept_id=concept.id,
-                shift_id=employee.shift.id,
-                check_count=len(daily_events),
-                notes=f"El empleado completó su jornada laboral y realizó {worked_hours_difference - employee.shift.working_hours} horas extra",
-                register_type=RegisterType.PRESENCIA,
-                first_check_in=first_check,
-                last_check_out=last_check,
-                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
-                work_date=day,
-                extra_hours=time(hour=int(extra_hours), minute=0, second=0),
-                pay=True,
-            )
-            concepts_to_add.append(concept)
-            employee_hours_to_add.append(employee_hours)
-
-        elif extra_hours < 0:
-            concept = Concept(description="Horas faltantes")
-            employee_hours = EmployeeHours(
-                employee_id=employee.id,
-                concept_id=concept.id,
-                shift_id=employee.shift.id,
-                check_count=len(daily_events),
-                notes=f"El empleado no completó su jornada laboral, le faltaron {abs(extra_hours)} horas",
-                register_type=RegisterType.PRESENCIA,
-                first_check_in=first_check,
-                last_check_out=last_check,
-                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
-                work_date=day,
-                extra_hours=time(hour=abs(int(extra_hours)), minute=0, second=0),
-                pay=False,
-            )
-            concepts_to_add.append(concept)
-            employee_hours_to_add.append(employee_hours)
-
-        else:
-            concept = Concept(description="Jornada laboral completa")
-            employee_hours = EmployeeHours(
-                employee_id=employee.id,
-                concept_id=concept.id,
-                shift_id=employee.shift.id,
-                check_count=len(daily_events),
-                notes="El empleado completó su jornada laboral",
-                register_type=RegisterType.PRESENCIA,
-                first_check_in=first_check,
-                last_check_out=last_check,
-                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
-                work_date=day,
-                extra_hours=time(hour=0, minute=0, second=0),
-                pay=True,
-            )
-            concepts_to_add.append(concept)
-            employee_hours_to_add.append(employee_hours)
+    if employee.shift.type != "NOCHE":
+        # 2) Para cada día hábil, procesar según tenga o no eventos
+        process_daily_hours(
+            employee, date_range, concepts_to_add, employee_hours_to_add, events_by_day
+        )
+    else:
+        process_night_shift_hours(
+            employee, date_range, concepts_to_add, employee_hours_to_add, events_by_day
+        )
 
     db.add_all(concepts_to_add)
     db.commit()
@@ -211,6 +108,151 @@ def calculate_salary(
         response.append(payroll_response)
 
     return response
+
+
+def process_night_shift_hours(
+    employee: Employee,
+    date_range: list[date],
+    concepts_to_add: list[Concept],
+    employee_hours_to_add: list[EmployeeHours],
+    events_by_day: dict[date, list[ClockEvents]],
+):
+    # for day in date_range:
+    #     today_events = events_by_day.get(day, [])
+    #     tomorrow_events = events_by_day.get(day + timedelta(days=1), [])
+    #     if not today_events:
+    #         log_employee_absence(
+    #             employee, concepts_to_add, employee_hours_to_add, day, None, None, 0
+    #         )
+    #         continue
+
+    #     today_in_events = [ev for ev in today_events if ev.event_type == ClockEventTypes.IN]
+    #     today_out_events = [ev for ev in today_events if ev.event_type == ClockEventTypes.OUT]
+    #     tomorrow_in_events = [ev for ev in tomorrow_events if ev.event_type == ClockEventTypes.IN]
+    #     tomorrow_out_events = [ev for ev in tomorrow_events if ev.event_type == ClockEventTypes.OUT]
+    pass
+
+
+def process_daily_hours(
+    employee: Employee,
+    date_range: list[date],
+    concepts_to_add: list[Concept],
+    employee_hours_to_add: list[EmployeeHours],
+    events_by_day: dict[date, list[ClockEvents]],
+):
+    for day in date_range:
+        # saltar sábados y domingos
+        if day.weekday() in (5, 6):
+            continue
+
+        daily_events = events_by_day.get(day, [])
+        ins = [ev for ev in daily_events if ev.event_type == ClockEventTypes.IN]
+        outs = [ev for ev in daily_events if ev.event_type == ClockEventTypes.OUT]
+
+        # EL EMPLEADO NO REGISTRÓ UNA ENTRADA EN TODO EL DIA
+        if not ins:
+            # No hay registros de entrada, registrar ausencia
+            log_employee_absence(
+                employee,
+                concepts_to_add,
+                employee_hours_to_add,
+                day,
+                None,
+                None,
+                0,
+            )
+            continue
+        first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
+
+        # EL EMPLEADO NO REGISTRÓ SU SALIDA
+        if len(ins) > len(outs):
+            concept = Concept(description="Presente sin salida registrada")
+            employee_hours = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                check_count=len(daily_events),
+                notes="Horario de salida no registrado",
+                register_type=RegisterType.PRESENCIA,
+                first_check_in=first_check,
+                last_check_out=None,
+                time_worked=time(
+                    hour=int(employee.shift.working_hours), minute=0, second=0
+                ),
+                work_date=day,
+                extra_hours=None,
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hours)
+
+        last_check = max(outs, key=lambda ev: ev.event_date).event_date.time()
+
+        # seleccionar los ins y los outs que no sean el primero y el último
+        first_check_hour = datetime.combine(day, first_check).hour
+        last_check_hour = datetime.combine(day, last_check).hour
+        worked_hours_difference = last_check_hour - first_check_hour
+        extra_hours = worked_hours_difference - employee.shift.working_hours
+
+        # EL EMPLEADO HIZO HORAS EXTRA
+        if extra_hours > 0:
+            concept = Concept(description="Horas extra")
+            employee_hours = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                check_count=len(daily_events),
+                notes=f"El empleado completó su jornada laboral y realizó {worked_hours_difference - employee.shift.working_hours} horas extra",
+                register_type=RegisterType.PRESENCIA,
+                first_check_in=first_check,
+                last_check_out=last_check,
+                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
+                work_date=day,
+                extra_hours=time(hour=int(extra_hours), minute=0, second=0),
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hours)
+
+        # EL EMPLEADO NO COMPLETÓ SU JORNADA LABORAL
+        elif extra_hours < 0:
+            concept = Concept(description="Horas faltantes")
+            employee_hours = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                check_count=len(daily_events),
+                notes=f"El empleado no completó su jornada laboral, le faltaron {abs(extra_hours)} horas",
+                register_type=RegisterType.PRESENCIA,
+                first_check_in=first_check,
+                last_check_out=last_check,
+                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
+                work_date=day,
+                extra_hours=time(hour=abs(int(extra_hours)), minute=0, second=0),
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hours)
+
+        # EL EMPLEADO COMPLETÓ SU JORNADA LABORAL
+        else:
+            concept = Concept(description="Jornada laboral completa")
+            employee_hours = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                check_count=len(daily_events),
+                notes="El empleado completó su jornada laboral",
+                register_type=RegisterType.PRESENCIA,
+                first_check_in=first_check,
+                last_check_out=last_check,
+                time_worked=time(hour=worked_hours_difference, minute=0, second=0),
+                work_date=day,
+                extra_hours=time(hour=0, minute=0, second=0),
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hours)
 
 
 def log_employee_absence(
