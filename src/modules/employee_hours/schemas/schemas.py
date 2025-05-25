@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from datetime import date, time
 from enum import Enum
 
@@ -18,7 +18,7 @@ class EmployeeHoursRequest(BaseModel):
     register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    time_worked: time
+    sumary_time: time
     work_date: date
     pay: bool
 
@@ -33,6 +33,6 @@ class EmployeeHoursResponse(BaseModel):
     register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    time_worked: time
+    sumary_time: time
     work_date: date
     pay: bool

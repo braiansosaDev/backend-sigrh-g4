@@ -23,7 +23,7 @@ class EmployeeHours(SQLModel, table=True):
     register_type: RegisterType = Field(default=None)
     first_check_in: time | None = Field(default=None)
     last_check_out: time | None = Field(default=None)
-    time_worked: time | None = Field(default=None)  # antes: hours
+    sumary_time: time | None = Field(default=None)  # antes: hours
     extra_hours: time | None = Field(default=None)  # antes: amount
     pay: bool = Field(default=False)
     notes: str = Field(default="")
