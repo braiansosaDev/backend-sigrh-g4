@@ -3,9 +3,6 @@ from pydantic import BaseModel
 from datetime import datetime, date
 from enum import Enum
 
-from src.modules.employees.models.employee import Employee
-
-
 class ClockEventTypes(str, Enum):
     IN = "in"
     OUT = "out"
@@ -18,15 +15,6 @@ class ClockEventRequest(BaseModel):
     event_type: ClockEventTypes
     event_date: datetime
 
-
-class ClockEventResponse(BaseModel):
-    employee_id: int
-    device_id: Optional[str] = None
-    source: Optional[str] = None
-    event_type: ClockEventTypes
-    event_date: datetime
-    employee: Employee
-
 class JobRead(BaseModel):
     id: int
     name: str
@@ -36,6 +24,14 @@ class EmployeeRead(BaseModel):
     first_name: str
     last_name: str
     job: Optional[JobRead]  # Relación anidada
+
+class ClockEventResponse(BaseModel):
+    employee_id: int
+    device_id: Optional[str] = None
+    source: Optional[str] = None
+    event_type: ClockEventTypes
+    event_date: datetime
+    employee: Optional[EmployeeRead]
 
 class ClockEventRead(BaseModel):
     id: int

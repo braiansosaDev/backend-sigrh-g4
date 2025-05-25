@@ -10,6 +10,7 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.clock_events.models.models import ClockEvents
+from src.modules.face_recognition.models.face_recognition import FaceRecognition
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 
 
@@ -34,7 +35,6 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     birth_date: date  # Agregar restricciones
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
@@ -44,6 +44,7 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     job: Optional["Job"] = Relationship(back_populates="employee")
     state: Optional["State"] = Relationship(back_populates="employee")
     country: Optional["Country"] = Relationship(back_populates="employee")
+    face_recognition: Optional["FaceRecognition"] = Relationship(back_populates="employee")
 
     work_histories: list["WorkHistory"] = Relationship(
         back_populates="employee", cascade_delete=True
