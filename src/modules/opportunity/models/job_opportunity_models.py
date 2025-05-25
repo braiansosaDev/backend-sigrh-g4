@@ -1,7 +1,11 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 from sqlalchemy.sql import func
-from src.modules.opportunity.schemas.job_opportunity_schemas import JobOpportunityStatus, JobOpportunityWorkMode, JobOpportunityAbilityImportance
+from src.modules.opportunity.schemas.job_opportunity_schemas import (
+    JobOpportunityStatus,
+    JobOpportunityWorkMode,
+    JobOpportunityAbilityImportance,
+)
 
 
 class JobOpportunityBaseModel(SQLModel):
@@ -9,7 +13,8 @@ class JobOpportunityBaseModel(SQLModel):
     Contiene todos los atributos comunes a todos
     los modelos de JobOpportunity.
     """
-    owner_employee_id: int = Field(foreign_key="employee.id")
+
+    owner_employee_id: int = Field(foreign_key="employee.id", ondelete="CASCADE")
     status: JobOpportunityStatus = Field()
     work_mode: JobOpportunityWorkMode = Field()
     title: str = Field(min_length=1, max_length=100)
@@ -18,7 +23,9 @@ class JobOpportunityBaseModel(SQLModel):
     budget_currency_id: str = Field(min_length=3, max_length=3)
     state_id: int = Field()
     created_at: datetime = Field(default=func.now())
-    updated_at: datetime = Field(default=func.now(), sa_column_kwargs={"onupdate": func.now()})
+    updated_at: datetime = Field(
+        default=func.now(), sa_column_kwargs={"onupdate": func.now()}
+    )
 
 
 class JobOpportunityModel(JobOpportunityBaseModel, table=True):
@@ -32,6 +39,8 @@ class JobOpportunityModel(JobOpportunityBaseModel, table=True):
     __tablename__ = "job_opportunity"  # type: ignore
 
     id: int | None = Field(primary_key=True, index=True)
+    employee: "Employee" = Relationship(back_populates="job_opportunity")
+
 
 class JobOpportunityIdModel(JobOpportunityBaseModel):
     """
@@ -41,6 +50,7 @@ class JobOpportunityIdModel(JobOpportunityBaseModel):
     cuando realmente sabemos que existe porque obtuvimos
     el objeto de la base de datos.
     """
+
     id: int = Field(primary_key=True, index=True)
 
 

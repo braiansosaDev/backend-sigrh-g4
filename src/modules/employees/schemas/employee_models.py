@@ -88,7 +88,6 @@ class UpdateEmployee(BaseModel):
     birth_date: Optional[date] = None
     hire_date: Optional[date] = None
     photo: Optional[bytes] = None
-    facial_register: Optional[bytes] = None
     address_street: Optional[str] = None
     address_city: Optional[str] = None
     address_cp: Optional[str] = None
@@ -121,7 +120,6 @@ class CreateEmployee(BaseModel):
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
