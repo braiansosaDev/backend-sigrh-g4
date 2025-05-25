@@ -81,7 +81,7 @@ def calculate_salary(
             employee, date_range, concepts_to_add, employee_hours_to_add, events_by_day
         )
     else:
-        process_night_shift_hours(
+        process_night_hours(
             employee, date_range, concepts_to_add, employee_hours_to_add, events_by_day
         )
 
@@ -110,36 +110,146 @@ def calculate_salary(
     return response
 
 
-def process_night_shift_hours(
+def process_night_hours(
     employee: Employee,
     date_range: list[date],
     concepts_to_add: list[Concept],
     employee_hours_to_add: list[EmployeeHours],
     events_by_day: dict[date, list[ClockEvents]],
 ):
-    # for day in date_range:
-    #     today_events = events_by_day.get(day, [])
-    #     tomorrow_events = events_by_day.get(day + timedelta(days=1), [])
-    #     if not today_events:
-    #         log_employee_absence(
-    #             employee, concepts_to_add, employee_hours_to_add, day, None, None, 0
-    #         )
-    #         continue
+    for day in date_range:
+        if day.weekday() == 6:  # domingo
+            continue
 
-    #     today_in_events = [ev for ev in today_events if ev.event_type == ClockEventTypes.IN]
-    #     today_out_events = [ev for ev in today_events if ev.event_type == ClockEventTypes.OUT]
-    #     tomorrow_in_events = [ev for ev in tomorrow_events if ev.event_type == ClockEventTypes.IN]
-    #     tomorrow_out_events = [ev for ev in tomorrow_events if ev.event_type == ClockEventTypes.OUT]
-    pass
+        yesterday = day - timedelta(days=1)
+        yesterday_events = sorted(
+            events_by_day.get(yesterday, []), key=lambda ev: ev.event_date
+        )
+        today_events = sorted(events_by_day.get(day, []), key=lambda ev: ev.event_date)
 
-def calculate_interval_time(events_list: list[ClockEvents], concepts_to_add: list[Concept],
-    employee_hours_to_add: list[EmployeeHours], employee: Employee, day: date) :
+        # Último evento del día anterior
+        last_event_yesterday = yesterday_events[-1] if yesterday_events else None
+        # Primer evento del día actual
+        first_event_today = today_events[0] if today_events else None
+
+        # CASO 1 – Ausencia total (no IN el día anterior y no OUT hoy)
+        if (
+            not last_event_yesterday
+            or last_event_yesterday.event_type != ClockEventTypes.IN
+        ) and not first_event_today:
+            print(f"{day} → NO ME PRESENTÉ A LABURAR")
+
+            concept = Concept(description="Ausencia en turno nocturno")
+            employee_hour = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                work_date=day,
+                register_type=RegisterType.AUSENCIA,
+                notes="No se registró ni entrada ni salida del turno nocturno.",
+                check_count=0,
+                sumary_time=time(0, 0, 0),
+                pay=False,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hour)
+
+        # CASO 2 – Olvidó hacer salida (último evento ayer fue IN, pero hoy no hay OUT)
+        elif (
+            last_event_yesterday
+            and last_event_yesterday.event_type == ClockEventTypes.IN
+            and not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
+        ):
+            print(f"{day} → ME OLVIDÉ DE REGISTRAR SALIDA")
+
+            concept = Concept(description="Presente sin salida")
+            employee_hour = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                work_date=day,
+                register_type=RegisterType.PRESENCIA,
+                notes="Entrada registrada el día anterior pero falta salida.",
+                check_count=1,
+                sumary_time=time(0, 0, 0),
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hour)
+
+        # CASO 3 – Doble entrada (IN ayer y primer evento hoy también es IN)
+        elif (
+            last_event_yesterday
+            and last_event_yesterday.event_type == ClockEventTypes.IN
+            and first_event_today
+            and first_event_today.event_type == ClockEventTypes.IN
+        ):
+            print(f"{day} → ME OLVIDÉ DE SALIR Y VOLVÍ A ENTRAR")
+
+            concept = Concept(description="Olvido de salida nocturna")
+            employee_hour = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                work_date=day,
+                register_type=RegisterType.PRESENCIA,
+                notes="Entrada el día anterior y nueva entrada hoy, sin salida intermedia.",
+                check_count=2,
+                sumary_time=time(0, 0, 0),
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hour)
+
+        # CASO 4 – IN ayer + OUT hoy → jornada válida
+        elif (
+            last_event_yesterday
+            and last_event_yesterday.event_type == ClockEventTypes.IN
+            and first_event_today
+            and first_event_today.event_type == ClockEventTypes.OUT
+        ):
+            print(f"{day} → JORNADA COMPLETA CON ENTRADA Y SALIDA")
+
+            check_in = last_event_yesterday.event_date
+            check_out = first_event_today.event_date
+            duration = check_out - check_in
+
+            total_seconds = int(duration.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+
+            summary_time = time(hour=hours, minute=minutes, second=seconds)
+
+            concept = Concept(description="Turno nocturno trabajado")
+            employee_hour = EmployeeHours(
+                employee_id=employee.id,
+                concept_id=concept.id,
+                shift_id=employee.shift.id,
+                work_date=day,
+                register_type=RegisterType.PRESENCIA,
+                notes="Turno nocturno completo.",
+                check_count=2,
+                sumary_time=summary_time,
+                pay=True,
+            )
+            concepts_to_add.append(concept)
+            employee_hours_to_add.append(employee_hour)
+
+
+def calculate_interval_time(
+    events_list: list[ClockEvents],
+    concepts_to_add: list[Concept],
+    employee_hours_to_add: list[EmployeeHours],
+    employee: Employee,
+    day: date,
+):
     if len(events_list) < 3:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Not enough events to calculate interval time",
         )
-    
+
     total_duration = timedelta()
 
     trimmed_events = events_list[1:-1]  # Excluye el primer y último evento
@@ -149,7 +259,10 @@ def calculate_interval_time(events_list: list[ClockEvents], concepts_to_add: lis
         current_event = trimmed_events[i]
         next_event = trimmed_events[i + 1]
 
-        if current_event.event_type == ClockEventTypes.OUT and next_event.event_type == ClockEventTypes.IN:
+        if (
+            current_event.event_type == ClockEventTypes.OUT
+            and next_event.event_type == ClockEventTypes.IN
+        ):
             interval = next_event.event_date - current_event.event_date
             total_duration += interval
             i += 2  # saltamos al siguiente par
@@ -162,24 +275,25 @@ def calculate_interval_time(events_list: list[ClockEvents], concepts_to_add: lis
     seconds = total_seconds % 60
 
     # Creamos el schema de respuesta
-    concept=Concept(description="Tiempo de intervalos")
-    employee_hour=EmployeeHours(
-                employee_id=employee.id,
-                concept_id=concept.id,
-                shift_id=employee.shift.id,
-                check_count=len(events_list),
-                notes="Tiempo de intervalos",
-                register_type=RegisterType.PRESENCIA,
-                first_check_in=None,
-                last_check_out=None,
-                sumary_time = time(hour=hours, minute=minutes, second=seconds),
-                work_date=day,
-                extra_hours=None,
-                pay=None,
-            )
-    
+    concept = Concept(description="Tiempo de intervalos")
+    employee_hour = EmployeeHours(
+        employee_id=employee.id,
+        concept_id=concept.id,
+        shift_id=employee.shift.id,
+        check_count=len(events_list),
+        notes="Tiempo de intervalos",
+        register_type=RegisterType.PRESENCIA,
+        first_check_in=None,
+        last_check_out=None,
+        sumary_time=time(hour=hours, minute=minutes, second=seconds),
+        work_date=day,
+        extra_hours=None,
+        pay=False,
+    )
+
     concepts_to_add.append(concept)
     employee_hours_to_add.append(employee_hour)
+
 
 def process_daily_hours(
     employee: Employee,
@@ -302,7 +416,9 @@ def process_daily_hours(
             concepts_to_add.append(concept)
             employee_hours_to_add.append(employee_hours)
 
-        calculate_interval_time(daily_events, concepts_to_add, employee_hours_to_add, employee, day)
+        calculate_interval_time(
+            daily_events, concepts_to_add, employee_hours_to_add, employee, day
+        )
 
 
 def log_employee_absence(
