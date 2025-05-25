@@ -23,9 +23,8 @@ INSERT INTO public.job (name, sector_id) VALUES
 
 -- 3) TURNOS
 INSERT INTO public.shift (description, type, working_hours, working_days) VALUES
-  ('Turno mañana',      'Mañana', 8, 5),
-  ('Turno tarde',       'Tarde',  8, 5),
-  ('Turno rotativo',    'Rotativo', 8, 7);
+  ('Turno mañana',      'Diurno', 8, 5),
+  ('Turno noche',       'Nocturno',  8, 7);
 
 -- 4) EMPLEADO
 -- INSERT INTO public.employee (

@@ -75,7 +75,7 @@ def calculate_salary(
         )
         events_by_day[event_day].append(event)
 
-    if employee.shift.type != "NOCHE":
+    if employee.shift.type != "Nocturno":
         # 2) Para cada día hábil, procesar según tenga o no eventos
         process_daily_hours(
             employee, date_range, concepts_to_add, employee_hours_to_add, events_by_day
