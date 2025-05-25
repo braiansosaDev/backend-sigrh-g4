@@ -33,7 +33,8 @@ def get_my_data(
         .options(
             selectinload(Employee.job).selectinload(Job.sector),
             selectinload(Employee.state),
-            selectinload(Employee.country)
+            selectinload(Employee.country),
+            selectinload(Employee.role_entity)
         )
     )
     employee = db.exec(stmt).one_or_none()

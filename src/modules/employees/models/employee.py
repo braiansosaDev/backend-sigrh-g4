@@ -64,3 +64,4 @@ class Employee(SQLModel, table=True):
     job_opportunity: list["JobOpportunityModel"] = Relationship(
         back_populates="employee", cascade_delete=True
     )
+    role_entity: "Role" = Relationship()
