@@ -1,6 +1,6 @@
 -- Script de inserción de datos de ejemplo para PostgreSQL
 
-BEGIN;
+-- BEGIN;
 
 -- 1) PAISES Y ESTADOS
 INSERT INTO public.country (name) VALUES
@@ -63,4 +63,4 @@ INSERT INTO public.shift (description, type, working_hours, working_days) VALUES
 --   (1, NULL, 1, 4, '2025-05-01', 'PRESENCIA', '08:15:00', '18:05:00', '09:35:00', 150.00 * 9.5833, FALSE, ''),
 --   (1, NULL, 1, 4, '2025-05-02', 'PRESENCIA', '08:05:00', '17:55:00', '08:50:00', 150.00 * 8.8333, FALSE, '');
 
-COMMIT;
+-- COMMIT;

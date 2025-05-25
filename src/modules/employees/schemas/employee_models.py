@@ -24,7 +24,7 @@ class EmployeeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str]
+    role: int
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -58,7 +58,7 @@ class MeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str]
+    role: int
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -82,7 +82,7 @@ class UpdateEmployee(BaseModel):
     type_dni: Optional[str] = None
     personal_email: Optional[EmailStr] = None
     active: Optional[bool] = None
-    role: Optional[str] = None
+    role: Optional[int] = None
     password: Optional[str] = None
     phone: Optional[str] = None
     salary: Optional[Decimal] = None
@@ -90,7 +90,6 @@ class UpdateEmployee(BaseModel):
     birth_date: Optional[date] = None
     hire_date: Optional[date] = None
     photo: Optional[bytes] = None
-    facial_register: Optional[bytes] = None
     address_street: Optional[str] = None
     address_city: Optional[str] = None
     address_cp: Optional[str] = None
@@ -115,7 +114,7 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: Optional[str] = None
+    role: int = Field()
     password: Optional[str] = None
     user_id: Optional[str] = None
     phone: str = Field(max_length=20)
@@ -125,7 +124,6 @@ class CreateEmployee(BaseModel):
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)

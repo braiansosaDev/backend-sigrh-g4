@@ -1,21 +1,36 @@
-from fastapi import APIRouter, status
+from datetime import date
+from fastapi import APIRouter, Query, status
 from src.database.core import DatabaseSession
 from src.modules.clock_events.schemas import schemas
 from src.modules.clock_events.services import services
-from typing import List
+from typing import List, Optional
 
 clock_events_router = APIRouter(prefix="/clock_events", tags=["Clock events"])
 
+@clock_events_router.get(
+    "/attendance-resume",
+    response_model=List[schemas.ClockEventAttendanceSummary],
+    status_code=status.HTTP_200_OK
+)
+async def read_attendance_resume(
+    db: DatabaseSession,
+    fecha: date = Query(...)
+):
+    """
+    Devuelve resumen de asistencia por empleado activo para una fecha dada
+    """
+    return services.get_attendance_resume(db, fecha)
+
 
 @clock_events_router.get(
-    "/", response_model=List[schemas.ClockEventResponse], status_code=status.HTTP_200_OK
+    "/", response_model=List[schemas.ClockEventRead], status_code=status.HTTP_200_OK
 )
-async def read_clock_events(db: DatabaseSession):
-    """
-    docstring
-    """
-    return services.get_clock_events(db)
-
+async def read_clock_events(
+    db: DatabaseSession,
+    employee_id: Optional[int] = Query(None),
+    fecha: Optional[date] = Query(None)
+):
+    return services.get_clock_events(db, employee_id=employee_id, fecha=fecha)
 
 @clock_events_router.post(
     "/", response_model=schemas.ClockEventResponse, status_code=status.HTTP_201_CREATED

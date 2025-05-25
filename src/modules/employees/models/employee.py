@@ -10,14 +10,17 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.clock_events.models.models import ClockEvents
+from src.modules.face_recognition.models.face_recognition import FaceRecognition
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.shift.models.models import Shift
 
 
-class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
+class Employee(SQLModel, table=True):
     """
     Modelo de empleado para la base de datos.
     """
+
+    __tablename__: str = "employee"  # type: ignore
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     user_id: str = Field(unique=True, max_length=100)
@@ -27,7 +30,7 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(unique=True, max_length=100)
     active: bool = Field(default=False)
-    role: str = Field(max_length=100, nullable=True)
+    role: int = Field(foreign_key="role.id")
     password: str = Field(max_length=100, nullable=True)
     phone: str = Field(unique=True, max_length=20)
     salary: Decimal = Field(gt=0)
@@ -35,7 +38,6 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     birth_date: date  # Agregar restricciones
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
@@ -47,6 +49,9 @@ class Employee(SQLModel, table=True, metadata={"table_name": "employee"}):
     state: Optional["State"] = Relationship(back_populates="employee")
     country: Optional["Country"] = Relationship(back_populates="employee")
     shift: "Shift" = Relationship(back_populates="employee")
+    face_recognition: Optional["FaceRecognition"] = Relationship(
+        back_populates="employee"
+    )
 
     work_histories: list["WorkHistory"] = Relationship(
         back_populates="employee", cascade_delete=True
