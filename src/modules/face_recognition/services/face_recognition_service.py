@@ -85,10 +85,10 @@ def verify_face(
 
 
 def update_face_register(
-    db: DatabaseSession, employee_id: int, update_face_register_request: UpdateFaceRegistration
+    db: DatabaseSession, update_face_register_request: UpdateFaceRegistration
 ) -> FaceRecognitionBaseModel:
     db_face_register = db.exec(
-        select(FaceRecognition).where(FaceRecognition.employee_id == employee_id)
+        select(FaceRecognition).where(FaceRecognition.employee_id == update_face_register_request.employee_id)
     ).one_or_none()
 
     if db_face_register is None:
@@ -100,7 +100,11 @@ def update_face_register(
     db.add(db_face_register)
     db.commit()
     db.refresh(db_face_register)
-    return db_face_register
+    result = FaceRecognitionBaseModel(
+        id=db_face_register.id,
+        employee_id=db_face_register.employee_id,
+    )
+    return result
 
 
 def delete_face_register(db: DatabaseSession, employee_id: int) -> None:
