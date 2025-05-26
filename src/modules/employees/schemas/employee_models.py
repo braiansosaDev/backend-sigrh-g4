@@ -114,7 +114,7 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: int = Field()
+    role: Optional[int] = None
     password: Optional[str] = None
     user_id: Optional[str] = None
     phone: str = Field(max_length=20)

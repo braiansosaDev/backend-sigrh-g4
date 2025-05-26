@@ -92,20 +92,21 @@ def update_face_register(
     ).one_or_none()
 
     if db_face_register is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Face not found."
+        result = create_face_register(db, update_face_register_request)
+        # raise HTTPException(
+        #     status_code=status.HTTP_404_NOT_FOUND, detail="Face not found in database."
+        # )
+        return result
+    else:
+        db_face_register.embedding = update_face_register_request.embedding
+        db.add(db_face_register)
+        db.commit()
+        db.refresh(db_face_register)
+        result = FaceRecognitionBaseModel(
+            id=db_face_register.id,
+            employee_id=db_face_register.employee_id,
         )
-
-    db_face_register.embedding = update_face_register_request.embedding
-    db.add(db_face_register)
-    db.commit()
-    db.refresh(db_face_register)
-    result = FaceRecognitionBaseModel(
-        id=db_face_register.id,
-        employee_id=db_face_register.employee_id,
-    )
-    return result
-
+        return result
 
 def delete_face_register(db: DatabaseSession, employee_id: int) -> None:
     db_face_register = db.exec(
