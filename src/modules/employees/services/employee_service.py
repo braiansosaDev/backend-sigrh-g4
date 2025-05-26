@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
+from src.modules.employees.schemas.employee_models import CreateEmployee, EmployeeResponse, UpdateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
@@ -14,7 +14,7 @@ def count_active_employees(db: DatabaseSession) -> int:
     result = utils.count_active_employees(db)
     return result
 
-def get_all_employees(db: DatabaseSession) -> List[Employee]:
+def get_all_employees(db: DatabaseSession) -> List[EmployeeResponse]:
     employees = utils.get_all_employees(db)
 
     if employees is None:
@@ -70,7 +70,6 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             birth_date=employee_request.birth_date,
             hire_date=employee_request.hire_date,
             photo=employee_request.photo,
-            facial_register=employee_request.facial_register,
             address_street=employee_request.address_street,
             address_city=employee_request.address_city,
             address_cp=employee_request.address_cp,

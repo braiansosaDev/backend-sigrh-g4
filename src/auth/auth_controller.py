@@ -8,6 +8,7 @@ from src.modules.employees.models.employee import Employee
 from sqlalchemy.orm import selectinload
 from src.modules.employees.models.job import Job
 from src.modules.employees.schemas.employee_models import MeResponse
+from src.modules.role.models.role_models import Role
 
 """Endopint para iniciar sesión como empleado.
 El empleado debe proporcionar su ID y contraseña.
@@ -33,7 +34,8 @@ def get_my_data(
         .options(
             selectinload(Employee.job).selectinload(Job.sector),
             selectinload(Employee.state),
-            selectinload(Employee.country)
+            selectinload(Employee.country),
+            selectinload(Employee.role_entity).selectinload(Role.permissions)
         )
     )
     employee = db.exec(stmt).one_or_none()

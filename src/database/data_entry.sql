@@ -1,42 +1,42 @@
 -- Script de inserción de datos de ejemplo para PostgreSQL
 
-BEGIN;
+-- BEGIN;
 
 -- 1. Paises
-INSERT INTO country (id, name) VALUES
-  (1, 'Argentina'),
-  (2, 'Chile');
+-- INSERT INTO country (id, name) VALUES
+--   (1, 'Argentina'),
+--   (2, 'Chile');
 
--- 2. Provincias / Estados
-INSERT INTO state (id, country_id, name) VALUES
-  (1, 1, 'Buenos Aires'),
-  (2, 1, 'Córdoba'),
-  (3, 2, 'Región Metropolitana');
+-- -- 2. Provincias / Estados
+-- INSERT INTO state (id, country_id, name) VALUES
+--   (1, 1, 'Buenos Aires'),
+--   (2, 1, 'Córdoba'),
+--   (3, 2, 'Región Metropolitana');
 
--- 3. Sectores
-INSERT INTO sector (id, name) VALUES
-  (1, 'Tecnología'),
-  (2, 'Finanzas');
+-- -- 3. Sectores
+-- INSERT INTO sector (id, name) VALUES
+--   (1, 'Tecnología'),
+--   (2, 'Finanzas');
 
--- 4. Puestos (job)
-INSERT INTO job (id, sector_id, name) VALUES
-  (1, 1, 'Desarrollador Backend'),
-  (2, 1, 'Desarrollador Frontend'),
-  (3, 2, 'Analista Financiero');
+-- -- 4. Puestos (job)
+-- INSERT INTO job (id, sector_id, name) VALUES
+--   (1, 1, 'Desarrollador Backend'),
+--   (2, 1, 'Desarrollador Frontend'),
+--   (3, 2, 'Analista Financiero');
 
 -- 5. Empleados
-INSERT INTO employee (
-  id, job_id, address_state_id, address_country_id, user_id,
-  first_name, last_name, dni, type_dni, personal_email,
-  password, phone, address_street, address_city, address_cp,
-  salary, active, birth_date, hire_date, photo, facial_register
-) VALUES
-  (1, 1, 1, 1, 'emp001', 'María', 'Gómez', '12345678', 'DNI', 'maria.gomez@example.com',
-   'hashed_pwd1', '+5491112345678', 'Calle Falsa 123', 'Buenos Aires', '1000',
-   150000, TRUE, '1988-05-10 00:00:00', '2022-01-15 09:00:00', NULL, NULL),
-  (2, 2, 2, 1, 'emp002', 'Juan', 'Pérez', '87654321', 'DNI', 'juan.perez@example.com',
-   'hashed_pwd2', '+5493518765432', 'Av. Siempre Viva 742', 'Córdoba', '5000',
-   130000, TRUE, '1990-11-20 00:00:00', '2023-06-01 08:30:00', NULL, NULL);
+-- INSERT INTO employee (
+--   id, job_id, address_state_id, address_country_id, user_id,
+--   first_name, last_name, dni, type_dni, personal_email,
+--   password, phone, address_street, address_city, address_cp,
+--   salary, active, birth_date, hire_date, photo, facial_register
+-- ) VALUES
+--   (1, 1, 1, 1, 'emp001', 'María', 'Gómez', '12345678', 'DNI', 'maria.gomez@example.com',
+--    'hashed_pwd1', '+5491112345678', 'Calle Falsa 123', 'Buenos Aires', '1000',
+--    150000, TRUE, '1988-05-10 00:00:00', '2022-01-15 09:00:00', NULL, NULL),
+--   (2, 2, 2, 1, 'emp002', 'Juan', 'Pérez', '87654321', 'DNI', 'juan.perez@example.com',
+--    'hashed_pwd2', '+5493518765432', 'Av. Siempre Viva 742', 'Córdoba', '5000',
+--    130000, TRUE, '1990-11-20 00:00:00', '2023-06-01 08:30:00', NULL, NULL);
 
 -- 6. Habilidades (ability)
 INSERT INTO ability (id, name, description) VALUES
@@ -116,4 +116,4 @@ INSERT INTO postulation (
    '{"JavaScript": 0.85, "SQL": 0.75}',
    '2025-05-16 11:20:00', '2025-05-14 09:00:00', '2025-05-16 11:20:00');
 
-COMMIT;
+-- COMMIT;

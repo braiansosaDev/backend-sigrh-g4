@@ -8,6 +8,8 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
+from src.modules.role.models.role_models import Role
+from src.modules.role.schemas.role_schemas import RolePublic
 
 class EmployeeResponse(BaseModel):
     """
@@ -17,13 +19,13 @@ class EmployeeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str] 
+    role: Optional[int] = None
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -36,7 +38,7 @@ class EmployeeResponse(BaseModel):
     address_cp: str
     address_state_id: Optional[int]
     address_country_id: Optional[int]
-    work_histories: list[WorkHistory] 
+    work_histories: list[WorkHistory]
     documents: list[Document]
     job: Optional[JobResponse] = None
     state: Optional[State] = None
@@ -51,13 +53,13 @@ class MeResponse(BaseModel):
 
     id: int
     user_id: str
-    first_name: str 
-    last_name: str  
+    first_name: str
+    last_name: str
     dni: str
-    type_dni: str 
+    type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[str]
+    role: Optional[int] = None
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -72,6 +74,7 @@ class MeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
+    role_entity: Optional[RolePublic] = None
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
@@ -80,7 +83,7 @@ class UpdateEmployee(BaseModel):
     type_dni: Optional[str] = None
     personal_email: Optional[EmailStr] = None
     active: Optional[bool] = None
-    role: Optional[str] = None
+    role: Optional[int] = None
     password: Optional[str] = None
     phone: Optional[str] = None
     salary: Optional[Decimal] = None
@@ -88,7 +91,6 @@ class UpdateEmployee(BaseModel):
     birth_date: Optional[date] = None
     hire_date: Optional[date] = None
     photo: Optional[bytes] = None
-    facial_register: Optional[bytes] = None
     address_street: Optional[str] = None
     address_city: Optional[str] = None
     address_cp: Optional[str] = None
@@ -112,7 +114,7 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: Optional[str] = None
+    role: Optional[int] = None
     password: Optional[str] = None
     user_id: Optional[str] = None
     phone: str = Field(max_length=20)
@@ -121,7 +123,6 @@ class CreateEmployee(BaseModel):
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
-    facial_register: Optional[bytes] = Field(default=None)
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
@@ -130,7 +131,7 @@ class CreateEmployee(BaseModel):
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
-     # Edad mínima (>=16 años)
+    # Edad mínima (>=16 años)
     @field_validator("birth_date")
     @classmethod
     def check_minimum_age(cls, v):
