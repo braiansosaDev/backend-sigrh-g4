@@ -56,6 +56,11 @@ def get_date_range(start_date: date, end_date: date) -> list[date]:
 def get_hours_by_date_range(
     db: DatabaseSession, request: PayrollRequest
 ) -> list[PayrollResponse]:
+    if request.end_date < request.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be greater than start date",
+        )
     employee = get_employee_by_id(db, request.employee_id)
     filtered_hours = filter_and_sort_hours(
         employee.employee_hours, request.start_date, request.end_date
@@ -63,7 +68,7 @@ def get_hours_by_date_range(
     return [
         PayrollResponse(
             employee_hours=EmployeeHoursSchema.model_validate(eh),
-            concept=ConceptSchema.model_validate(eh.concept),
+            concept=ConceptSchema.model_validate(eh.concept),  # type: ignore
             shift=ShiftSchema.model_validate(employee.shift),
         )
         for eh in filtered_hours
@@ -80,19 +85,19 @@ def filter_and_sort_hours(
     )
 
 
-def calculate_hours(
-    db: DatabaseSession, request: PayrollRequest
-) -> list[PayrollResponse]:
+def calculate_hours(db: DatabaseSession, request: PayrollRequest):
+    if request.end_date < request.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be greater than start date",
+        )
     employee = get_employee_by_id(db, request.employee_id)
     sorted_events = filter_and_sort_clock_events(
         employee.clock_events, request.start_date, request.end_date
     )
-
     date_range = get_date_range(request.start_date, request.end_date)
-    response: list[PayrollResponse] = []
     concepts_to_add: list[Concept] = []
     employee_hours_to_add: list[EmployeeHours] = []
-
     events_by_day: dict[date, list[ClockEvents]] = defaultdict(list)
 
     # 1) Agrupar eventos por día
@@ -126,16 +131,6 @@ def calculate_hours(
     for eh in employee_hours_to_add:
         db.refresh(eh)
 
-    for eh, concept in zip(employee_hours_to_add, concepts_to_add):
-        payroll_response = PayrollResponse(
-            employee_hours=EmployeeHoursSchema.model_validate(eh),
-            concept=ConceptSchema.model_validate(concept),
-            shift=ShiftSchema.model_validate(employee.shift),
-        )
-        response.append(payroll_response)
-
-    return response
-
 
 def process_night_hours(
     employee: Employee,
@@ -164,8 +159,6 @@ def process_night_hours(
             not last_event_yesterday
             or last_event_yesterday.event_type != ClockEventTypes.IN
         ) and not first_event_today:
-            print(f"{day} → NO ME PRESENTÉ A LABURAR")
-
             concept = Concept(description="Ausencia en turno nocturno")
             employee_hour = EmployeeHours(
                 employee_id=employee.id,
@@ -188,8 +181,6 @@ def process_night_hours(
             and first_event_today.event_type == ClockEventTypes.IN
             and not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
         ):
-            print(f"{day} → AUSENTE (sólo IN suelto hoy sin OUT y sin IN previo)")
-
             concept = Concept(
                 description="Ausencia en turno nocturno (entrada inválida)"
             )
@@ -214,8 +205,6 @@ def process_night_hours(
             and last_event_yesterday.event_type == ClockEventTypes.IN
             and not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
         ):
-            print(f"{day} → ME OLVIDÉ DE REGISTRAR SALIDA")
-
             concept = Concept(description="Presente sin salida")
             employee_hour = EmployeeHours(
                 employee_id=employee.id,
@@ -238,8 +227,6 @@ def process_night_hours(
             and first_event_today
             and first_event_today.event_type == ClockEventTypes.IN
         ):
-            print(f"{day} → ME OLVIDÉ DE SALIR Y VOLVÍ A ENTRAR")
-
             concept = Concept(description="Olvido de salida nocturna")
             employee_hour = EmployeeHours(
                 employee_id=employee.id,
@@ -262,8 +249,6 @@ def process_night_hours(
             and first_event_today
             and first_event_today.event_type == ClockEventTypes.OUT
         ):
-            print(f"{day} → JORNADA COMPLETA CON ENTRADA Y SALIDA")
-
             check_in = last_event_yesterday.event_date
             check_out = first_event_today.event_date
             duration = check_out - check_in

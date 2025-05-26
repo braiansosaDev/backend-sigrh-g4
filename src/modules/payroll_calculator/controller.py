@@ -8,8 +8,7 @@ payroll_router = APIRouter(prefix="/payroll", tags=["Payroll Calculation"])
 
 @payroll_router.post(
     "/calculate",
-    response_model=list[schemas.PayrollResponse],  # No devolver esto
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def calculate_hours(db: DatabaseSession, request: schemas.PayrollRequest):
     return service.calculate_hours(db, request)
