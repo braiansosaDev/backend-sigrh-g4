@@ -2,11 +2,12 @@ from pydantic import BaseModel
 
 
 class ConceptRequest(BaseModel):
-    arca_concept_id: int
     description: str
+    is_deletable: bool = False
 
 
 class ConceptResponse(BaseModel):
     id: int
-    arca_concept_id: int
+    # exportation_id: int
     description: str
+    is_deletable: bool

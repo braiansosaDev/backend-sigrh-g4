@@ -57,7 +57,6 @@ def extract_text_from_pdf(base64_pdf: str):
             texto += pagina.get_text()
         return texto
     except Exception as e:
-        print(f"Error al procesar el PDF: {e}")
         return ""
 
 

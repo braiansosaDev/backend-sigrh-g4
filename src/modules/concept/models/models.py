@@ -1,8 +1,11 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 
 class Concept(SQLModel, table=True):
     __tablename__ = "concept"  # type: ignore
-    id: int = Field(primary_key=True)
-    arca_concept_id: int
-    description: str
+    id: int | None = Field(default=None, primary_key=True)
+    # exportation_id: Optional[int]
+    description: str = Field(default="")
+    is_deletable: bool = Field(default=False)
+
+    employee_hours: "EmployeeHours" = Relationship(back_populates="concept")

@@ -28,6 +28,7 @@ from src.modules.employee_hours.controllers.controller import employee_hours_rou
 from src.modules.clock_events.controllers.controller import clock_events_router
 from src.modules.concept.controllers.controller import concept_router
 from src.modules.shift.controllers.controller import shift_router
+from src.modules.payroll_calculator.controller import payroll_router
 
 app = FastAPI(
     root_path="/api/v1",
@@ -63,3 +64,4 @@ app.include_router(employee_hours_router)
 app.include_router(clock_events_router)
 app.include_router(concept_router)
 app.include_router(shift_router)
+app.include_router(payroll_router)

@@ -1,25 +1,33 @@
-from sqlmodel import Field, Relationship, SQLModel, CheckConstraint
+from sqlmodel import Field, Relationship, SQLModel
 from datetime import time, date
+from enum import Enum
+
+
+class RegisterType(str, Enum):
+    AUSENCIA = "AUSENCIA"
+    PRESENCIA = "PRESENCIA"
+    TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
 
 
 class EmployeeHours(SQLModel, table=True):
     __tablename__ = "employee_hours"  # type: ignore
-    __table_args__ = (
-        CheckConstraint("weekday >= 1 AND weekday <= 7", name="chk_weekday_range"),
+
+    id: int | None = Field(default=None, primary_key=True)
+    employee_id: int | None = Field(
+        default=None, foreign_key="employee.id", ondelete="CASCADE"
     )
-    id: int = Field(primary_key=True)
-    employee_id: int = Field(foreign_key="employee.id", ondelete="CASCADE")
-    concept_id: int = Field(foreign_key="concept.id")
+    concept_id: int | None = Field(default=None, foreign_key="concept.id")
     shift_id: int = Field(foreign_key="shift.id")
-    weekday: int
-    date: date
-    register_type: str  # ESCIFICAR!
-    first_check_in: time
-    last_check_out: time
-    check_count: int
-    amount: float
-    hours: time
-    pay: bool
-    notes: str
+    check_count: int = Field(default=0)
+    work_date: date = Field(default=date.today)  # antes: date
+    register_type: RegisterType = Field(default=None)
+    first_check_in: time | None = Field(default=None)
+    last_check_out: time | None = Field(default=None)
+    sumary_time: time | None = Field(default=None)  # antes: hours
+    extra_hours: time | None = Field(default=None)  # antes: amount
+    pay: bool = Field(default=False)
+    notes: str = Field(default="")
 
     employee: "Employee" = Relationship(back_populates="employee_hours")
+    concept: "Concept" = Relationship(back_populates="employee_hours")
+    shift: "Shift" = Relationship(back_populates="employee_hours")
