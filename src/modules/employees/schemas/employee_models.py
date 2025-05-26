@@ -8,6 +8,8 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
+from src.modules.role.models.role_models import Role
+from src.modules.role.schemas.role_schemas import RolePublic
 
 class EmployeeResponse(BaseModel):
     """
@@ -23,7 +25,7 @@ class EmployeeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: int
+    role: Optional[int] = None
     password: Optional[str]
     phone: str
     salary: Decimal
@@ -57,7 +59,7 @@ class MeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: int
+    role: Optional[int] = None
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -72,6 +74,7 @@ class MeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
+    role_entity: Optional[RolePublic] = None
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
