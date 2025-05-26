@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-#import fitz
+import fitz
 from pypdf import PdfReader
 from io import BytesIO
 from spacy.language import Language
@@ -20,6 +20,7 @@ import spacy
 import base64
 import logging
 import re
+import itertools
 from sqlalchemy import func
 from sqlmodel import select
 
@@ -58,15 +59,17 @@ def get_all_abilities(
 def extract_text_from_pdf(base64_pdf: str):
     try:
         pdf_bytes = base64.b64decode(base64_pdf)
-        #doc = fitz.open("pdf", pdf_bytes)
-        #texto = ""
-        #for pagina in doc:
-        #    texto += pagina.get_text()
+        doc = fitz.open("pdf", pdf_bytes)
+        texto = ""
+        for pagina in doc:
+            texto += pagina.get_text()
         #return texto
-        doc = PdfReader(BytesIO(pdf_bytes))
-        texto: str = ""
-        for pagina in doc.pages:
-            texto += pagina.extract_text()
+        texto += " "
+        doc_pypdf = PdfReader(BytesIO(pdf_bytes))
+        #texto: str = ""
+        for pagina in doc_pypdf.pages:
+            texto += pagina.extract_text(extraction_mode="plain")
+        logger.info(f"Extracted text:\n{texto}")
         return texto
     except Exception as e:
         print(f"Error al procesar el PDF: {e}")
@@ -199,10 +202,7 @@ def match_abilities(text: str, abilities: list[str], model: Language, *, similar
     doc = model(" ".join(tokens_text))
     logger.info(f"Tokens: {tokens_text}")
 
-    doc_norm: Doc = doc.copy()
-    doc_norm_text = [token.lemma_ for token in doc_norm if token.text.strip() and token.lemma_.strip() and not token.is_stop and token.pos_ != "ADP"]
-    doc_norm = model(" ".join(doc_norm_text))
-    logger.info(f"Norm tokens: {doc_norm_text}")
+
 
     result: dict[str, Any] = {
         "WORDS_FOUND": [],
@@ -219,8 +219,94 @@ def match_abilities(text: str, abilities: list[str], model: Language, *, similar
         elif match_phrase(doc, ability, model):
             result["WORDS_FOUND"].append(ability)
         else:
+            custom_lemmas = {
+            "lic": "licenciatura",
+            "tec": "tecnicatura",
+            "ing": "ingenieria",
+            "definicion": "definir",
+            "capacitacion": "capacitar",
+            "definiciones": "definir",
+            "organizacion": "organizar",
+            "organizaciones": "organizar",
+            "resolucion": "resolver",
+            "resoluciones": "resolver",
+            "ejecucion": "ejecutar",
+            "ejecuciones": "ejecutar",
+            "educacion": "educar",
+            "educaciones": "educar",
+            "analisis": "analizar",
+            "construccion": "construir",
+            "construcciones": "construir",
+            "produccion": "producir",
+            "producciones": "producir",
+            "evaluacion": "evaluar",
+            "evaluaciones": "evaluar",
+            "informacion": "informar",
+            "revision": "revisar",
+            "revisiones": "revisar",
+            "desarrollo": "desarrollar",
+            "desarrollos": "desarrollar",
+            "programacion": "programar",
+            "programaciones": "programar",
+            "implementacion": "implementar",
+            "implementaciones": "implementar",
+            "diseno": "disenar",
+            "disenos": "disenar",
+            "configuracion": "configurar",
+            "configuraciones": "configurar",
+            "integracion": "integrar",
+            "integraciones": "integrar",
+            "mantenimiento": "mantener",
+            "automatizacion": "automatizar",
+            "automatizaciones": "automatizar",
+            "optimizacion": "optimizar",
+            "optimizaciones": "optimizar",
+            "pruebas": "probar",
+            "testing": "probar",
+            "despliegue": "desplegar",
+            "despliegues": "desplegar",
+            "soporte": "soportar",
+            "migracion": "migrar",
+            "migraciones": "migrar",
+            "documentacion": "documentar",
+            "depuracion": "depurar",
+            "refactorizacion": "refactorizar",
+            "innovacion": "innovar",
+            "actualizacion": "actualizar",
+            "prueba": "probar",
+            "integracioncontinua": "integrar",
+            "desplieguecontinuo": "desplegar",
+            "postgres": "sql",
+            "postgresql": "sql",
+            "mariadb": "sql",
+            "mysql": "sql",
+            "adm": "administrar",
+            "administracion": "administrar",
+            "administraciones": "administrar",
+            "comunicacion": "comunicar",
+            "comunicaciones": "comunicar",
+            "liderazgo": "liderar",
+            "gestion": "gestionar",
+            "gestiones": "gestionar",
+            "estrategia": "estrategizar",
+            "estrategias": "estrategizar",
+            "planificacion": "planificar",
+            "planificaciones": "planificar",
+            "innovaciones": "innovar",
+            "experiencia": "experimentar",
+            "coordinacion": "coordinar",
+            "coordinaciones": "coordinar",
+            "proyecto": "proyectar",
+            "proyectos": "proyectar",
+            "code": "codigo"
+            }
+            doc_norm: Doc = doc.copy()
+            doc_norm_text = [custom_lemmas.get(token.lemma_, token.lemma_) for token in doc_norm if token.text.strip() and token.lemma_.strip() and not token.is_stop and token.pos_ != "ADP"]
+            doc_norm = model(" ".join(doc_norm_text))
+            logger.info(f"Norm tokens: {doc_norm_text}")
+
             ability_doc: Doc = model(ability)
-            ability_doc_text = [token.lemma_ for token in ability_doc if token.text.strip() and token.lemma_.strip() and not token.is_stop and token.pos_ != "ADP"]
+            ability_doc_text = [custom_lemmas.get(token.lemma_, token.lemma_) for token in ability_doc if token.text.strip() and token.lemma_.strip() and not token.is_stop and token.pos_ != "ADP"]
             ability_doc = model(" ".join(ability_doc_text))
 
             if not ability_doc or len(ability_doc) == 0 or not all([token.has_vector for token in ability_doc]):
@@ -264,12 +350,30 @@ def match_abilities(text: str, abilities: list[str], model: Language, *, similar
 
 
 def create_token_groups(doc: Doc, word_amount: int) -> list[Span]:
-    token_groups: list[Span] = []
+    output_spans: list[Span] = []
+
     for i in range(len(doc) - word_amount + 1):
         token_group = doc[i : i + word_amount]
-        token_groups.append(token_group)
-    logger.info(f"Token groups ({len(token_groups)}): {[token_group.text for token_group in token_groups]}")
-    return token_groups
+        output_spans.append(token_group)
+
+        tokens_text = [token.text for token in token_group]
+
+        if word_amount >= 10:
+            logger.info(f"Skipping token group \"{tokens_text}\" permutations because word amount is too large ({word_amount})")
+        elif word_amount > 1:
+            perms = set(itertools.permutations(tokens_text))
+            for perm in perms:
+                if list(perm) == tokens_text:
+                    continue
+                new_doc = Doc(doc.vocab, words=list(perm))
+                new_span = new_doc[0:len(new_doc)]
+                output_spans.append(new_span)
+
+    logger.info(
+           f"Total token groups (including permutations): {len(output_spans)}. "
+           f"Groups: {[span.text for span in output_spans]}"
+       )
+    return output_spans
 
 
 def load_spanish_model():
