@@ -107,7 +107,8 @@ INSERT INTO role_permission (role_id, permission_id) VALUES
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.shift (description, type, working_hours, working_days) VALUES
-  ('Turno mañana',      'Diurno', 8, 5),
-  ('Turno noche',       'Nocturno',  8, 7);
+  ('Turno mañana',      'Matutino', 8, 5),
+  ('Turno tarde',      'Vespertino', 8, 5),
+  ('Turno noche',       'Nocturno',  8, 6);
 
 COMMIT;

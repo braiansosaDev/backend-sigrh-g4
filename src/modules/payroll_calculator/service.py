@@ -53,7 +53,34 @@ def get_date_range(start_date: date, end_date: date) -> list[date]:
     return [start + timedelta(days=i) for i in range(delta_days + 1)]
 
 
-def calculate_salary(
+def get_hours_by_date_range(
+    db: DatabaseSession, request: PayrollRequest
+) -> list[PayrollResponse]:
+    employee = get_employee_by_id(db, request.employee_id)
+    filtered_hours = filter_and_sort_hours(
+        employee.employee_hours, request.start_date, request.end_date
+    )
+    return [
+        PayrollResponse(
+            employee_hours=EmployeeHoursSchema.model_validate(eh),
+            concept=ConceptSchema.model_validate(eh.concept),
+            shift=ShiftSchema.model_validate(employee.shift),
+        )
+        for eh in filtered_hours
+    ]
+
+
+def filter_and_sort_hours(
+    employee_hours: list[EmployeeHours], start_date: date, end_date: date
+) -> list[EmployeeHours]:
+    # Compara solo fechas, no datetime
+    return sorted(
+        (eh for eh in employee_hours if start_date <= eh.work_date <= end_date),
+        key=lambda eh: eh.work_date,
+    )
+
+
+def calculate_hours(
     db: DatabaseSession, request: PayrollRequest
 ) -> list[PayrollResponse]:
     employee = get_employee_by_id(db, request.employee_id)
@@ -156,13 +183,16 @@ def process_night_hours(
 
         # CASO 1.1 – No hubo IN el día anterior, y hoy solo hay un IN suelto → ausencia
         if (
-            not any(ev.event_type == ClockEventTypes.IN for ev in yesterday_events) and
-            first_event_today and first_event_today.event_type == ClockEventTypes.IN and
-            not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
+            not any(ev.event_type == ClockEventTypes.IN for ev in yesterday_events)
+            and first_event_today
+            and first_event_today.event_type == ClockEventTypes.IN
+            and not any(ev.event_type == ClockEventTypes.OUT for ev in today_events)
         ):
             print(f"{day} → AUSENTE (sólo IN suelto hoy sin OUT y sin IN previo)")
 
-            concept = Concept(description="Ausencia en turno nocturno (entrada inválida)")
+            concept = Concept(
+                description="Ausencia en turno nocturno (entrada inválida)"
+            )
             employee_hour = EmployeeHours(
                 employee_id=employee.id,
                 concept_id=concept.id,
@@ -293,7 +323,6 @@ def calculate_interval_time(
     employee: Employee,
     day: date,
 ):
-
     total_duration = timedelta()
 
     trimmed_events = events_list[1:-1]  # Excluye el primer y último evento
@@ -395,7 +424,6 @@ def process_daily_hours(
 
         last_check = max(outs, key=lambda ev: ev.event_date).event_date.time()
 
-
         check_in_dt = datetime.combine(day, first_check)
         check_out_dt = datetime.combine(day, last_check)
 
@@ -418,7 +446,7 @@ def process_daily_hours(
             extra_h = int(extra_hours_float)
             extra_m = int((extra_hours_float - extra_h) * 60)
             extra_time = time(hour=extra_h, minute=extra_m, second=0)
-            
+
             concept = Concept(description="Horas extra")
             employee_hours = EmployeeHours(
                 employee_id=employee.id,
@@ -482,8 +510,8 @@ def process_daily_hours(
 
         if len(daily_events) > 2:
             calculate_interval_time(
-            daily_events, concepts_to_add, employee_hours_to_add, employee, day
-        )
+                daily_events, concepts_to_add, employee_hours_to_add, employee, day
+            )
 
 
 def log_employee_absence(

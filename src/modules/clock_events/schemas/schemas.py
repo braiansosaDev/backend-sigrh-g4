@@ -2,7 +2,6 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import datetime, date, timedelta, timezone
 from enum import Enum
-from datetime import timezone
 
 
 class ClockEventTypes(str, Enum):
@@ -37,13 +36,17 @@ class ClockEventResponse(BaseModel):
     device_id: Optional[str] = None
     source: Optional[str] = None
     event_type: ClockEventTypes
-    event_date: datetime
+    event_date: datetime = datetime.now(timezone.utc).astimezone(
+        timezone(timedelta(hours=-3))
+    )
     employee: Optional[EmployeeRead]
 
 
 class ClockEventRead(BaseModel):
     id: int
-    event_date: datetime
+    event_date: datetime = datetime.now(timezone.utc).astimezone(
+        timezone(timedelta(hours=-3))
+    )
     event_type: str
     source: str
     device_id: str
