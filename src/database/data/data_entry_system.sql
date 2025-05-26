@@ -67,7 +67,8 @@ los empleados'),
 (11, 'Gestion Nomina empleados - Aprobaciones', 'El usuario puede aprobar operaciones sobre
 la nomina de empleados'),
 (12, 'Asignacion de Roles - Aprobaciones', 'El usuario puede Aprobar las asignaciones de
-Roles a los empleados')
+Roles a los empleados'),
+(13, 'ABM Fichadas', 'El usuario puede acceder a la pestania de asistencia')
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;

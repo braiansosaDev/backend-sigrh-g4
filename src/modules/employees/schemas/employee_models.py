@@ -9,6 +9,7 @@ from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
 from src.modules.role.models.role_models import Role
+from src.modules.role.schemas.role_schemas import RolePublic
 
 class EmployeeResponse(BaseModel):
     """
@@ -73,7 +74,7 @@ class MeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
-    role_entity: Optional[Role] = None
+    role_entity: Optional[RolePublic] = None
 
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
