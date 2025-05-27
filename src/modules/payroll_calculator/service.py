@@ -14,7 +14,7 @@ from src.modules.payroll_calculator.schemas import (
     ShiftSchema,
 )
 from src.modules.employee_hours.models.models import EmployeeHours, RegisterType
-from sqlmodel import select
+from sqlmodel import and_, delete, select
 
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
@@ -92,6 +92,12 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
             detail="End date must be greater than start date",
         )
     employee = get_employee_by_id(db, request.employee_id)
+
+    # Eliminar registros existentes antes de recalcular
+    db.exec(
+        delete(EmployeeHours)
+    )
+    
     sorted_events: list[ClockEvents] = []
     if employee.shift.type == "Nocturno":
         date_range = get_date_range(
