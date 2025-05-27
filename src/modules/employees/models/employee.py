@@ -3,16 +3,20 @@ from decimal import Decimal
 from typing import Optional
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
-from src.modules.employee_hours.models.models import EmployeeHours
-from src.modules.employees.models.country import Country
-from src.modules.employees.models.documents import Document
-from src.modules.employees.models.job import Job
-from src.modules.employees.models.state import State
-from src.modules.employees.models.work_history import WorkHistory
-from src.modules.clock_events.models.models import ClockEvents
-from src.modules.face_recognition.models.face_recognition import FaceRecognition
-from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
-from src.modules.shift.models.models import Shift
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.clock_events.models.models import ClockEvents
+    from src.modules.employee_hours.models.models import EmployeeHours
+    from src.modules.employees.models.country import Country
+    from src.modules.employees.models.documents import Document
+    from src.modules.employees.models.job import Job
+    from src.modules.employees.models.state import State
+    from src.modules.employees.models.work_history import WorkHistory
+    from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
+    from src.modules.face_recognition.models.face_recognition import FaceRecognition
+    from src.modules.shift.models.models import Shift
+    from src.modules.role.models.role_models import Role
 
 
 class Employee(SQLModel, table=True):
