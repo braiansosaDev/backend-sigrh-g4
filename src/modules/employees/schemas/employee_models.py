@@ -10,6 +10,8 @@ from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
 from src.modules.role.models.role_models import Role
 from src.modules.role.schemas.role_schemas import RolePublic
+from src.modules.shift.models.models import Shift
+
 
 class EmployeeResponse(BaseModel):
     """
@@ -30,6 +32,7 @@ class EmployeeResponse(BaseModel):
     phone: str
     salary: Decimal
     job_id: Optional[int]
+    shift_id: Optional[int] = None
     birth_date: date
     hire_date: date
     photo: Optional[bytes]
@@ -43,6 +46,7 @@ class EmployeeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
+    shift: Optional[Shift] = None
 
 
 class MeResponse(BaseModel):
@@ -76,6 +80,7 @@ class MeResponse(BaseModel):
     country: Optional[Country] = None
     role_entity: Optional[RolePublic] = None
 
+
 class UpdateEmployee(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
@@ -108,6 +113,7 @@ class CreateEmployee(BaseModel):
     Modelo de empleado para la creación de un nuevo empleado.
     Este modelo se utiliza para validar los datos de entrada al crear un nuevo empleado en la base de datos.
     """
+
     first_name: str = Field(max_length=100)
     last_name: str = Field(max_length=100)
     dni: str = Field(max_length=50)
@@ -120,6 +126,7 @@ class CreateEmployee(BaseModel):
     phone: str = Field(max_length=20)
     salary: Decimal = Field(gt=0)
     job_id: Optional[int] = None
+    shift_id: int
     birth_date: date
     hire_date: date = Field(default=date.today())
     photo: Optional[bytes] = Field(default=None)
@@ -146,11 +153,24 @@ class CreateEmployee(BaseModel):
     @classmethod
     def validate_phone_country_code(cls, v):
         if not v.startswith("+"):
-            raise ValueError("El número de teléfono debe incluir el código de país (ej: +54).")
+            raise ValueError(
+                "El número de teléfono debe incluir el código de país (ej: +54)."
+            )
         return v
 
     # Validación de campos vacíos
-    @field_validator("first_name", "last_name", "dni", "type_dni","personal_email","phone","address_street", "address_city", "address_cp", mode="before")
+    @field_validator(
+        "first_name",
+        "last_name",
+        "dni",
+        "type_dni",
+        "personal_email",
+        "phone",
+        "address_street",
+        "address_city",
+        "address_cp",
+        mode="before",
+    )
     @classmethod
     def non_empty_strings(cls, v, field):
         if not v.strip():

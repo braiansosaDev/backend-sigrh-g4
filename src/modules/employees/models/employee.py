@@ -14,6 +14,9 @@ if TYPE_CHECKING:
     from src.modules.employees.models.state import State
     from src.modules.employees.models.work_history import WorkHistory
     from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
+    from src.modules.face_recognition.models.face_recognition import FaceRecognition
+    from src.modules.shift.models.models import Shift
+    from src.modules.role.models.role_models import Role
 
 
 class Employee(SQLModel, table=True):
@@ -21,7 +24,7 @@ class Employee(SQLModel, table=True):
     Modelo de empleado para la base de datos.
     """
 
-    __tablename__: str = "employee" # type: ignore
+    __tablename__: str = "employee"  # type: ignore
 
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     user_id: str = Field(unique=True, max_length=100)
@@ -44,12 +47,15 @@ class Employee(SQLModel, table=True):
     address_cp: str = Field(max_length=100)
     address_state_id: int = Field(foreign_key="state.id", nullable=True)
     address_country_id: int = Field(foreign_key="country.id", nullable=True)
+    shift_id: int = Field(foreign_key="shift.id", nullable=True)
 
     job: Optional["Job"] = Relationship(back_populates="employee")
     state: Optional["State"] = Relationship(back_populates="employee")
     country: Optional["Country"] = Relationship(back_populates="employee")
-
-    face_recognition: Optional["FaceRecognition"] = Relationship(back_populates="employee")
+    shift: "Shift" = Relationship(back_populates="employee")
+    face_recognition: Optional["FaceRecognition"] = Relationship(
+        back_populates="employee"
+    )
 
     work_histories: list["WorkHistory"] = Relationship(
         back_populates="employee", cascade_delete=True

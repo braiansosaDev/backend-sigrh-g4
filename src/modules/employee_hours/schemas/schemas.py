@@ -1,20 +1,25 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from datetime import date, time
+from enum import Enum
+
+
+class RegisterType(str, Enum):
+    AUSENCIA = "AUSENCIA"
+    PRESENCIA = "PRESENCIA"
+    TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
 
 
 class EmployeeHoursRequest(BaseModel):
     employee_id: int
     concept_id: int
     shift_id: int
-    weekday: int = Field(ge=1, le=7)
     check_count: int
     notes: str
-    register_type: str  # ESPECIFICAR!
+    register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    hours: time
-    date: date
-    amount: float
+    sumary_time: time
+    work_date: date
     pay: bool
 
 
@@ -23,13 +28,11 @@ class EmployeeHoursResponse(BaseModel):
     employee_id: int
     concept_id: int
     shift_id: int
-    weekday: int = Field(ge=1, le=7)
     check_count: int
     notes: str
-    register_type: str  # ESPECIFICAR!
+    register_type: RegisterType
     first_check_in: time
     last_check_out: time
-    hours: time
-    date: date
-    amount: float
+    sumary_time: time
+    work_date: date
     pay: bool

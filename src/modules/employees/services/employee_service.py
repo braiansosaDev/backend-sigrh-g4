@@ -3,7 +3,11 @@ from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee, EmployeeResponse, UpdateEmployee
+from src.modules.employees.schemas.employee_models import (
+    CreateEmployee,
+    EmployeeResponse,
+    UpdateEmployee,
+)
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
@@ -13,6 +17,7 @@ from src.modules.employees.services import utils
 def count_active_employees(db: DatabaseSession) -> int:
     result = utils.count_active_employees(db)
     return result
+
 
 def get_all_employees(db: DatabaseSession) -> List[EmployeeResponse]:
     employees = utils.get_all_employees(db)
@@ -44,18 +49,33 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     Returns:
         Employee: Empleado registrado.
     """
-   
+
     try:
         # Convertir documentos
-        documents = [Document(**doc.model_dump()) for doc in employee_request.documents] if employee_request.documents else []
+        documents = (
+            [Document(**doc.model_dump()) for doc in employee_request.documents]
+            if employee_request.documents
+            else []
+        )
 
         # Convertir historial laboral
-        work_histories = [WorkHistory(**history.model_dump()) for history in employee_request.work_histories] if employee_request.work_histories else []
+        work_histories = (
+            [
+                WorkHistory(**history.model_dump())
+                for history in employee_request.work_histories
+            ]
+            if employee_request.work_histories
+            else []
+        )
 
-        hashed_password = get_password_hash(employee_request.password) if employee_request.password else None
-       
+        hashed_password = (
+            get_password_hash(employee_request.password)
+            if employee_request.password
+            else None
+        )
+
         db_employee = Employee(
-            user_id=utils.create_user_id(db,employee_request),
+            user_id=utils.create_user_id(db, employee_request),
             first_name=employee_request.first_name,
             last_name=employee_request.last_name,
             dni=employee_request.dni,
@@ -77,6 +97,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             address_country_id=employee_request.address_country_id,
             work_histories=work_histories,
             documents=documents,
+            shift_id=employee_request.shift_id,
         )
         db.add(db_employee)
         db.commit()
@@ -87,7 +108,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         # Podés refinar el mensaje si querés analizar `str(e.orig)`
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc)."
+            detail="Ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
         )
     except Exception as e:
         db.rollback()
@@ -139,6 +160,7 @@ def update_employee(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Error de validación: Usuario, DNI, Mail o Telefono ya está siendo utilizado",
         )
+
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:
     """

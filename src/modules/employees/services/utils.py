@@ -57,6 +57,7 @@ def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
             selectinload(Employee.country),
             selectinload(Employee.work_histories),
             selectinload(Employee.documents),
+            selectinload(Employee.shift)
         )
     )
     return db.exec(stmt).one_or_none()

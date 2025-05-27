@@ -72,7 +72,6 @@ def extract_text_from_pdf(base64_pdf: str):
         logger.info(f"Extracted text:\n{texto}")
         return texto
     except Exception as e:
-        print(f"Error al procesar el PDF: {e}")
         return ""
 
 
