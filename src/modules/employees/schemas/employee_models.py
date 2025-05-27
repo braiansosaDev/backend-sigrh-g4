@@ -10,6 +10,7 @@ from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
 from src.modules.role.models.role_models import Role
 from src.modules.role.schemas.role_schemas import RolePublic
+from src.modules.shift.models.models import Shift
 
 
 class EmployeeResponse(BaseModel):
@@ -31,6 +32,7 @@ class EmployeeResponse(BaseModel):
     phone: str
     salary: Decimal
     job_id: Optional[int]
+    shift_id: Optional[int] = None
     birth_date: date
     hire_date: date
     photo: Optional[bytes]
@@ -44,6 +46,7 @@ class EmployeeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
+    shift: Optional[Shift] = None
 
 
 class MeResponse(BaseModel):
