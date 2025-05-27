@@ -92,10 +92,23 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
             detail="End date must be greater than start date",
         )
     employee = get_employee_by_id(db, request.employee_id)
-    sorted_events = filter_and_sort_clock_events(
-        employee.clock_events, request.start_date, request.end_date
-    )
-    date_range = get_date_range(request.start_date, request.end_date)
+    sorted_events: list[ClockEvents] = []
+    if employee.shift.type == "Nocturno":
+        date_range = get_date_range(
+            request.start_date - timedelta(days=1), request.end_date
+        )
+        sorted_events = filter_and_sort_clock_events(
+            employee.clock_events,
+            request.start_date - timedelta(days=1),
+            request.end_date,
+        )
+    else:
+        date_range = get_date_range(request.start_date, request.end_date)
+        sorted_events = filter_and_sort_clock_events(
+            employee.clock_events,
+            request.start_date,
+            request.end_date,
+        )
     concepts_to_add: list[Concept] = []
     employee_hours_to_add: list[EmployeeHours] = []
     events_by_day: dict[date, list[ClockEvents]] = defaultdict(list)
@@ -211,6 +224,7 @@ def process_night_hours(
                 concept_id=concept.id,
                 shift_id=employee.shift.id,
                 work_date=day,
+                first_check_in=last_event_yesterday.event_date.time(),
                 register_type=RegisterType.PRESENCIA,
                 notes="Entrada registrada el día anterior pero falta salida.",
                 check_count=1,
@@ -234,6 +248,7 @@ def process_night_hours(
                 shift_id=employee.shift.id,
                 work_date=day,
                 register_type=RegisterType.PRESENCIA,
+                first_check_in=last_event_yesterday.event_date.time(),
                 notes="Entrada el día anterior y nueva entrada hoy, sin salida intermedia.",
                 check_count=2,
                 sumary_time=time(int(employee.shift.working_hours), 0, 0),
@@ -291,6 +306,8 @@ def process_night_hours(
                 shift_id=employee.shift.id,
                 work_date=day,
                 register_type=RegisterType.PRESENCIA,
+                first_check_in=last_event_yesterday.event_date.time(),
+                last_check_out=first_event_today.event_date.time(),
                 notes=notes,
                 check_count=2,
                 sumary_time=summary_time,
