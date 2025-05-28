@@ -6,14 +6,13 @@ from sqlmodel import select, text
 from src.database.core import DatabaseSession
 from src.modules.clock_events.schemas.schemas import ClockEventRequest
 from src.modules.clock_events.models.models import ClockEvents
-from src.modules.employees.models.employee import Employee
-from src.modules.employees.models.job import Job
 from src.modules.employees.services.utils import get_employee_by_id
 import logging
-from sqlalchemy.orm import selectinload
+
 
 def get_attendance_resume(db: DatabaseSession, fecha: date):
     return get_clock_event_summary_by_date_sql(db, fecha)
+
 
 def get_clock_event_summary_by_date_sql(db: DatabaseSession, fecha: date):
     query = text("""
@@ -41,10 +40,9 @@ def get_clock_event_summary_by_date_sql(db: DatabaseSession, fecha: date):
 def get_clock_event_by_id(db: DatabaseSession, id: int) -> ClockEvents | None:
     return db.exec(select(ClockEvents).where(ClockEvents.id == id)).first()
 
+
 def get_clock_events(
-    db: DatabaseSession,
-    employee_id: Optional[int] = None,
-    fecha: Optional[date] = None
+    db: DatabaseSession, employee_id: Optional[int] = None, fecha: Optional[date] = None
 ) -> Sequence[ClockEvents]:
     stmt = select(ClockEvents)
 
@@ -55,11 +53,12 @@ def get_clock_events(
         stmt = stmt.where(
             ClockEvents.event_date.between(
                 datetime.combine(fecha, datetime.min.time()),
-                datetime.combine(fecha, datetime.max.time())
+                datetime.combine(fecha, datetime.max.time()),
             )
         )
 
     return db.exec(stmt.order_by(ClockEvents.event_date)).all()
+
 
 def post_clock_event(db: DatabaseSession, request: ClockEventRequest) -> ClockEvents:
     try:
