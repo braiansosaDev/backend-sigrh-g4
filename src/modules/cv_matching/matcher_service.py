@@ -1,7 +1,7 @@
 from fastapi import HTTPException
-import fitz
-from src.cv_matching import schema
+from src.modules.cv_matching import matcher_schema
 from src.database.core import DatabaseSession
+from sqlalchemy import func
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
 )
@@ -12,12 +12,12 @@ import unicodedata
 import string
 import spacy
 import base64
-from sqlalchemy import func
+import fitz
 
 
 def get_all_postulations(
     db: DatabaseSession, job_opportunity_id: int
-) -> List[schema.PostulationResponse]:
+) -> List[matcher_schema.PostulationResponse]:
     postulations = (
         db.query(Postulation)
         .filter(Postulation.job_opportunity_id == job_opportunity_id)
@@ -62,7 +62,7 @@ def extract_text_from_pdf(base64_pdf: str):
 
 def evaluate_candidates(
     db: DatabaseSession, job_opportunity_id: int
-) -> List[schema.MatcherResponse]:
+) -> List[matcher_schema.MatcherResponse]:
     postulations = (
         db.query(Postulation)
         .filter(Postulation.job_opportunity_id == job_opportunity_id)
@@ -95,7 +95,7 @@ def evaluate_candidates(
         )
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
-        matcher = schema.MatcherResponse(
+        matcher = matcher_schema.MatcherResponse(
             postulation_id=postulation.id,
             name=postulation.name,
             surname=postulation.surname,
