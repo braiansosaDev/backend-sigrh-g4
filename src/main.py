@@ -19,8 +19,8 @@ from src.modules.postulation.controllers.postulation_controller import (
 )
 from src.modules.role.controllers.role_controller import role_router
 from src.modules.role.controllers.permission_controller import permission_router
-from src.auth.auth_controller import auth_router
-from src.modules.cv_matching.controller import matcher_router
+from src.modules.auth.auth_controller import auth_router
+from src.modules.cv_matching.matcher_controller import matcher_router
 
 from src.modules.face_recognition.controllers.face_recognition_controller import (
     face_recognition_router,
