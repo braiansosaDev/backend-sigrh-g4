@@ -1,4 +1,8 @@
 from sqlmodel import Field, SQLModel, Relationship
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee, EmployeeHours
 
 
 class Shift(SQLModel, table=True):
