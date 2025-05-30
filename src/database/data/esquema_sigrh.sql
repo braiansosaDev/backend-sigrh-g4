@@ -502,7 +502,7 @@ CREATE TABLE public.job_opportunity (
     budget_currency_id character varying(3) NOT NULL,
     state_id integer NOT NULL,
     required_skill_percentage double precision NOT NULL,
-    desirable_skill_percenttage double precision NOT NULL,
+    desirable_skill_percentage double precision NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     id integer NOT NULL

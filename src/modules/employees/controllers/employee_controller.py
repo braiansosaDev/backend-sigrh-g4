@@ -2,14 +2,13 @@ from typing import List
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
-from src.auth.login_request import LoginRequest
 from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
-    UpdateEmployee,
 )
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
+
 
 @employee_router.post(
     "/active-count",
