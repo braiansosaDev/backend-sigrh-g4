@@ -11,8 +11,3 @@ class MatcherResponse(BaseModel):
     desired_words_found: list[str]
     required_words_not_found: list[str]
     desired_words_not_found: list[str]
-
-
-class MatcherRequest(BaseModel):
-    required_skill_percentage: float
-    desirable_skill_percentage: float

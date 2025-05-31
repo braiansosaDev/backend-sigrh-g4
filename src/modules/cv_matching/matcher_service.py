@@ -5,6 +5,7 @@ from spacy.tokens.span import Span
 from spacy.matcher import PhraseMatcher
 from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
 )
@@ -52,15 +53,23 @@ def extract_text_from_pdf(base64_pdf: str) -> str:
 
 
 def evaluate_candidates(
-    db: DatabaseSession, job_opportunity_id: int, request: matcher_schema.MatcherRequest
+    db: DatabaseSession, job_opportunity_id: int
 ) -> List[matcher_schema.MatcherResponse]:
+    job_opportunity = db.exec(
+        select(JobOpportunityModel).where(JobOpportunityModel.id == job_opportunity_id)
+    ).first()
     postulations = db.exec(
         select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)
     ).all()
     if not postulations:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El id {job_opportunity_id} no existe",
+            detail=f"No hay postulaciones para la oferta laboral {job_opportunity_id}",
+        )
+    if not job_opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No existe la oferta laboral {job_opportunity_id}",
         )
     abilities = get_all_abilities(db, job_opportunity_id)
     model = load_spanish_model()
@@ -83,14 +92,14 @@ def evaluate_candidates(
             normalized_required_words,
             model,
             similarity_threshold=0.79,
-            minimum_percentage=request.required_skill_percentage,
+            minimum_percentage=job_opportunity.required_skill_percentage,
         )
         desired_words_match = match_abilities(
             normalized_text,
             normalized_desired_words,
             model,
             similarity_threshold=0.79,
-            minimum_percentage=request.desirable_skill_percentage,
+            minimum_percentage=job_opportunity.desirable_skill_percentage,
         )
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
