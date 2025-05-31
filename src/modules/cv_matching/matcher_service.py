@@ -83,18 +83,22 @@ def evaluate_candidates(
             normalized_required_words,
             model,
             similarity_threshold=0.79,
-            minimum_percentage=1.0,
+            minimum_percentage=request.required_skill_percentage,
         )
         desired_words_match = match_abilities(
             normalized_text,
             normalized_desired_words,
             model,
             similarity_threshold=0.79,
-            minimum_percentage=0.50,
+            minimum_percentage=request.desirable_skill_percentage,
         )
 
-        ability_match = (
+        words_found = (
             required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
+        )
+        words_not_found = (
+            required_words_match["WORDS_NOT_FOUND"]
+            + desired_words_match["WORDS_NOT_FOUND"]
         )
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
@@ -103,7 +107,8 @@ def evaluate_candidates(
             name=postulation.name,
             surname=postulation.surname,
             suitable=suitable,
-            ability_match=ability_match,
+            ability_match=words_found,
+            abilities_not_found=words_not_found,
             required_skill_percentage=0,
             desirable_skill_percentage=0,
         )
@@ -115,9 +120,8 @@ def evaluate_candidates(
             "required_words": required_words_match["WORDS_FOUND"],
             "desired_words": desired_words_match["WORDS_FOUND"],
         }
-        # postulation.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
         postulation.status = (
-            PostulationStatus.ACEPTADA if suitable else PostulationStatus.NO_ACEPTADA
+            PostulationStatus.ACEPTADA if suitable else PostulationStatus.RECHAZADO
         )
 
     db.commit()
