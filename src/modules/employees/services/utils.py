@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Sequence
 from fastapi import HTTPException, status
 from sqlmodel import func, select
 from src.database.core import DatabaseSession
@@ -21,7 +21,7 @@ def get_single_work_history_by_id(
 def get_work_history_of_employee(
     db: DatabaseSession,
     employee_id: int,
-) -> List[WorkHistory]:
+) -> Sequence[WorkHistory]:
     return db.exec(
         select(WorkHistory).where(WorkHistory.employee_id == employee_id)
     ).all()
@@ -41,7 +41,7 @@ def get_document(db: DatabaseSession, document_id: int, employee_id: int):
     ).one_or_none()
 
 def count_active_employees(db: DatabaseSession) -> int:
-    result = db.exec(select(func.count()).select_from(Employee).where(Employee.active == True))
+    result = db.exec(select(func.count()).select_from(Employee).where(Employee.active))
     return result.one()
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:

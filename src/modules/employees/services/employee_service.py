@@ -11,6 +11,9 @@ from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.modules.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 
 
 def count_active_employees(db: DatabaseSession) -> int:
@@ -104,10 +107,10 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         return db_employee
     except IntegrityError as e:
         db.rollback()
-        # Podés refinar el mensaje si querés analizar `str(e.orig)`
+        logger.error(f"Unexpected IntegrityError occurred while creating Employee:\n{e}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
+            detail="Ocurrió un error inesperado, probablemente ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
         )
     except Exception as e:
         db.rollback()
