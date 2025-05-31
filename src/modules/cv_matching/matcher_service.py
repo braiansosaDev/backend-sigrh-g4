@@ -92,14 +92,6 @@ def evaluate_candidates(
             similarity_threshold=0.79,
             minimum_percentage=request.desirable_skill_percentage,
         )
-
-        words_found = (
-            required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
-        )
-        words_not_found = (
-            required_words_match["WORDS_NOT_FOUND"]
-            + desired_words_match["WORDS_NOT_FOUND"]
-        )
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
         matcher = matcher_schema.MatcherResponse(
@@ -107,10 +99,10 @@ def evaluate_candidates(
             name=postulation.name,
             surname=postulation.surname,
             suitable=suitable,
-            ability_match=words_found,
-            abilities_not_found=words_not_found,
-            required_skill_percentage=0,
-            desirable_skill_percentage=0,
+            required_words_found=required_words_match["WORDS_FOUND"],
+            desired_words_found=desired_words_match["WORDS_FOUND"],
+            required_words_not_found=required_words_match["WORDS_NOT_FOUND"],
+            desired_words_not_found=desired_words_match["WORDS_NOT_FOUND"],
         )
         response.append(matcher)
 
