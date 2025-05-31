@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.database.core import DatabaseSession
 
 from fastapi import status
 import logging
 
+from src.modules.clock_events.schemas.schemas import ClockEventTypes
 from src.modules.face_recognition.schemas.face_recognition_models import (
     CreateFaceRegistration,
     FaceRecognitionBaseModel,
@@ -70,7 +71,7 @@ async def update_face(
     status_code=status.HTTP_202_ACCEPTED,
 )
 async def register_attendance(
-    event_type: str,
+    event_type: ClockEventTypes,
     db: DatabaseSession,
     face_recognition: VerifyFaceRegistration,
 ) -> OperationStatus:
@@ -79,18 +80,12 @@ async def register_attendance(
     """
     logger.info(f"Registrando {event_type}...")
 
-    # Validar el tipo recibido (para evitar errores de tipeo)
-    if event_type not in {"in", "out"}:
-        raise HTTPException(
-            status_code=400, detail="Tipo de evento inválido. Usar 'in' o 'out'."
-        )
-
     # Asignar device según el tipo
-    device_id = (
-        "Totem de reconocimiento facial ingreso."
-        if event_type == "in"
-        else "Totem de reconocimiento facial egreso."
-    )
+    match event_type:
+        case ClockEventTypes.IN:
+            device_id = "Totem de reconocimiento facial ingreso."
+        case ClockEventTypes.OUT:
+            device_id = "Totem de reconocimiento facial egreso."
 
     return face_recognition_service.register_attendance(
         db, face_recognition, event_type=event_type, device_id=device_id
