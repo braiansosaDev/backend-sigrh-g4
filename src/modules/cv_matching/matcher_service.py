@@ -1,19 +1,18 @@
-from fastapi import HTTPException
-import fitz
-from pypdf import PdfReader
 from io import BytesIO
 from spacy.language import Language
 from spacy.tokens import Doc
 from spacy.tokens.span import Span
 from spacy.matcher import PhraseMatcher
+from sqlmodel import select
 from src.database.core import DatabaseSession
-from sqlalchemy import func
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
 )
 from src.modules.opportunity.services import opportunity_service
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.cv_matching import matcher_schema
+from src.modules.postulation.schemas.postulation_schemas import PostulationStatus
+from fastapi import status, HTTPException
 from typing import List, Any
 import unicodedata
 import string
@@ -22,35 +21,11 @@ import base64
 import logging
 import re
 import itertools
-from sqlmodel import select
-
+from datetime import datetime
+import fitz  # type: ignore
+from pypdf import PdfReader
 
 logger = logging.getLogger("uvicorn.error")
-
-
-def get_all_postulations(
-    db: DatabaseSession, job_opportunity_id: int
-) -> List[matcher_schema.PostulationResponse]:
-    postulations = db.exec(
-        select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)
-    ).all()
-
-    if not postulations:
-        raise HTTPException(status_code=404, detail="Postulation not found")
-
-    formatted_postulations = []
-    for postulation in postulations:
-        postulation_dict = postulation.dict()
-        try:
-            # Decodifica base64 a bytes, luego a utf-8
-            postulation_dict["cv_file"] = base64.b64decode(postulation.cv_file).decode(
-                "utf-8"
-            )
-        except Exception:
-            postulation_dict["cv_file"] = ""
-        formatted_postulations.append(postulation_dict)
-
-    return formatted_postulations
 
 
 def get_all_abilities(
@@ -59,31 +34,34 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
-def extract_text_from_pdf(base64_pdf: str):
+def extract_text_from_pdf(base64_pdf: str) -> str:
     try:
         pdf_bytes = base64.b64decode(base64_pdf)
         doc = fitz.open("pdf", pdf_bytes)
-        texto = ""
-        for pagina in doc:
-            texto += pagina.get_text()
-        # return texto
-        texto += " "
+        text: str = ""
+        for page in doc:  # type: ignore
+            text += page.get_text()  # type: ignore
+        text += " "  # type: ignore
         doc_pypdf = PdfReader(BytesIO(pdf_bytes))
-        # texto: str = ""
-        for pagina in doc_pypdf.pages:
-            texto += pagina.extract_text(extraction_mode="plain")
-        logger.info(f"Extracted text:\n{texto}")
-        return texto
-    except Exception as e:
+        for page in doc_pypdf.pages:
+            text += page.extract_text(extraction_mode="plain")  # type: ignore
+        logger.info(f"Extracted text:\n{text}")
+        return text  # type: ignore
+    except Exception:
         return ""
 
 
 def evaluate_candidates(
-    db: DatabaseSession, job_opportunity_id: int
+    db: DatabaseSession, job_opportunity_id: int, request: matcher_schema.MatcherRequest
 ) -> List[matcher_schema.MatcherResponse]:
     postulations = db.exec(
         select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)
-    )
+    ).all()
+    if not postulations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El id {job_opportunity_id} no existe",
+        )
     abilities = get_all_abilities(db, job_opportunity_id)
     model = load_spanish_model()
 
@@ -93,7 +71,7 @@ def evaluate_candidates(
     normalized_required_words = normalize_words(required_abilities)
     normalized_desired_words = normalize_words(desired_abilities)
 
-    response = []
+    response: list[matcher_schema.MatcherResponse] = []
 
     for postulation in postulations:
         normalized_text = normalize(
@@ -126,31 +104,36 @@ def evaluate_candidates(
             surname=postulation.surname,
             suitable=suitable,
             ability_match=ability_match,
+            required_skill_percentage=0,
+            desirable_skill_percentage=0,
         )
         response.append(matcher)
 
-        postulation.evaluated_at = func.now()
+        postulation.evaluated_at = datetime.now()
         postulation.suitable = suitable
         postulation.ability_match = {
             "required_words": required_words_match["WORDS_FOUND"],
             "desired_words": desired_words_match["WORDS_FOUND"],
         }
-        postulation.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
+        # postulation.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
+        postulation.status = (
+            PostulationStatus.ACEPTADA if suitable else PostulationStatus.NO_ACEPTADA
+        )
 
     db.commit()
 
     return response
 
 
-def extract_desirable_abilities(abilities):
-    desired_abilities = []
+def extract_desirable_abilities(abilities: JobOpportunityResponse):
+    desired_abilities: list[str] = []
     for ability in abilities.desirable_abilities:
         desired_abilities.append(ability.name)
     return desired_abilities
 
 
-def extract_required_abilities(abilities):
-    required_abilities = []
+def extract_required_abilities(abilities: JobOpportunityResponse):
+    required_abilities: list[str] = []
     for ability in abilities.required_abilities:
         required_abilities.append(ability.name)
     return required_abilities
@@ -172,7 +155,7 @@ def normalize(text: str) -> str:
     return text
 
 
-def normalize_words(words: list) -> list[str]:
+def normalize_words(words: list[str]) -> list[str]:
     normalized_words = [normalize(word) for word in words]
     return normalized_words
 
@@ -182,7 +165,7 @@ def match_phrase(tokens: Doc, ability: str, model: Language) -> bool:
     matcher.add("TerminologyList", [model.make_doc(ability)])
 
     matches = matcher(tokens)
-    matches_list = []
+    matches_list: list[Span] = []
     if not matches:
         logger.info(f"Did not find {ability} with PhraseMatcher")
         return False

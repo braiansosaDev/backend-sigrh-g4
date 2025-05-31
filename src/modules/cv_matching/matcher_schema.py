@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
-from typing import List
+from typing import List, Optional, Any
 
 
 class PostulationResponse(BaseModel):
@@ -15,7 +15,7 @@ class PostulationResponse(BaseModel):
     cv_file: str
     evaluated_at: datetime
     suitable: bool
-    ability_match: dict
+    ability_match: dict[str, Any]
     created_at: datetime
     status: str
 
@@ -26,8 +26,15 @@ class PostulationResponse(BaseModel):
 
 
 class MatcherResponse(BaseModel):
-    postulation_id: int
+    postulation_id: Optional[int]
     name: str
     surname: str
     suitable: bool
     ability_match: List[str]
+    required_skill_percentage: float
+    desirable_skill_percentage: float
+
+
+class MatcherRequest(BaseModel):
+    required_skill_percentage: float
+    desirable_skill_percentage: float
