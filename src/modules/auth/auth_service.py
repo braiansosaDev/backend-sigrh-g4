@@ -1,8 +1,9 @@
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.database.core import DatabaseSession
-from src.auth.crypt import verify_password
+from src.modules.auth.crypt import verify_password
 from src.modules.employees.services import utils
+
 
 def auth_login(db: DatabaseSession, user_id: str, password: str) -> Employee:
     """
