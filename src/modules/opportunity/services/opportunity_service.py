@@ -70,7 +70,7 @@ def create_opportunity(
     db: DatabaseSession, request: JobOpportunityRequest
 ) -> JobOpportunityResponse:
     try:
-        db_opportunity = JobOpportunityModel(**request.dict())
+        db_opportunity = JobOpportunityModel(**request.dict(), required_skill_percentage=100, desirable_skill_percentage=50)
         required_abilities: list[AbilityPublic] = request.required_abilities
         desirable_abilities: list[AbilityPublic] = request.desirable_abilities
 
