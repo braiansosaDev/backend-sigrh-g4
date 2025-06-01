@@ -116,7 +116,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO shift (id, description, type, working_hours, working_days) VALUES
   (1, 'Turno mañana',      'Matutino', 8, 5),
   (2, 'Turno tarde',      'Vespertino', 8, 5),
-  (3, 'Turno noche',       'Nocturno',  8, 6)
+  (3, 'Turno noche',       'Nocturno',  8, 7)
 ON CONFLICT (id) DO UPDATE SET
 description = EXCLUDED.description,
 type = EXCLUDED.type,
