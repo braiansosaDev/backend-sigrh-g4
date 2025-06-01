@@ -8,6 +8,7 @@ class PostulationStatus(Enum):
     ACEPTADA = "aceptada"
     NO_ACEPTADA = "no aceptada"
     CONTRATADO = "contratado"
+    RECHAZADO = "rechazado"
 
 
 class PostulationCreate(BaseModel):

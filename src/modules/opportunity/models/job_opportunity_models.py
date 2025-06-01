@@ -22,6 +22,8 @@ class JobOpportunityBaseModel(SQLModel):
     budget: int = Field(gt=0)
     budget_currency_id: str = Field(min_length=3, max_length=3)
     state_id: int = Field()
+    required_skill_percentage: float = Field(ge=0.0, le=100.0)
+    desirable_skill_percentage: float = Field(ge=0.0, le=100.0)
     created_at: datetime = Field(default=func.now())
     updated_at: datetime = Field(
         default=func.now(), sa_column_kwargs={"onupdate": func.now()}

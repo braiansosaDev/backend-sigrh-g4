@@ -1,3 +1,5 @@
+BEGIN;
+
 -- Cargar países
 INSERT INTO country (id, name) VALUES
 (1, 'Argentina'),
@@ -92,3 +94,8 @@ INSERT INTO role_permission (role_id, permission_id) VALUES
 (6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4),
 (7,4)
 ON CONFLICT DO NOTHING;
+INSERT INTO shift (description, type, working_hours, working_days) VALUES
+  ('Turno mañana', 'Matutino', 8, 5),
+  ('Turno Tarde', 'Vespertino', 8, 5),
+  ('Turno noche', 'Nocturno',  8, 7);
+COMMIT;

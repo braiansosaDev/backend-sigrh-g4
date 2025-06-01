@@ -73,7 +73,8 @@ CREATE TYPE public.postulationstatus AS ENUM (
     'PENDIENTE',
     'ACEPTADA',
     'NO_ACEPTADA',
-    'CONTRATADO'
+    'CONTRATADO',
+    'RECHAZADO'
 );
 
 
@@ -205,6 +206,46 @@ ALTER SEQUENCE public.concept_id_seq OWNED BY public.concept.id;
 
 
 --
+-- Name: configuration; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.configuration (
+    id integer NOT NULL,
+    company_name character varying NOT NULL,
+    primary_color character varying NOT NULL,
+    secondary_color character varying NOT NULL,
+    logo bytea NOT NULL,
+    favicon bytea NOT NULL,
+    email character varying NOT NULL,
+    phone character varying NOT NULL
+);
+
+
+ALTER TABLE public.configuration OWNER TO postgres;
+
+--
+-- Name: configuration_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.configuration_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.configuration_id_seq OWNER TO postgres;
+
+--
+-- Name: configuration_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.configuration_id_seq OWNED BY public.configuration.id;
+
+
+--
 -- Name: country; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -326,6 +367,7 @@ CREATE TABLE public.employee_hours (
     sumary_time time without time zone,
     extra_hours time without time zone,
     pay boolean NOT NULL,
+    payroll_status character varying NOT NULL,
     notes character varying NOT NULL
 );
 
@@ -459,6 +501,8 @@ CREATE TABLE public.job_opportunity (
     budget integer NOT NULL,
     budget_currency_id character varying(3) NOT NULL,
     state_id integer NOT NULL,
+    required_skill_percentage double precision NOT NULL,
+    desirable_skill_percentage double precision NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL,
     id integer NOT NULL
@@ -500,6 +544,48 @@ ALTER SEQUENCE public.job_opportunity_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.job_opportunity_id_seq OWNED BY public.job_opportunity.id;
+
+
+--
+-- Name: leave; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.leave (
+    id integer NOT NULL,
+    employee_id integer NOT NULL,
+    request_date date NOT NULL,
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    leave_type character varying NOT NULL,
+    reason character varying,
+    document_status character varying NOT NULL,
+    request_status character varying NOT NULL,
+    observations character varying
+);
+
+
+ALTER TABLE public.leave OWNER TO postgres;
+
+--
+-- Name: leave_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.leave_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.leave_id_seq OWNER TO postgres;
+
+--
+-- Name: leave_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.leave_id_seq OWNED BY public.leave.id;
 
 
 --
@@ -776,6 +862,13 @@ ALTER TABLE ONLY public.concept ALTER COLUMN id SET DEFAULT nextval('public.conc
 
 
 --
+-- Name: configuration id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.configuration ALTER COLUMN id SET DEFAULT nextval('public.configuration_id_seq'::regclass);
+
+
+--
 -- Name: country id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -822,6 +915,13 @@ ALTER TABLE ONLY public.job ALTER COLUMN id SET DEFAULT nextval('public.job_id_s
 --
 
 ALTER TABLE ONLY public.job_opportunity ALTER COLUMN id SET DEFAULT nextval('public.job_opportunity_id_seq'::regclass);
+
+
+--
+-- Name: leave id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.leave ALTER COLUMN id SET DEFAULT nextval('public.leave_id_seq'::regclass);
 
 
 --
@@ -896,6 +996,14 @@ ALTER TABLE ONLY public.clock_events
 
 ALTER TABLE ONLY public.concept
     ADD CONSTRAINT concept_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: configuration configuration_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.configuration
+    ADD CONSTRAINT configuration_pkey PRIMARY KEY (id);
 
 
 --
@@ -995,6 +1103,14 @@ ALTER TABLE ONLY public.job
 
 
 --
+-- Name: leave leave_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.leave
+    ADD CONSTRAINT leave_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: permission permission_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1066,6 +1182,13 @@ CREATE INDEX ix_ability_id ON public.ability USING btree (id);
 
 
 --
+-- Name: ix_configuration_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_configuration_id ON public.configuration USING btree (id);
+
+
+--
 -- Name: ix_country_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -1084,6 +1207,20 @@ CREATE UNIQUE INDEX ix_country_name ON public.country USING btree (name);
 --
 
 CREATE INDEX ix_document_id ON public.document USING btree (id);
+
+
+--
+-- Name: ix_employee_hours_employee_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_employee_hours_employee_id ON public.employee_hours USING btree (employee_id);
+
+
+--
+-- Name: ix_employee_hours_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_employee_hours_id ON public.employee_hours USING btree (id);
 
 
 --
@@ -1119,6 +1256,62 @@ CREATE INDEX ix_job_name ON public.job USING btree (name);
 --
 
 CREATE INDEX ix_job_opportunity_id ON public.job_opportunity USING btree (id);
+
+
+--
+-- Name: ix_leave_document_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_document_status ON public.leave USING btree (document_status);
+
+
+--
+-- Name: ix_leave_employee_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_employee_id ON public.leave USING btree (employee_id);
+
+
+--
+-- Name: ix_leave_end_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_end_date ON public.leave USING btree (end_date);
+
+
+--
+-- Name: ix_leave_id; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_id ON public.leave USING btree (id);
+
+
+--
+-- Name: ix_leave_leave_type; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_leave_type ON public.leave USING btree (leave_type);
+
+
+--
+-- Name: ix_leave_request_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_request_date ON public.leave USING btree (request_date);
+
+
+--
+-- Name: ix_leave_request_status; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_request_status ON public.leave USING btree (request_status);
+
+
+--
+-- Name: ix_leave_start_date; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX ix_leave_start_date ON public.leave USING btree (start_date);
 
 
 --
@@ -1316,6 +1509,14 @@ ALTER TABLE ONLY public.job_opportunity
 
 ALTER TABLE ONLY public.job
     ADD CONSTRAINT job_sector_id_fkey FOREIGN KEY (sector_id) REFERENCES public.sector(id);
+
+
+--
+-- Name: leave leave_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.leave
+    ADD CONSTRAINT leave_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES public.employee(id);
 
 
 --

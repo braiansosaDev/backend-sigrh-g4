@@ -5,7 +5,7 @@ class Shift(SQLModel, table=True):
     __tablename__ = "shift"  # type: ignore
     id: int = Field(primary_key=True)
     description: str
-    type: str
+    type: str  # Matutino, Nocturno, Vespertino
     working_hours: float
     working_days: int
 

@@ -6,7 +6,7 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityUpdate,
 )
 from src.modules.opportunity.services import opportunity_service
-from src.auth.token import TokenDependency
+from src.modules.auth.token import TokenDependency
 
 
 opportunity_router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
