@@ -13,7 +13,7 @@ config_router = APIRouter(prefix="/configurations", tags=["Configurations"])
 async def get_configurations(db: DatabaseSession):
     return config_service.get_configurations(db)
 
-
+#
 # @config_router.get(
 #     path="/{config_id}",
 #     response_model=config_schemas.ConfigResponse,
