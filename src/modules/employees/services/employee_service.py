@@ -6,10 +6,11 @@ from src.modules.employees.models.documents import Document
 from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeResponse,
+    UpdateEmployee,
 )
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
-from src.modules.auth.crypt import get_password_hash
+from src.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
 
 
