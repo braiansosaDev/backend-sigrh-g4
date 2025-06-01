@@ -384,7 +384,7 @@ def match_abilities(
 
     result["SUITABLE"] = (
         len(result["WORDS_FOUND"]) / len(abilities)
-    ) >= minimum_percentage
+    ) >= minimum_percentage / 100
     return result
 
 
