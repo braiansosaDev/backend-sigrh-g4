@@ -1,16 +1,14 @@
-from pydantic import BaseModel, StringConstraints
-from typing import Annotated
-
-ColorHex = Annotated[str, StringConstraints(pattern=r"^#(?:[0-9a-fA-F]{3}){1,2}$")]
+from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 
 class ConfigBase(BaseModel):
     company_name: str
-    primary_color: ColorHex
-    secondary_color: ColorHex
-    logo: bytes
-    favicon: bytes
-    email: str
+    primary_color: Optional[str]
+    secondary_color: Optional[str]
+    logo: str
+    favicon: str
+    email: EmailStr
     phone: str
 
 

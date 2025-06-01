@@ -15,12 +15,12 @@ async def get_all_configurations(db: DatabaseSession):
 
 
 @config_router.get(
-    path="/{id}",
+    path="/{config_id}",
     response_model=config_schemas.ConfigResponse,
     status_code=status.HTTP_200_OK,
 )
-async def get_configurations(db: DatabaseSession, id: int):
-    return config_service.get_configurations(db, id)
+async def get_configurations_by_id(db: DatabaseSession, config_id: int):
+    return config_service.get_configurations(db, config_id)
 
 
 @config_router.post(
@@ -35,16 +35,16 @@ async def post_configurations(
 
 
 @config_router.patch(
-    path="/{id}",
+    path="/{config_id}",
     response_model=config_schemas.ConfigResponse,
     status_code=status.HTTP_200_OK,
 )
 async def patch_configurations(
-    db: DatabaseSession, id: int, request: config_schemas.ConfigRequest
+    db: DatabaseSession, config_id: int, request: config_schemas.ConfigRequest
 ):
-    return config_service.update_configurations(db, id, request)
+    return config_service.update_configurations(db, config_id, request)
 
 
-@config_router.delete(path="/{id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_configurations(db: DatabaseSession, id: int):
-    return config_service.delete_configurations(db, id)
+@config_router.delete(path="/{config_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_configurations(db: DatabaseSession, config_id: int):
+    return config_service.delete_configurations(db, config_id)
