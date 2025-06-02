@@ -13,7 +13,7 @@ from src.modules.payroll_calculator.schemas import (
     PayrollResponse,
     ShiftSchema,
 )
-from src.modules.employee_hours.models.models import EmployeeHours, RegisterType
+from src.modules.employee_hours.models.models import EmployeeHours, RegisterType, payType
 from sqlmodel import and_, delete, select
 
 
@@ -700,9 +700,9 @@ def check_concept(db: DatabaseSession, concept_description: str) -> Concept:
 def create_employee_hours_if_not_exists(
     db: DatabaseSession,
     employee: Employee,
-    concept: id,
+    concept: int,
     day: date,
-    daily_events_count: int | None,
+    daily_events_count: int,
     first_check_in: time | None,
     last_check_out: time | None,
     payroll_status: str,
@@ -736,7 +736,7 @@ def create_employee_hours_if_not_exists(
         last_check_out=last_check_out,
         sumary_time=sumary_time,
         extra_hours=extra_hours,
-        payroll_status=payroll_status,  # acá le pasas 'archived', 'payable', etc
+        payroll_status=payType(payroll_status),  # acá le pasas 'archived', 'payable', etc
         notes=notes,
     )
 
