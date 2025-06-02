@@ -111,15 +111,18 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
         )
         events_by_day[event_day].append(event)
     try:   
-        if employee.shift.type != "Nocturno":
+        if employee.shift.type == "matutino":
             # 2) Para cada día hábil, procesar según tenga o no eventos
             process_daily_hours(
                 db, employee, date_range, events_by_day
             )
+        elif employee.shift.type == "vespertino":
+            pass
         else:
-            process_night_hours(
-                db, employee, date_range, events_by_day
-            )
+            # process_night_hours(
+            #     db, employee, date_range, events_by_day
+            # )
+            pass
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -551,20 +554,13 @@ def create_employee_hours_if_not_exists(
     extra_hours: time | None,
     register_type: RegisterType,
 ):
-    # Buscar si existe
-    # existing_employee_hours = db.exec(
-    #     select(EmployeeHours)
-    #     .where(
-    #         EmployeeHours.employee_id == employee.id,
-    #         EmployeeHours.work_date == day,
-    #         EmployeeHours.payroll_status == "archived"
-    #     )
-    # ).one_or_none()
+
     existing_employee_hours = db.exec(
         select(EmployeeHours)
         .where(
             EmployeeHours.employee_id == employee.id,
             EmployeeHours.work_date == day,
+            EmployeeHours.concept_id == concept
         )
     ).one_or_none()
 
