@@ -12,7 +12,6 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
 from src.modules.opportunity.services import opportunity_service
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.cv_matching import matcher_schema
-from src.modules.postulation.schemas.postulation_schemas import PostulationStatus
 from fastapi import status, HTTPException
 from typing import List, Any
 import unicodedata
@@ -121,9 +120,6 @@ def evaluate_candidates(
             "required_words": required_words_match["WORDS_FOUND"],
             "desired_words": desired_words_match["WORDS_FOUND"],
         }
-        postulation.status = (
-            PostulationStatus.ACEPTADA if suitable else PostulationStatus.RECHAZADO
-        )
 
     db.commit()
 
@@ -203,8 +199,8 @@ def match_abilities(
     al mínimo porcentaje requerido del total de habilidades.
     """
 
-    if minimum_percentage <= 0:
-        raise ValueError("minimum_percentage must be a positive value")
+    if minimum_percentage < 0:
+        raise ValueError("minimum_percentage must be a positive value or zero")
 
     logger.info(
         f"Finding required abilities {abilities} with threshold {similarity_threshold} and minimum percentage {minimum_percentage}"
