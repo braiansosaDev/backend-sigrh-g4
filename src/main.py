@@ -31,6 +31,8 @@ from src.modules.clock_events.controllers.controller import clock_events_router
 from src.modules.concept.controllers.controller import concept_router
 from src.modules.shift.controllers.controller import shift_router
 from src.modules.payroll_calculator.controller import payroll_router
+from src.modules.leave.controllers.leave_controller import leave_router
+
 
 app = FastAPI(
     root_path="/api/v1",
@@ -67,3 +69,4 @@ app.include_router(clock_events_router)
 app.include_router(concept_router)
 app.include_router(shift_router)
 app.include_router(payroll_router)
+app.include_router(leave_router)

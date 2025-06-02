@@ -23,7 +23,7 @@ from src.modules.employees.models.work_history import WorkHistory
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.shift.models.models import Shift
 from src.modules.configuration.config_models import Configuration
-from src.modules.leave.leave_models import Leave
+from src.modules.leave.models.leave_models import Leave
 from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityAbility,
     JobOpportunityModel,
