@@ -5,13 +5,13 @@ class RolePermission(SQLModel, table=True):
     __tablename__: str = "role_permission" # type: ignore
 
     role_id: int = Field(foreign_key="role.id", primary_key=True, index=True, ondelete="CASCADE")
-    permission_id: str = Field(foreign_key="permission.id", primary_key=True, index=True, ondelete="CASCADE")
+    permission_id: int = Field(foreign_key="permission.id", primary_key=True, index=True, ondelete="CASCADE")
 
 
 class Permission(SQLModel, table=True):
     __tablename__: str = "permission" # type: ignore
 
-    id: str | None = Field(primary_key=True, index=True, min_length=1, max_length=100)
+    id: int | None = Field(primary_key=True, index=True, default=None)
     name: str = Field(min_length=1, max_length=50)
     description: str = Field(min_length=1, max_length=100)
     roles: list["Role"] = Relationship(back_populates="permissions", link_model=RolePermission)

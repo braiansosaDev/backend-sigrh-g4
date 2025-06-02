@@ -2,6 +2,12 @@ from sqlmodel import Field, Relationship, SQLModel
 from datetime import time, date
 from enum import Enum
 from typing import Optional
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
+    from src.modules.concept.models.models import Concept
+    from src.modules.shift.models.models import Shift
 
 
 class RegisterType(str, Enum):

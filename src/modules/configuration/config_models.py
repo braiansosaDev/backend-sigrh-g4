@@ -10,7 +10,7 @@ class Configuration(SQLModel, table=True):
     company_name: str
     primary_color: Optional[str]
     secondary_color: Optional[str]
-    logo: str  # Guardar en Base64
-    favicon: str  # Guardar en Base64
+    logo: Optional[str]  # Guardar en Base64
+    favicon: Optional[str]  # Guardar en Base64
     email: EmailStr
     phone: str

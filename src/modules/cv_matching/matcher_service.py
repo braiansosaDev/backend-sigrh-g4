@@ -14,6 +14,7 @@ from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.cv_matching import matcher_schema
 from fastapi import status, HTTPException
 from typing import List, Any
+import pymupdf
 import unicodedata
 import string
 import spacy
@@ -22,7 +23,6 @@ import logging
 import re
 import itertools
 from datetime import datetime
-import fitz  # type: ignore
 from pypdf import PdfReader
 
 logger = logging.getLogger("uvicorn.error")
@@ -34,21 +34,34 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
-def extract_text_from_pdf(base64_pdf: str) -> str:
+def extract_text_from_pdf(base64_pdf: str):
+    texto: str = ""
+    pdf_bytes = base64.b64decode(base64_pdf)
+
     try:
-        pdf_bytes = base64.b64decode(base64_pdf)
-        doc = fitz.open("pdf", pdf_bytes)
-        text: str = ""
-        for page in doc:  # type: ignore
-            text += page.get_text()  # type: ignore
-        text += " "  # type: ignore
-        doc_pypdf = PdfReader(BytesIO(pdf_bytes))
-        for page in doc_pypdf.pages:
-            text += page.extract_text(extraction_mode="plain")  # type: ignore
-        logger.info(f"Extracted text:\n{text}")
-        return text  # type: ignore
-    except Exception:
-        return ""
+        logger.info("Extracting text with PyMuPDF...")
+        with pymupdf.open("pdf", pdf_bytes) as doc_pymupdf:
+            for pagina in doc_pymupdf:
+                texto += pagina.get_text()  # type: ignore
+    except Exception as e:
+        logger.error("Unexpected exception occurred while extracting text with PyMuPDF")
+        logger.error(e)
+
+    try:
+        logger.info("Extracting text with pypdf...")
+        if texto.strip():
+            texto += " "
+        with PdfReader(BytesIO(pdf_bytes)) as doc_pypdf:
+            for pagina in doc_pypdf.pages:
+                texto += pagina.extract_text(extraction_mode="plain")
+    except Exception as e:
+        logger.error("Unexpected error occurred while extracting text with pypdf")
+        logger.error(e)
+
+    if not texto.strip():
+        raise ValueError("Extracted text is empty!")
+    logger.info(f"Extracted text:\n{texto}")
+    return texto
 
 
 def evaluate_candidates(
