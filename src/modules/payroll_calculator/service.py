@@ -303,58 +303,6 @@ def process_night_hours(
             employee_hours_to_add.append(employee_hour)
 
 
-def calculate_interval_time(
-    events_list: list[ClockEvents],
-    concepts_to_add: list[Concept],
-    employee_hours_to_add: list[EmployeeHours],
-    employee: Employee,
-    day: date,
-):
-    total_duration = timedelta()
-
-    trimmed_events = events_list[1:-1]  # Excluye el primer y último evento
-
-    i = 0
-    while i < len(trimmed_events) - 1:
-        current_event = trimmed_events[i]
-        next_event = trimmed_events[i + 1]
-
-        if (
-            current_event.event_type == ClockEventTypes.OUT
-            and next_event.event_type == ClockEventTypes.IN
-        ):
-            interval = next_event.event_date - current_event.event_date
-            total_duration += interval
-            i += 2  # saltamos al siguiente par
-        else:
-            i += 1  # si no es un par válido, seguimos buscando
-
-    total_seconds = int(total_duration.total_seconds())
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-
-    # Creamos el schema de respuesta
-    concept = Concept(description="Tiempo de intervalos")
-    employee_hour = EmployeeHours(
-        employee_id=employee.id,
-        concept_id=concept.id,
-        shift_id=employee.shift.id,
-        check_count=len(events_list),
-        notes="Tiempo de intervalos",
-        register_type=RegisterType.PRESENCIA,
-        first_check_in=None,
-        last_check_out=None,
-        sumary_time=time(hour=hours, minute=minutes, second=seconds),
-        work_date=day,
-        extra_hours=None,
-        pay=False,
-    )
-
-    concepts_to_add.append(concept)
-    employee_hours_to_add.append(employee_hour)
-
-
 def process_daily_hours(
     db: DatabaseSession,
     employee: Employee,
