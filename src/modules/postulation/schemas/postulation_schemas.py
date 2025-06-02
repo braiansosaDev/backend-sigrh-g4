@@ -41,6 +41,7 @@ class PostulationResponse(PostulationCreate):
     created_at: datetime = Field()
     updated_at: datetime = Field()
     status: PostulationStatus = Field()
+    motive: str | None
 
 
 class PostulationUpdate(BaseModel):
@@ -58,3 +59,4 @@ class PostulationUpdate(BaseModel):
     address_state_id: int | None = Field(default=None)
     cv_file: str | None = Field(default=None)
     status: PostulationStatus = Field()
+    motive: str | None

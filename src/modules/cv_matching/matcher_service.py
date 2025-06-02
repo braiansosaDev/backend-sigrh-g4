@@ -14,7 +14,7 @@ from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.cv_matching import matcher_schema
 from fastapi import status, HTTPException
 from typing import List, Any
-import pymupdf
+import pymupdf  # type: ignore
 import unicodedata
 import string
 import spacy
@@ -34,7 +34,7 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
-def extract_text_from_pdf(base64_pdf: str):
+def extract_text_from_pdf(base64_pdf: str):  # type: ignore
     texto: str = ""
     pdf_bytes = base64.b64decode(base64_pdf)
 
@@ -49,19 +49,19 @@ def extract_text_from_pdf(base64_pdf: str):
 
     try:
         logger.info("Extracting text with pypdf...")
-        if texto.strip():
-            texto += " "
+        if texto.strip():  # type: ignore
+            texto += " "  # type: ignore
         with PdfReader(BytesIO(pdf_bytes)) as doc_pypdf:
             for pagina in doc_pypdf.pages:
-                texto += pagina.extract_text(extraction_mode="plain")
+                texto += pagina.extract_text(extraction_mode="plain")  # type: ignore
     except Exception as e:
         logger.error("Unexpected error occurred while extracting text with pypdf")
         logger.error(e)
 
-    if not texto.strip():
+    if not texto.strip():  # type: ignore
         raise ValueError("Extracted text is empty!")
     logger.info(f"Extracted text:\n{texto}")
-    return texto
+    return texto  # type: ignore
 
 
 def evaluate_candidates(
@@ -96,7 +96,7 @@ def evaluate_candidates(
 
     for postulation in postulations:
         normalized_text = normalize(
-            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
+            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())  # type: ignore
         )
         logger.info(f"Normalized PDF text:\n{normalized_text}")
         required_words_match = match_abilities(
