@@ -30,3 +30,4 @@ class Postulation(SQLModel, table=True):
         default=func.now(), sa_column_kwargs={"onupdate": func.now()}
     )
     status: PostulationStatus = Field(default=PostulationStatus.PENDIENTE)
+    motive: str = Field(nullable=True)
