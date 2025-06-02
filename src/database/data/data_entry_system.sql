@@ -6,6 +6,8 @@ INSERT INTO country (id, name) VALUES
 (2, 'Brasil'),
 (3, 'Chile')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+SELECT setval(pg_get_serial_sequence('country', 'id'), (SELECT MAX(id) FROM country));
+
 -- Cargar provincias/estados
 INSERT INTO state (id, name, country_id) VALUES
 (1, 'Buenos Aires', 1),
@@ -18,6 +20,8 @@ INSERT INTO state (id, name, country_id) VALUES
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 country_id = EXCLUDED.country_id;
+SELECT setval(pg_get_serial_sequence('state', 'id'), (SELECT MAX(id) FROM state));
+
 -- Sectores
 INSERT INTO sector (id, name) VALUES
 (1, 'Desarrollo'),
@@ -27,6 +31,8 @@ INSERT INTO sector (id, name) VALUES
 (5, 'Contabilidad'),
 (6, 'Proyectos')
 ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
+SELECT setval(pg_get_serial_sequence('sector', 'id'), (SELECT MAX(id) FROM sector));
+
 -- Cargar puestos
 INSERT INTO job (id, name, sector_id) VALUES
 (1, 'Desarrollador', 1),
@@ -38,6 +44,8 @@ INSERT INTO job (id, name, sector_id) VALUES
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 sector_id = EXCLUDED.sector_id;
+SELECT setval(pg_get_serial_sequence('job', 'id'), (SELECT MAX(id) FROM job));
+
 -- Cargar habilidades
 INSERT INTO ability (id, name, description) VALUES
 (1, 'Java', 'Lenguaje de programación orientado a objetos'),
@@ -51,6 +59,9 @@ INSERT INTO ability (id, name, description) VALUES
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;
+SELECT setval(pg_get_serial_sequence('ability', 'id'), (SELECT MAX(id) FROM ability));
+
+-- Cargar permisos
 INSERT INTO permission (id, name, description) VALUES
 (1, 'ABM Empleados', 'El usuario puede ingresar y accionar en ABM Empleados'),
 (2, 'ABM Roles', 'El usuario puede operar con el ABM de roles'),
@@ -74,6 +85,9 @@ Roles a los empleados'),
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;
+SELECT setval(pg_get_serial_sequence('permission', 'id'), (SELECT MAX(id) FROM permission));
+
+-- Cargar roles
 INSERT INTO role (id, name, description) VALUES
 (1, 'Analista RRHH', 'Analista de Recursos humanos'),
 (2, 'Administrador Root', 'Usuario de Administrador ROOT IT'),
@@ -85,14 +99,29 @@ INSERT INTO role (id, name, description) VALUES
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;
+SELECT setval(pg_get_serial_sequence('role', 'id'), (SELECT MAX(id) FROM role));
+
+-- Cargar permisos de roles
 INSERT INTO role_permission (role_id, permission_id) VALUES
-(1,1), (1,7), (1,5), (1,9),
+(1,1), (1,7), (1,5), (1,9), (1,5),
 (2,8), (2,1), (2,2), (2,6),
 (3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4),
 (4,9),
 (5,7), (5,11), (5,9), (5,10),
 (6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4),
-(7,4)
+(7,3)
 ON CONFLICT DO NOTHING;
+
+-- Cargar shifts
+INSERT INTO shift (id, description, type, working_hours, working_days) VALUES
+  (1, 'Turno mañana',      'Matutino', 8, 5),
+  (2, 'Turno tarde',      'Vespertino', 8, 5),
+  (3, 'Turno noche',       'Nocturno',  8, 7)
+ON CONFLICT (id) DO UPDATE SET
+description = EXCLUDED.description,
+type = EXCLUDED.type,
+working_hours = EXCLUDED.working_hours,
+working_days = EXCLUDED.working_days;
+SELECT setval(pg_get_serial_sequence('shift', 'id'), (SELECT MAX(id) FROM shift));
 
 COMMIT;

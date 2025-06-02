@@ -1,5 +1,4 @@
 from fastapi import HTTPException
-import fitz
 from pypdf import PdfReader
 from io import BytesIO
 from spacy.language import Language
@@ -13,8 +12,10 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
 )
 from src.modules.opportunity.services import opportunity_service
 from src.modules.postulation.models.postulation_models import Postulation
+from src.modules.postulation.schemas.postulation_schemas import PostulationStatus
 from src.modules.cv_matching import matcher_schema
 from typing import List, Any
+import pymupdf
 import unicodedata
 import string
 import spacy
@@ -60,22 +61,37 @@ def get_all_abilities(
 
 
 def extract_text_from_pdf(base64_pdf: str):
+    texto: str = ""
+    pdf_bytes = base64.b64decode(base64_pdf)
+
     try:
-        pdf_bytes = base64.b64decode(base64_pdf)
-        doc = fitz.open("pdf", pdf_bytes)
-        texto = ""
-        for pagina in doc:
-            texto += pagina.get_text()
-        # return texto
-        texto += " "
-        doc_pypdf = PdfReader(BytesIO(pdf_bytes))
-        # texto: str = ""
-        for pagina in doc_pypdf.pages:
-            texto += pagina.extract_text(extraction_mode="plain")
-        logger.info(f"Extracted text:\n{texto}")
-        return texto
+        logger.info("Extracting text with PyMuPDF...")
+        with pymupdf.open("pdf", pdf_bytes) as doc_pymupdf:
+            for pagina in doc_pymupdf:
+                # Se debe ignorar porque pymupdf no soporta
+                # adecuadamente los type hints:
+                # https://github.com/pymupdf/PyMuPDF/issues/2883
+                texto += pagina.get_text() # type: ignore
     except Exception as e:
-        return ""
+        logger.error("Unexpected exception occurred while extracting text with PyMuPDF")
+        logger.error(e)
+
+    try:
+        logger.info("Extracting text with pypdf...")
+        if texto.strip():
+            texto += " "
+        with PdfReader(BytesIO(pdf_bytes)) as doc_pypdf:
+            for pagina in doc_pypdf.pages:
+                texto += pagina.extract_text(extraction_mode="plain")
+    except Exception as e:
+        logger.error("Unexpected error occurred while extracting text with pypdf")
+        logger.error(e)
+
+    if not texto.strip():
+        raise ValueError("Extracted text is empty!")
+    logger.info(f"Extracted text:\n{texto}")
+    return texto
+
 
 
 def evaluate_candidates(
@@ -135,7 +151,7 @@ def evaluate_candidates(
             "required_words": required_words_match["WORDS_FOUND"],
             "desired_words": desired_words_match["WORDS_FOUND"],
         }
-        postulation.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
+        postulation.status = PostulationStatus.ACEPTADA if suitable else PostulationStatus.NO_ACEPTADA
 
     db.commit()
 

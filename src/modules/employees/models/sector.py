@@ -1,5 +1,8 @@
 from sqlmodel import Field, Relationship, SQLModel
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.job import Job
 
 
 class Sector(SQLModel, table=True):

@@ -1,6 +1,11 @@
 from sqlmodel import Field, SQLModel, Relationship
 from datetime import datetime
 from src.modules.clock_events.schemas.schemas import ClockEventTypes
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
+
 
 class ClockEvents(SQLModel, table=True):
     __tablename__ = "clock_events"  # type: ignore

@@ -34,7 +34,7 @@ class Employee(SQLModel, table=True):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(unique=True, max_length=100)
     active: bool = Field(default=False)
-    role: int = Field(foreign_key="role.id")
+    role: int | None = Field(foreign_key="role.id", default=None)
     password: str = Field(max_length=100, nullable=True)
     phone: str = Field(unique=True, max_length=20)
     salary: Decimal = Field(gt=0)
