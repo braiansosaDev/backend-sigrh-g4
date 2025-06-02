@@ -7,8 +7,13 @@ from typing import Optional
 class RegisterType(str, Enum):
     AUSENCIA = "AUSENCIA"
     PRESENCIA = "PRESENCIA"
-    TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
+    DIA_NO_HABIL = "DIA NO HABIL"
 
+class payType(str, Enum):
+    PAYABLE = "payable"
+    NOT_PAYABLE = "not payable"
+    ARCHIVED = "archived"
+    PENDING_VALIDATION = "pending validation"
 
 class EmployeeHours(SQLModel, table=True):
     __tablename__ = "employee_hours"  # type: ignore
@@ -32,10 +37,7 @@ class EmployeeHours(SQLModel, table=True):
     last_check_out: Optional[time] = Field(default=None, nullable=True)
     sumary_time: Optional[time] = Field(default=None, nullable=True)
     extra_hours: Optional[time] = Field(default=None, nullable=True)
-    pay: bool = Field(default=False)
-    payroll_status: str = Field(
-        description="Por pagar, Impagable, Archivado, Pendiente de validación"
-    )
+    payroll_status: payType = Field(default=None)
     notes: str
 
     employee: "Employee" = Relationship(back_populates="employee_hours")
