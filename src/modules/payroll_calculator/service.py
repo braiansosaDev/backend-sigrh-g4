@@ -113,13 +113,15 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
     try:   
         if employee.shift.type == "matutino":
             # 2) Para cada día hábil, procesar según tenga o no eventos
-            process_daily_hours(
+            process_morning_shift_hours(
                 db, employee, date_range, events_by_day
             )
         elif employee.shift.type == "vespertino":
-            pass
+            process_afternoon_shift_hours(
+                db, employee, date_range, events_by_day
+            )
         else:
-            process_night_hours(
+            process_night_shift_hours(
                 db, employee, date_range, events_by_day
             )
             pass
@@ -130,8 +132,7 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
         )
 
 
-
-def process_daily_hours(
+def process_morning_shift_hours(
     db: DatabaseSession,
     employee: Employee,
     date_range: list[date],
@@ -300,7 +301,223 @@ def process_daily_hours(
                 register_type=RegisterType.PRESENCIA,
             )
 
-def process_night_hours(
+def process_afternoon_shift_hours(
+    db: DatabaseSession,
+    employee: Employee,
+    date_range: list[date],
+    events_by_day: dict[date, list[ClockEvents]],
+):
+    for day in date_range:
+        # Saltar sábados y domingos
+        if day.weekday() in (5, 6):
+            concept = check_concept(db, "Día no hábil.")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=0,
+                first_check_in=None,
+                last_check_out=None,
+                payroll_status="archived",
+                notes="Día no hábil",
+                sumary_time=None,
+                extra_hours=None,
+                register_type=RegisterType.DIA_NO_HABIL,
+            )
+            continue
+
+        daily_events = events_by_day.get(day, [])
+        next_day_events = events_by_day.get(day + timedelta(days=1), [])
+
+        ins = [ev for ev in daily_events if ev.event_type == ClockEventTypes.IN]
+        outs_today = [ev for ev in daily_events if ev.event_type == ClockEventTypes.OUT]
+        outs_tomorrow = [ev for ev in next_day_events if ev.event_type == ClockEventTypes.OUT]
+        outs = outs_today + outs_tomorrow
+
+        if not ins:
+            # No entrada
+            concept = check_concept(db, "Ausente sin entrada registrada")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=0,
+                first_check_in=None,
+                last_check_out=None,
+                payroll_status="not payable",
+                notes="El empleado no registró entrada en el día.",
+                sumary_time=None,
+                extra_hours=None,
+                register_type=RegisterType.AUSENCIA,
+            )
+            continue
+
+        first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
+
+        if not outs:
+            # No salida
+            concept = check_concept(db, "Presente sin salida registrada")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=None,
+                payroll_status="not payable",
+                notes="El empleado registró entrada pero no salida.",
+                sumary_time=None,
+                extra_hours=None,
+                register_type=RegisterType.PRESENCIA,
+            )
+            continue
+
+        outs_sorted = sorted(outs, key=lambda ev: ev.event_date)
+        first_check_in_dt = datetime.combine(day, first_check)
+        last_check_datetime = next(
+            (ev.event_date for ev in outs_sorted if ev.event_date > first_check_in_dt),
+            None
+        )
+
+        if not last_check_datetime:
+            # No salida válida después del IN
+            concept = check_concept(db, "Presente sin salida registrada")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=None,
+                payroll_status="not payable",
+                notes="El empleado registró entrada pero no salida.",
+                sumary_time=None,
+                extra_hours=None,
+                register_type=RegisterType.PRESENCIA,
+            )
+            continue
+
+        last_check = last_check_datetime.time()
+
+        check_in_dt = first_check_in_dt
+        check_out_day = day if last_check_datetime.date() == day else day + timedelta(days=1)
+        check_out_dt = datetime.combine(check_out_day, last_check)
+
+        print(f"DEBUG -- Day: {day}, Check-in: {check_in_dt}, Check-out: {check_out_dt}")
+
+        if check_out_dt <= check_in_dt:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Salida inválida: la salida ({check_out_dt}) es anterior o igual a la entrada ({check_in_dt})",
+            )
+
+        worked_duration = check_out_dt - check_in_dt
+        total_seconds = int(worked_duration.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) % 60
+        seconds = total_seconds % 60
+
+        if hours >= 24:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El empleado tiene {int(hours)}h trabajadas, excediendo el máximo permitido de 23h59m.",
+            )
+
+        summary_time = None
+        if hours < 24:
+            summary_time = time(hour=hours, minute=minutes, second=seconds)
+
+        worked_hours_float = hours + (minutes / 60)
+
+        lower_bound = 7.5  # 7h30m
+        upper_bound = 8.5  # 8h30m
+
+        if lower_bound <= worked_hours_float <= upper_bound:
+            concept = check_concept(db, "Jornada laboral completa")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=last_check,
+                payroll_status="payable",
+                notes="El empleado completó su jornada laboral.",
+                sumary_time=summary_time,
+                extra_hours=None,
+                register_type=RegisterType.PRESENCIA,
+            )
+        elif worked_hours_float < lower_bound:
+            faltante_hours = int(8.0 - worked_hours_float)
+            faltante_minutes = int((8.0 - worked_hours_float - faltante_hours) * 60)
+            concept = check_concept(db, "Tiempo faltante")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=last_check,
+                payroll_status="not payable",
+                notes=f"Le faltaron {faltante_hours}h {faltante_minutes}m para completar la jornada",
+                sumary_time=summary_time,
+                extra_hours=None,
+                register_type=RegisterType.PRESENCIA,
+            )
+        else:
+            # Horas extra
+            extra_seconds = total_seconds - (8 * 3600)
+            extra_hours = extra_seconds // 3600
+            extra_minutes = (extra_seconds % 3600) // 60
+
+            if extra_hours >= 24:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"El empleado tiene {int(extra_hours)}h trabajadas, excediendo el máximo permitido de 23h59m.",
+                )
+
+            extra_time = time(hour=int(extra_hours), minute=int(extra_minutes), second=0)
+
+            concept = check_concept(db, "Jornada laboral completa")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=last_check,
+                payroll_status="payable",
+                notes="El empleado completó su jornada laboral.",
+                sumary_time=time(hour=8),
+                extra_hours=None,
+                register_type=RegisterType.PRESENCIA,
+            )
+
+            concept = check_concept(db, "Horas extra")
+            create_employee_hours_if_not_exists(
+                db=db,
+                employee=employee,
+                concept=concept.id,
+                day=day,
+                daily_events_count=len(daily_events) + len(next_day_events),
+                first_check_in=first_check,
+                last_check_out=last_check,
+                payroll_status="pending validation",
+                notes=f"El empleado realizó {int(extra_hours)}h {int(extra_minutes)}m extra",
+                sumary_time=None,
+                extra_hours=extra_time,
+                register_type=RegisterType.PRESENCIA,
+            )
+
+
+def process_night_shift_hours(
     db: DatabaseSession,
     employee: Employee,
     date_range: list[date],
