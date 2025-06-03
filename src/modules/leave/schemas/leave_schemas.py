@@ -49,8 +49,8 @@ class LeaveUpdate(BaseModel):
     end_date: Optional[date] = Field(default=None)
     leave_type_id: Optional[int] = Field(default=None)
     reason: Optional[str] = Field(default=None)
-    document_status: Optional[str] = Field(default=None)
-    request_status: Optional[str] = Field(default=None)
+    document_status: Optional[LeaveDocumentStatus] = Field(default=None)
+    request_status: Optional[LeaveRequestStatus] = Field(default=None)
 
     @model_validator(mode="after")
     def check_dates(self) -> "LeaveUpdate":

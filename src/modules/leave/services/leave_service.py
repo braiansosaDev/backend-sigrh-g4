@@ -98,8 +98,7 @@ def update_leave(session: DatabaseSession, leave_id: int, request: LeaveUpdate):
     db_leave: Leave = get_leave(session, leave_id)
 
     for attr, value in request.model_dump(exclude_unset=True).items():
-        if hasattr(request, attr):
-            setattr(db_leave, attr, value)
+        setattr(db_leave, attr, value)
 
     if db_leave.start_date > db_leave.end_date:
         raise HTTPException(
