@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
@@ -21,7 +20,7 @@ async def count_active_employees(
     return {"active_count": employee_service.count_active_employees(db)}
 
 
-"""Enpoint para buscar a un empleado por su ID. 
+"""Enpoint para buscar a un empleado por su ID.
 Returns:
     EmployeeResponse: Devuelve los datos del empleado.
 """
@@ -30,7 +29,7 @@ Returns:
 @employee_router.get(
     "/",
     status_code=status.HTTP_200_OK,
-    response_model=List[EmployeeResponse],
+    response_model=list[EmployeeResponse],
 )
 async def get_all_employees(
     db: DatabaseSession,
