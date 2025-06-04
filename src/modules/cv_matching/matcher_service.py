@@ -130,8 +130,10 @@ def evaluate_candidates(
         postulation.evaluated_at = datetime.now()
         postulation.suitable = suitable
         postulation.ability_match = {
-            "required_words": required_words_match["WORDS_FOUND"],
-            "desired_words": desired_words_match["WORDS_FOUND"],
+            "required_words_found": required_words_match["WORDS_FOUND"],
+            "desired_words_found": desired_words_match["WORDS_FOUND"],
+            "required_words_not_found": required_words_match["WORDS_NOT_FOUND"],
+            "desired_words_not_found": desired_words_match["WORDS_NOT_FOUND"],
         }
 
     db.commit()
