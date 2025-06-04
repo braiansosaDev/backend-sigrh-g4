@@ -46,24 +46,9 @@ class LeaveCreate(BaseModel):
 
 
 class LeaveUpdate(BaseModel):
-    start_date: Optional[date] = Field(default=None)
-    end_date: Optional[date] = Field(default=None)
-    leave_type_id: Optional[int] = Field(default=None)
-    reason: Optional[str] = Field(default=None)
     document_status: Optional[LeaveDocumentStatus] = Field(default=None)
     request_status: Optional[LeaveRequestStatus] = Field(default=None)
-
-    @model_validator(mode="after")
-    def check_dates(self) -> "LeaveUpdate":
-        if (
-            self.start_date is not None
-            and self.end_date is not None
-            and self.start_date > self.end_date
-        ):
-            raise ValueError(
-                "La fecha de inicio no puede ser posterior a la fecha de fin."
-            )
-        return self
+    file: Optional[str] = Field(default=None)
 
 
 class LeavePublic(BaseModel):

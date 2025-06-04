@@ -11,6 +11,7 @@ from src.modules.leave.schemas.leave_schemas import (
     LeaveUpdate,
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
+from src.modules.employees.services import employee_service
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -95,17 +96,47 @@ def create_leave(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def update_leave(session: DatabaseSession, leave_id: int, request: LeaveUpdate):
+def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int, request: LeaveUpdate):
     db_leave: Leave = get_leave(session, leave_id)
 
-    for attr, value in request.model_dump(exclude_unset=True).items():
-        setattr(db_leave, attr, value)
+    employee = employee_service.get_employee(session, db_leave.employee_id)
 
-    if db_leave.start_date > db_leave.end_date:
+    if token.get("employee_id") == employee.id:
+        if request.file is not None:
+            db_leave.file = request.file
+
+        try:
+            session.add(db_leave)
+            session.commit()
+            session.refresh(db_leave)
+            return db_leave
+        except IntegrityError:
+            session.rollback()
+            logger.error(
+                f"An unexpected error ocurred while updating Leave with ID {leave_id} and data {request.model_dump_json()}"
+            )
+            raise
+
+
+    request_employee_id= token.get("employee_id")
+    if request_employee_id is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La fecha de inicio no puede ser posterior a la fecha de fin.",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se encuentra el employee_id en el token."
         )
+
+    request_employee = employee_service.get_employee(session, request_employee_id)
+
+    # TODO: Cambiar el ID del permiso por un enum sincronizado al data entry
+    if (10 not in list(map(lambda permission: permission.id, request_employee.role_entity.permissions))):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para realizar esta acción."
+        )
+
+    if request.request_status is not None:
+        db_leave.request_status = request.request_status
+    if request.document_status is not None:
+        db_leave.document_status = request.document_status
 
     try:
         session.add(db_leave)
@@ -114,7 +145,7 @@ def update_leave(session: DatabaseSession, leave_id: int, request: LeaveUpdate):
         return db_leave
     except IntegrityError as e:
         logger.error(
-            f"Unexpected IntegrityError occurred while updating Leave with data {request.model_dump_json()}"
+            f"Unexpected IntegrityError occurred while updating Leave with ID {leave_id} and data {request.model_dump_json()}"
         )
         raise e
 

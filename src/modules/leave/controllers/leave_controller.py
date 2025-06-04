@@ -56,4 +56,4 @@ async def update_leave(
     leave_id: int,
     request: LeaveUpdate,
 ):
-    return leave_service.update_leave(session, leave_id, request)
+    return leave_service.update_leave(session, token, leave_id, request)
