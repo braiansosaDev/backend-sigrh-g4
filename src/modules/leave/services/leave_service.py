@@ -78,6 +78,7 @@ def create_leave(
             if leave_type.justification_required
             else LeaveDocumentStatus.NO_REQUERIDO
         ),
+        file=request.file
     )
 
     try:
