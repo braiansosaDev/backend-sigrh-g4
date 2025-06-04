@@ -34,7 +34,7 @@ class LeaveCreate(BaseModel):
     end_date: FutureDate = Field()
     leave_type_id: int = Field()
     reason: Optional[str] = Field(default=None)
-    file: str = Field(min_length=1)
+    file: Optional[str] = Field(min_length=1, default=None)
 
     @model_validator(mode="after")
     def check_end_date(self) -> "LeaveCreate":
@@ -48,7 +48,7 @@ class LeaveCreate(BaseModel):
 class LeaveUpdate(BaseModel):
     document_status: Optional[LeaveDocumentStatus] = Field(default=None)
     request_status: Optional[LeaveRequestStatus] = Field(default=None)
-    file: Optional[str] = Field(default=None)
+    file: Optional[str] = Field(min_length=1, default=None)
 
 
 class LeavePublic(BaseModel):
@@ -61,7 +61,7 @@ class LeavePublic(BaseModel):
     reason: Optional[str] = Field(default=None)
     document_status: LeaveDocumentStatus = Field()
     request_status: LeaveRequestStatus = Field()
-    file: str = Field()
+    file: Optional[str] = Field(default=None)
     created_at: AwareDatetime = Field()
     updated_at: AwareDatetime = Field()
 

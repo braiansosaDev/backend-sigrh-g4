@@ -67,6 +67,9 @@ def create_leave(
             detail=f"El tipo de licencia con ID {request.leave_type_id} no existe.",
         )
 
+    if leave_type.justification_required and not request.file:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{leave_type.type}' requiere archivo de justificación obligatorio.")
+
     db_leave = Leave(
         employee_id=employee_id,
         start_date=request.start_date,
@@ -103,8 +106,10 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     request_employee_id = token.get("employee_id")
 
     if request_employee_id == leave_author_employee.id:
-        if request.file is not None:
+        if request.file is not None and request.file.strip():
             db_leave.file = request.file
+        elif db_leave.leave_type.justification_required:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.")
 
         try:
             session.add(db_leave)

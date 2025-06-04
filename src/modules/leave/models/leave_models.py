@@ -21,7 +21,7 @@ class Leave(SQLModel, table=True):
     request_date: date = Field(default_factory=date.today, index=True)
     start_date: date = Field(index=True)
     end_date: date = Field(index=True)
-    file: str = Field()
+    file: Optional[str] = Field(default=None)
 
     leave_type_id: int = Field(foreign_key="leave_type.id")
     leave_type: LeaveType = Relationship()
