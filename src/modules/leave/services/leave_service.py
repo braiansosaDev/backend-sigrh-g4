@@ -99,9 +99,10 @@ def create_leave(
 def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int, request: LeaveUpdate):
     db_leave: Leave = get_leave(session, leave_id)
 
-    employee = employee_service.get_employee(session, db_leave.employee_id)
+    leave_author_employee = employee_service.get_employee(session, db_leave.employee_id)
+    request_employee_id = token.get("employee_id")
 
-    if token.get("employee_id") == employee.id:
+    if request_employee_id == leave_author_employee.id:
         if request.file is not None:
             db_leave.file = request.file
 
@@ -117,8 +118,6 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
             )
             raise
 
-
-    request_employee_id= token.get("employee_id")
     if request_employee_id is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
