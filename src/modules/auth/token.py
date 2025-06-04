@@ -10,6 +10,13 @@ import os
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="employees/login")
 
 
+def get_env_var(name: str) -> str:
+    result = os.environ.get(name)
+    if result is None:
+        raise ValueError(f"Environment variable {name} not found.")
+    return result
+
+
 def encode_token(payload: dict) -> str:
     """
     Encode a JWT token with the given payload.
@@ -27,7 +34,7 @@ def encode_token(payload: dict) -> str:
     load_dotenv()
 
     return jwt.encode(
-        payload, key=os.environ.get("SECRET_KEY"), algorithm=os.environ.get("ALGORITHM")
+        payload, key=get_env_var("SECRET_KEY"), algorithm=get_env_var("ALGORITHM")
     )
 
 
@@ -52,8 +59,8 @@ def decode_token(
 
     data = jwt.decode(
         token=token,
-        key=os.environ.get("SECRET_KEY"),
-        algorithms=[os.environ.get("ALGORITHM")],
+        key=get_env_var("SECRET_KEY"),
+        algorithms=[get_env_var("ALGORITHM")],
     )
     return data
 

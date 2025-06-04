@@ -10,7 +10,7 @@ from sqlmodel import select, col
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
-from typing import Sequence
+from typing import Sequence, cast, Any
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -46,7 +46,9 @@ def get_all_postulations(
     query = select(Postulation)
     if job_opportunity_id is not None:
         query = query.where(Postulation.job_opportunity_id == job_opportunity_id)
-    return db.exec(query.order_by(Postulation.id)).all()
+    return db.exec(
+        query.order_by(cast(Any, Postulation.id))
+    ).all()
 
 
 def get_postulation_by_id(
