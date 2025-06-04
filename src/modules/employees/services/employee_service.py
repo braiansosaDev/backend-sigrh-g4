@@ -1,13 +1,10 @@
-from typing import List
+from typing import Sequence
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.sector import Sector
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import (
-    CreateEmployee,
-    EmployeeResponse,
-)
+from src.modules.employees.schemas.employee_models import CreateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
@@ -23,7 +20,7 @@ def count_active_employees(db: DatabaseSession) -> int:
     return result
 
 
-def get_all_employees(db: DatabaseSession) -> List[EmployeeResponse]:
+def get_all_employees(db: DatabaseSession) -> Sequence[Employee]:
     employees = utils.get_all_employees(db)
 
     if employees is None:
@@ -69,7 +66,10 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     try:
         # Convertir documentos
         documents = (
-            [Document(**doc.model_dump()) for doc in employee_request.documents]
+            [
+                Document(**doc.model_dump())
+                for doc in employee_request.documents
+            ]
             if employee_request.documents
             else []
         )
@@ -98,7 +98,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             type_dni=employee_request.type_dni,
             personal_email=employee_request.personal_email,
             active=employee_request.active,
-            role=employee_request.role,
+            role_id=employee_request.role_id,
             password=hashed_password,
             phone=employee_request.phone,
             salary=employee_request.salary,
@@ -190,7 +190,7 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
         None
     """
     employee = utils.get_employee_by_id(db, employee_id)
-    work_history = utils.get_work_history_of_employee(db, employee_id)
+    work_histories = employee.work_histories
     documents = utils.get_documents_of_employee(db, employee_id)
 
     if employee is None:
@@ -202,7 +202,7 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
         db.delete(document)
         db.commit()
 
-    for history in work_history:
+    for history in work_histories:
         db.delete(history)
         db.commit()
 

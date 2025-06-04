@@ -12,4 +12,4 @@ class CreateState(BaseModel):
 
 class UpdateState(BaseModel):
     name: Optional[str] = None
-    country_id: int
+    country_id: Optional[int] = None

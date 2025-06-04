@@ -8,13 +8,13 @@ import src.modules.employees.services.utils as utils
 
 def get_work_history(db: DatabaseSession, employee_id: int) -> List[WorkHistory]:
     employee = utils.get_employee_by_id(db, employee_id)
-    work_history = utils.get_work_history_of_employee(db, employee_id)
+    work_histories = employee.work_histories
 
     if employee is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found."
         )
-    return work_history
+    return work_histories
 
 
 def create_work_history(

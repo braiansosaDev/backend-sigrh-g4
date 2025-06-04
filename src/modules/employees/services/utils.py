@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import Sequence, cast, Any
 from fastapi import HTTPException, status
 from sqlmodel import func, select
 from src.database.core import DatabaseSession
@@ -9,40 +9,52 @@ from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.employee_models import CreateEmployee
 from sqlalchemy.orm import selectinload
 
+
 def get_single_work_history_by_id(
     db: DatabaseSession, employee_id: int, work_history_id: int
 ) -> WorkHistory:
-    return db.exec(
+    result = db.exec(
         select(WorkHistory)
         .where(WorkHistory.id == work_history_id)
         .where(WorkHistory.employee_id == employee_id)
     ).one_or_none()
 
-def get_work_history_of_employee(
-    db: DatabaseSession,
-    employee_id: int,
-) -> Sequence[WorkHistory]:
-    return db.exec(
-        select(WorkHistory).where(WorkHistory.employee_id == employee_id)
-    ).all()
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"La work history con ID {work_history_id} del empleado {employee_id} no existe."
+        )
+
+    return result
+
 
 def get_documents_of_employee(
     db: DatabaseSession,
     employee_id: int,
-) -> List[Document]:
+) -> Sequence[Document]:
     return db.exec(select(Document).where(Document.employee_id == employee_id)).all()
 
 
-def get_document(db: DatabaseSession, document_id: int, employee_id: int):
-    return db.exec(
+def get_document(db: DatabaseSession, document_id: int, employee_id: int) -> Document:
+    result = db.exec(
         select(Document)
         .where(Document.id == document_id)
         .where(Document.employee_id == employee_id)
     ).one_or_none()
 
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El documento con ID {document_id} del empleado con ID {employee_id} no existe."
+        )
+
+    return result
+
+
 def count_active_employees(db: DatabaseSession) -> int:
     result = db.exec(select(func.count()).select_from(Employee).where(Employee.active))
     return result.one()
+
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     """
@@ -52,24 +64,59 @@ def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
         select(Employee)
         .where(Employee.id == employee_id)
         .options(
-            selectinload(Employee.job).selectinload(Job.sector),
-            selectinload(Employee.state),
-            selectinload(Employee.country),
-            selectinload(Employee.work_histories),
-            selectinload(Employee.documents),
-            selectinload(Employee.shift)
+            selectinload(cast(Any, Employee.job)).selectinload(cast(Any, Job.sector)),
+            selectinload(cast(Any, Employee.state)),
+            selectinload(cast(Any, Employee.country)),
+            selectinload(cast(Any, Employee.work_histories)),
+            selectinload(cast(Any, Employee.documents)),
+            selectinload(cast(Any, Employee.shift))
         )
     )
-    return db.exec(stmt).one_or_none()
+
+    result = db.exec(stmt).one_or_none()
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El empleado con ID {employee_id} no existe."
+        )
+    return result
+
+
 
 def get_employee_by_id_simple(db: DatabaseSession, employee_id: int) -> Employee:
-    return db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
+    employee = db.exec(
+        select(Employee).where(Employee.id == employee_id)
+    ).one_or_none()
+
+    if employee is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El empleado con ID {employee_id} no existe."
+        )
+
+    return employee
+
 
 def get_employee_by_user_id(db: DatabaseSession, user_id: str) -> Employee:
-    return db.exec(select(Employee).where(Employee.user_id == user_id)).one_or_none()
+    employee = db.exec(
+        select(Employee).where(Employee.user_id == user_id)
+    ).one_or_none()
 
-def get_all_employees(db: DatabaseSession):
-    return db.exec(select(Employee).order_by(Employee.id)).all()
+    if employee is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El empleado con user_id {user_id} no existe."
+        )
+
+    return employee
+
+
+def get_all_employees(db: DatabaseSession) -> Sequence[Employee]:
+    return db.exec(
+        select(Employee)
+        .order_by(cast(Any, Employee.id))
+    ).all()
+
 
 def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
     first_char = employee_request.first_name[0].lower()
