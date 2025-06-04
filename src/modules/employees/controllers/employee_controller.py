@@ -39,6 +39,15 @@ async def get_all_employees(
 
 
 @employee_router.get(
+    "/{sector_id}",
+    status_code=status.HTTP_200_OK,
+    response_model=List[EmployeeResponse],
+)
+async def get_all_employees_by_sector(db: DatabaseSession, sector_id: int):
+    return employee_service.get_all_employees_by_sector(db, sector_id)
+
+
+@employee_router.get(
     "/{employee_id}",
     status_code=status.HTTP_200_OK,
     response_model=EmployeeResponse,

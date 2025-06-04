@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.sector import Sector
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
 from src.modules.employees.schemas.employee_models import (
@@ -9,6 +10,7 @@ from src.modules.employees.schemas.employee_models import (
 )
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
+from sqlmodel import select
 from src.modules.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
 import logging
@@ -28,6 +30,18 @@ def get_all_employees(db: DatabaseSession) -> List[EmployeeResponse]:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found."
         )
+    return employees
+
+
+def get_all_employees_by_sector(db: DatabaseSession, sector_id: int):
+    sector = db.exec(select(Sector).where(Sector.id == sector_id)).first()
+    if not sector:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Sector not found"
+        )
+    employees = db.exec(
+        select(Employee).where(Employee.job.sector_id == sector_id)
+    ).all()
     return employees
 
 
@@ -107,7 +121,9 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         return db_employee
     except IntegrityError as e:
         db.rollback()
-        logger.error(f"Unexpected IntegrityError occurred while creating Employee:\n{e}")
+        logger.error(
+            f"Unexpected IntegrityError occurred while creating Employee:\n{e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ocurrió un error inesperado, probablemente ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
