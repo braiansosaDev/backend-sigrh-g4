@@ -15,6 +15,11 @@ from src.modules.leave.services import leave_service
 leave_router = APIRouter(prefix="/leaves", tags=["Leaves"])
 
 
+@leave_router.get("/{sector_id}", response_model=list[LeavePublic])
+async def get_leaves_of_employees_by_sector(session: DatabaseSession, sector_id: int):
+    return leave_service.get_leaves_of_employees_by_sector(session, sector_id)
+
+
 @leave_router.get("/", response_model=list[LeavePublic])
 async def get_leaves(
     session: DatabaseSession,

@@ -12,9 +12,27 @@ from src.modules.leave.schemas.leave_schemas import (
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
 from src.modules.employees.services import employee_service
+from src.modules.employees.models.sector import Sector
 import logging
 
 logger = logging.getLogger("uvicorn.error")
+
+
+def get_leaves_of_employees_by_sector(session: DatabaseSession, sector_id: int):
+    sector = session.exec(select(Sector).where(Sector.id == sector_id)).first()
+    leaves = session.exec(
+        select(Leave).where(Leave.employee.job.sector.id == sector_id)
+    ).all()
+
+    if not sector:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Sector no encontrado"
+        )
+    if not leaves:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recurso no encontrado"
+        )
+    return leaves
 
 
 def get_leave_or_none(session: DatabaseSession, leave_id: int) -> Leave | None:
@@ -68,7 +86,10 @@ def create_leave(
         )
 
     if leave_type.justification_required and not request.file:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{leave_type.type}' requiere archivo de justificación obligatorio.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El tipo de licencia '{leave_type.type}' requiere archivo de justificación obligatorio.",
+        )
 
     db_leave = Leave(
         employee_id=employee_id,
@@ -82,7 +103,7 @@ def create_leave(
             if leave_type.justification_required
             else LeaveDocumentStatus.NO_REQUERIDO
         ),
-        file=request.file
+        file=request.file,
     )
 
     try:
@@ -99,7 +120,12 @@ def create_leave(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int, request: LeaveUpdate):
+def update_leave(
+    session: DatabaseSession,
+    token: TokenDependency,
+    leave_id: int,
+    request: LeaveUpdate,
+):
     db_leave: Leave = get_leave(session, leave_id)
 
     leave_author_employee = employee_service.get_employee(session, db_leave.employee_id)
@@ -109,7 +135,10 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
         if request.file is not None and request.file.strip():
             db_leave.file = request.file
         elif db_leave.leave_type.justification_required:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.",
+            )
 
         try:
             session.add(db_leave)
@@ -126,15 +155,18 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     if request_employee_id is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se encuentra el employee_id en el token."
+            detail="No se encuentra el employee_id en el token.",
         )
 
     request_employee = employee_service.get_employee(session, request_employee_id)
 
     # TODO: Cambiar el ID del permiso por un enum sincronizado al data entry
-    if (10 not in list(map(lambda permission: permission.id, request_employee.role_entity.permissions))):
+    if 10 not in list(
+        map(lambda permission: permission.id, request_employee.role_entity.permissions)
+    ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para realizar esta acción."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tiene permiso para realizar esta acción.",
         )
 
     if request.request_status is not None:
