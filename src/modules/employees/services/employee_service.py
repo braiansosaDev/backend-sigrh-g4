@@ -1,6 +1,7 @@
 from typing import Sequence
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
 from src.modules.employees.models.sector import Sector
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
@@ -37,7 +38,9 @@ def get_all_employees_by_sector(db: DatabaseSession, sector_id: int):
             status_code=status.HTTP_404_NOT_FOUND, detail="Sector not found"
         )
     employees = db.exec(
-        select(Employee).where(Employee.job.sector_id == sector_id)
+        select(Employee)
+        .join(Job, Employee.job_id == Job.id)
+        .where(Job.sector_id == sector_id)
     ).all()
     return employees
 
@@ -66,10 +69,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     try:
         # Convertir documentos
         documents = (
-            [
-                Document(**doc.model_dump())
-                for doc in employee_request.documents
-            ]
+            [Document(**doc.model_dump()) for doc in employee_request.documents]
             if employee_request.documents
             else []
         )
