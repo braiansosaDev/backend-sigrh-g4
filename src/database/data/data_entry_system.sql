@@ -104,7 +104,7 @@ SELECT setval(pg_get_serial_sequence('role', 'id'), (SELECT MAX(id) FROM role));
 -- Cargar permisos de roles
 INSERT INTO role_permission (role_id, permission_id) VALUES
 (1,1), (1,7), (1,5), (1,9), (1,5),
-(2,8), (2,1), (2,2), (2,6),
+(2,8), (2,1), (2,2), (2,6), (2,5),
 (3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4),
 (4,9),
 (5,7), (5,11), (5,9), (5,10),
