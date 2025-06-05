@@ -2,55 +2,75 @@ from src.database.core import DatabaseSession
 from src.modules.employees.schemas.job_models import CreateJob, UpdateJob
 from src.modules.employees.models.job import Job
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
+from typing import cast, Any
+import logging
+
+logger = logging.getLogger("uvicorn.error")
+
 
 def get_all_jobs(db: DatabaseSession):
-    return db.exec(select(Job)).all()
-
-def get_job_by_id(db: DatabaseSession, job_id: int) -> Job:
     return db.exec(
         select(Job)
-        .where(Job.id == job_id)
-    ).one_or_none()
+        .order_by(cast(Any, Job.id))
+    ).all()
 
-def create_job(db: DatabaseSession,create_job_request: CreateJob,) -> Job:
+
+def get_job_by_id_or_none(db: DatabaseSession, job_id: int) -> Job | None:
+    return db.exec(select(Job).where(Job.id == job_id)).one_or_none()
+
+
+def get_job_by_id(db: DatabaseSession, job_id: int) -> Job:
+    result = get_job_by_id_or_none(db, job_id)
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"El Job con ID {job_id} no existe."
+        )
+    return result
+
+def create_job(db: DatabaseSession, create_job_request: CreateJob) -> Job:
     db_job = Job(
         name=create_job_request.name,
         sector_id=create_job_request.sector_id
     )
-    db.add(db_job)
-    db.commit()
-    db.refresh(db_job)
-    return db_job
+
+    try:
+        db.add(db_job)
+        db.commit()
+        db.refresh(db_job)
+        return db_job
+    except IntegrityError:
+        db.rollback()
+        logger.error(f"An unexpected error occurred while creating Job with data {create_job_request.model_dump_json()}")
+        raise
 
 
-def update_job(db: DatabaseSession,job_id: int,update_job_request: UpdateJob) -> Job:
-    job = db.exec(
-        select(Job).where(Job.id == job_id)
-    ).one_or_none()
+def update_job(db: DatabaseSession, job_id: int, update_job_request: UpdateJob) -> Job:
+    db_job = get_job_by_id(db, job_id)
 
-    if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found."
-        )
+    for attr, value in update_job_request.dict(exclude_unset=True).items():
+        setattr(db_job, attr, value)
 
-    job.name = update_job_request.name
-    job.sector_id = update_job_request.sector_id
-    db.add(job)
-    db.commit()
-    db.refresh(job)
-    return job
-    
+    try:
+        db.add(db_job)
+        db.commit()
+        db.refresh(db_job)
+        return db_job
+    except IntegrityError:
+        db.rollback()
+        logger.error(f"An unexpected error occurred while updating Job with ID {job_id} and data {update_job_request.model_dump_json()}")
+        raise
 
-def delete_job(db: DatabaseSession,job_id: int) -> None:
-    job = db.exec(
-        select(Job).where(Job.id == job_id)
-    ).one_or_none()
 
-    if job is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found."
-        )
+def delete_job(db: DatabaseSession, job_id: int) -> None:
+    db_job = get_job_by_id(db, job_id)
 
-    db.delete(job)
-    db.commit()
+    try:
+        db.delete(db_job)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.error(f"An unexpected IntegrityError occurred while deleting Job with ID {job_id}")
+        raise
