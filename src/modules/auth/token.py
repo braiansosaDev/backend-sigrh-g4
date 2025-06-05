@@ -7,7 +7,7 @@ from src.database.core import DatabaseSession
 import os
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="employees/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 def get_env_var(name: str) -> str:
