@@ -1630,3 +1630,25 @@ ALTER TABLE ONLY public.work_history
 -- PostgreSQL database dump complete
 --
 
+-- Cargar tipos de licencia
+INSERT INTO leave_type (id, type, justification_required) VALUES
+(1, 'Licencia por maternidad', True),
+(2, 'Licencia por paternidad', True),
+(3, 'Licencia médica por enfermedad común', False),
+(4, 'Licencia médica por accidente laboral', False),
+(5, 'Licencia por enfermedad familiar grave', False),
+(6, 'Licencia por duelo', False),
+(7, 'Licencia por casamiento', True),
+(8, 'Licencia sindical', True),
+(9, 'Licencia por estudio o examen', True),
+(10, 'Licencia por adopción', True),
+(11, 'Licencia por donación de sangre', False),
+(12, 'Licencia por fuerza mayor', False),
+(13, 'Licencia por mudanza', True),
+(14, 'Licencia por trámite personal urgente', False)
+ON CONFLICT (id) DO UPDATE SET
+type = EXCLUDED.type,
+justification_required = EXCLUDED.justification_required;
+SELECT setval(pg_get_serial_sequence('leave_type', 'id'), (SELECT MAX(id) FROM leave_type));
+
+COMMIT;
