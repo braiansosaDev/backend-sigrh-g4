@@ -4,6 +4,8 @@ from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
 from src.modules.leave.schemas.leave_schemas import (
     LeaveDocumentStatus,
     LeaveRequestStatus,
@@ -21,7 +23,10 @@ logger = logging.getLogger("uvicorn.error")
 def get_leaves_of_employees_by_sector(session: DatabaseSession, sector_id: int):
     sector = session.exec(select(Sector).where(Sector.id == sector_id)).first()
     leaves = session.exec(
-        select(Leave).where(Leave.employee.job.sector.id == sector_id)
+        select(Leave)
+        .join(Employee, Leave.employee_id == Employee.id)
+        .join(Job, Employee.job_id == Job.id)
+        .where(Job.sector_id == sector_id)
     ).all()
 
     if not sector:
