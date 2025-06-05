@@ -711,19 +711,68 @@ def create_employee_hours_if_not_exists(
     extra_hours: time | None,
     register_type: RegisterType,
 ):
-
+    
     existing_employee_hours = db.exec(
         select(EmployeeHours)
         .where(
             EmployeeHours.employee_id == employee.id,
             EmployeeHours.work_date == day,
-            EmployeeHours.concept_id == concept
         )
     ).one_or_none()
 
-    if existing_employee_hours:
-        return existing_employee_hours
+    concept_description = db.exec(select(Concept.description).where(Concept.id == concept)).one_or_none()
 
+    if existing_employee_hours:
+        if concept == existing_employee_hours.concept_id:
+            # Si ya existe un registro con el mismo concepto, actualizamos
+            existing_employee_hours.check_count = daily_events_count
+            existing_employee_hours.first_check_in = first_check_in or existing_employee_hours.first_check_in
+            existing_employee_hours.last_check_out = last_check_out or existing_employee_hours.last_check_out
+            existing_employee_hours.sumary_time = sumary_time or existing_employee_hours.sumary_time
+            existing_employee_hours.extra_hours = extra_hours or existing_employee_hours.extra_hours
+            existing_employee_hours.payroll_status = payType(payroll_status)
+            existing_employee_hours.notes = notes
+            existing_employee_hours.register_type = register_type
+
+            db.commit()
+            db.refresh(existing_employee_hours)
+            return existing_employee_hours
+        
+        if concept_description == 'Horas extra':
+            employee_hours = EmployeeHours(
+            employee_id=employee.id,
+            concept_id=concept,
+            shift_id=employee.shift.id,
+            check_count=daily_events_count,
+            work_date=day,
+            register_type=register_type,
+            first_check_in=first_check_in,
+            last_check_out=last_check_out,
+            sumary_time=sumary_time,
+            extra_hours=extra_hours,
+            payroll_status=payType(payroll_status),  # acá le pasas 'archived', 'payable', etc
+            notes=notes,
+            )   
+            db.add(employee_hours)
+            db.commit()
+            db.refresh(employee_hours)  
+            return existing_employee_hours
+        
+        else:
+            existing_employee_hours.concept_id = concept
+            existing_employee_hours.check_count = daily_events_count
+            existing_employee_hours.first_check_in = first_check_in or existing_employee_hours.first_check_in
+            existing_employee_hours.last_check_out = last_check_out or existing_employee_hours.last_check_out
+            existing_employee_hours.sumary_time = sumary_time or existing_employee_hours.sumary_time
+            existing_employee_hours.extra_hours = extra_hours or existing_employee_hours.extra_hours
+            existing_employee_hours.payroll_status = payType(payroll_status)
+            existing_employee_hours.notes = notes
+            existing_employee_hours.register_type = register_type
+
+            db.commit()
+            db.refresh(existing_employee_hours)
+            return existing_employee_hours
+        
     # Crear nuevo
     employee_hours = EmployeeHours(
         employee_id=employee.id,
