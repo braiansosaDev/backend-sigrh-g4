@@ -2,11 +2,14 @@ from sqlalchemy import func, Column, TIMESTAMP
 from sqlmodel import SQLModel, Field, Relationship
 from datetime import date
 from pydantic import AwareDatetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 
 class LeaveType(SQLModel, table=True):
-    __tablename__ = "leave_type" # type: ignore
+    __tablename__ = "leave_type"  # type: ignore
 
     id: Optional[int] = Field(primary_key=True, index=True, default=None)
     type: str = Field(min_length=1, unique=True, index=True)
@@ -40,9 +43,15 @@ class Leave(SQLModel, table=True):
 
     created_at: Optional[AwareDatetime] = Field(
         default=None,
-        sa_column=Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+        sa_column=Column(
+            TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+        ),
     )
     updated_at: Optional[AwareDatetime] = Field(
         default=None,
-        sa_column=Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+        sa_column=Column(
+            TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+        ),
     )
+
+    employee: Optional["Employee"] = Relationship(back_populates="leaves")
