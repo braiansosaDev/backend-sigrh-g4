@@ -53,7 +53,7 @@ class Employee(SQLModel, table=True):
     job: Optional["Job"] = Relationship(back_populates="employees")
     state: Optional["State"] = Relationship(back_populates="employees")
     country: Optional["Country"] = Relationship(back_populates="employees")
-    shift: Optional["Shift"] = Relationship(back_populates="employees")
+    shift: "Shift" = Relationship(back_populates="employees")
     face_recognition: Optional["FaceRecognition"] = Relationship(
         back_populates="employee"
     )
