@@ -1,5 +1,12 @@
 BEGIN;
 
+-- IMPORTANTE IMPORTANTE IMPORTANTE IMPORTANTE IMPORTANTE
+--
+-- Si agregás nuevas tablas agregá la llamada a setval
+-- como en las demás (solo cambiar el nombre de la tabla)
+-- para evitar que dé error de ID duplicada al agregar
+-- nuevas filas.
+
 -- Cargar países
 INSERT INTO country (id, name) VALUES
 (1, 'Argentina'),
@@ -104,8 +111,9 @@ SELECT setval(pg_get_serial_sequence('role', 'id'), (SELECT MAX(id) FROM role));
 -- Cargar permisos de roles
 INSERT INTO role_permission (role_id, permission_id) VALUES
 (1,1), (1,7), (1,5), (1,9), (1,5),
-(2,8), (2,1), (2,2), (2,6), (2,5),
-(2,1), (2,2), (2,3), (2,4), (2,5), (2,6), (2,7), (2,8), (2,9), (2,10), (2,11), (2,12), (2,13)
+--(2,8), (2,1), (2,2), (2,6), (2,5),
+-- Se agregaron todos los permisos a root para facilitar desarrollo
+(2,1), (2,2), (2,3), (2,4), (2,5), (2,6), (2,7), (2,8), (2,9), (2,10), (2,11), (2,12), (2,13),
 (3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4),
 (4,9),
 (5,7), (5,11), (5,9), (5,10),
@@ -125,9 +133,13 @@ working_hours = EXCLUDED.working_hours,
 working_days = EXCLUDED.working_days;
 SELECT setval(pg_get_serial_sequence('shift', 'id'), (SELECT MAX(id) FROM shift));
 
--- Cargar empleado de prueba -- Usuario: bsosa672 -- Contraseña: 1234
+-- Cargar empleado de prueba
+-- Usuario: bsosa672
+-- Contraseña: 1234
 INSERT INTO public.employee
-(id, user_id, first_name, last_name, dni, type_dni, personal_email, active, role_id, "password", phone, salary, job_id, birth_date, hire_date, address_street, address_city, address_cp, address_state_id, address_country_id, shift_id)
-VALUES(1, 'bsosa672', 'Braian', 'Sosa', '43022672', 'du', 'braianorlandososa@gmail.com', true, 2, '$2b$12$hTsvK48LWxRA3Cet8bHIi..SdpxgWyMyQMlfsZd24WGRcshuTXcGK', '+2131125277960', 1, 1, '2000-10-20', '2025-05-06', 'asdadsad', '123123', 'string1231231', 1, 1, 3)1;
+(id, user_id, first_name, last_name, dni, type_dni, personal_email, active, role_id, password, phone, salary, job_id, birth_date, hire_date, address_street, address_city, address_cp, address_state_id, address_country_id, shift_id)
+VALUES(1, 'bsosa672', 'Braian', 'Sosa', '43022672', 'du', 'braianorlandososa@gmail.com', true, 2, '$2b$12$hTsvK48LWxRA3Cet8bHIi..SdpxgWyMyQMlfsZd24WGRcshuTXcGK', '+2131125277960', 1, 1, '2000-10-20', '2025-05-06', 'asdadsad', '123123', 'string1231231', 1, 1, 3)
+ON CONFLICT (id) DO NOTHING;
+SELECT setval(pg_get_serial_sequence('employee', 'id'), (SELECT MAX(id) FROM employee));
 
 COMMIT;
