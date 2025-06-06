@@ -38,7 +38,7 @@ class EmployeeHoursSchema(BaseModel):
     last_check_out: time | None
     sumary_time: time | None
     extra_hours: time | None
-    pay: bool
+    payroll_status: str
     notes: str
 
     model_config = {"from_attributes": True}

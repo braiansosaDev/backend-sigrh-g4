@@ -35,11 +35,11 @@ async def create_employee_hours(
 
 @employee_hours_router.patch(
     "/{employee_hours_id}",
-    response_model=schemas.EmployeeHoursResponse,
+    response_model=schemas.EmployeeHoursPatchResponse,
     status_code=status.HTTP_200_OK,
 )
 async def update_employee_hours(
-    db: DatabaseSession, employee_hours_id: int, request: schemas.EmployeeHoursRequest
+    db: DatabaseSession, employee_hours_id: int, request: schemas.EmployeeHoursPatchRequest
 ):
     """
     docstring

@@ -1,4 +1,6 @@
-from fastapi import HTTPException, status, APIRouter
+from typing import Annotated
+from fastapi import Depends, HTTPException, status, APIRouter
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
 from src.database.core import DatabaseSession
 from src.modules.auth import auth_service
@@ -9,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from src.modules.employees.models.job import Job
 from src.modules.employees.schemas.employee_models import MeResponse
 from src.modules.role.models.role_models import Role
+from typing import cast, Any
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -37,10 +40,10 @@ def get_my_data(db: DatabaseSession, payload: TokenDependency):
         select(Employee)
         .where(Employee.id == employee_id)
         .options(
-            selectinload(Employee.job).selectinload(Job.sector),
-            selectinload(Employee.state),
-            selectinload(Employee.country),
-            selectinload(Employee.role_entity).selectinload(Role.permissions),
+            selectinload(cast(Any, Employee.job)).selectinload(cast(Any, Job.sector)),
+            selectinload(cast(Any, Employee.state)),
+            selectinload(cast(Any, Employee.country)),
+            selectinload(cast(Any, Employee.role)).selectinload(cast(Any, Role.permissions))
         )
     )
     employee = db.exec(stmt).one_or_none()
@@ -57,11 +60,11 @@ def get_my_data(db: DatabaseSession, payload: TokenDependency):
 @auth_router.post("/login", status_code=status.HTTP_200_OK, response_model=dict)
 async def auth_login(
     db: DatabaseSession,
-    login_request: LoginRequest,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
     try:
         employee = auth_service.auth_login(
-            db, login_request.user_id, login_request.password
+            db, form_data.username, form_data.password
         )
     except ValueError as e:
         logger.error(f"Unexpected error while processing login:\n{e}")
