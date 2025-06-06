@@ -132,7 +132,7 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     request_employee = employee_service.get_employee(session, request_employee_id)
 
     # TODO: Cambiar el ID del permiso por un enum sincronizado al data entry
-    if (10 not in list(map(lambda permission: permission.id, request_employee.role_entity.permissions))):
+    if (not request_employee.role or 10 not in list(map(lambda permission: permission.id, request_employee.role.permissions))):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para realizar esta acción."
         )
