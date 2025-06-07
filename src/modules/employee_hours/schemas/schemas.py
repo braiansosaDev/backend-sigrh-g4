@@ -7,7 +7,7 @@ from enum import Enum
 class RegisterType(str, Enum):
     AUSENCIA = "AUSENCIA"
     PRESENCIA = "PRESENCIA"
-    TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
+    DIA_NO_HABIL = "DIA NO HABIL"
 
 class EmployeeHoursPatchRequest(BaseModel):
     employee_id: Optional[int] = None
