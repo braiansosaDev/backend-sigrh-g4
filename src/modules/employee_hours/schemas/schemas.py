@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel
 from datetime import date, time
 from enum import Enum
@@ -7,6 +8,33 @@ class RegisterType(str, Enum):
     AUSENCIA = "AUSENCIA"
     PRESENCIA = "PRESENCIA"
     TIEMPO_INTERMEDIO = "TIEMPO INTERMEDIO"
+
+class EmployeeHoursPatchRequest(BaseModel):
+    employee_id: Optional[int] = None
+    concept_id: Optional[int] = None
+    shift_id: Optional[int] = None
+    check_count: Optional[int] = None
+    notes: Optional[str] = None
+    register_type: Optional[RegisterType] = None
+    first_check_in: Optional[time] = None
+    last_check_out: Optional[time] = None
+    sumary_time: Optional[time] = None
+    work_date: Optional[date] = None
+    payroll_status: Optional[str] = None
+
+
+class EmployeeHoursPatchResponse(BaseModel):
+    employee_id: Optional[int] = None
+    concept_id: Optional[int] = None
+    shift_id: Optional[int] = None
+    check_count: Optional[int] = None
+    notes: Optional[str] = None
+    register_type: Optional[RegisterType] = None
+    first_check_in: Optional[time] = None
+    last_check_out: Optional[time] = None
+    sumary_time: Optional[time] = None
+    work_date: Optional[date] = None
+    payroll_status: Optional[str] = None
 
 
 class EmployeeHoursRequest(BaseModel):
@@ -20,7 +48,7 @@ class EmployeeHoursRequest(BaseModel):
     last_check_out: time
     sumary_time: time
     work_date: date
-    pay: bool
+    payroll_status: str
 
 
 class EmployeeHoursResponse(BaseModel):
@@ -35,4 +63,4 @@ class EmployeeHoursResponse(BaseModel):
     last_check_out: time
     sumary_time: time
     work_date: date
-    pay: bool
+    payroll_status: str

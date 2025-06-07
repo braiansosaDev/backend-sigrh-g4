@@ -14,7 +14,7 @@ from src.modules.payroll_calculator.schemas import (
     ShiftSchema,
 )
 from src.modules.employee_hours.models.models import EmployeeHours, RegisterType, payType
-from sqlmodel import and_, delete, select
+from sqlmodel import delete, select
 
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
@@ -140,9 +140,22 @@ def process_morning_shift_hours(
 ):
     for day in date_range:
         # Saltar sábados y domingos
+        existing_employee_hours = db.exec(
+        select(EmployeeHours)
+        .where(
+            EmployeeHours.employee_id == employee.id,
+            EmployeeHours.work_date == day,
+            EmployeeHours.payroll_status != 'archived'
+        )).all()
+
+        if existing_employee_hours:
+            for eh in existing_employee_hours:
+                db.delete(eh)
+                db.commit()
+                
         if day.weekday() in (5, 6):
             concept= check_concept(db, "Día no hábil.")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db, 
                 employee=employee, 
                 concept=concept.id, 
@@ -150,7 +163,7 @@ def process_morning_shift_hours(
                 daily_events_count=0, 
                 first_check_in=None, 
                 last_check_out=None, 
-                payroll_status="archived", 
+                payroll_status="not payable", 
                 notes="Día no hábil", 
                 sumary_time=None, 
                 extra_hours=None,
@@ -165,7 +178,7 @@ def process_morning_shift_hours(
         # EL EMPLEADO NO REGISTRÓ UNA ENTRADA EN TODO EL DÍA
         if not ins:
             concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -186,7 +199,7 @@ def process_morning_shift_hours(
         # EL EMPLEADO NO REGISTRÓ SU SALIDA
         if len(ins) > len(outs):
             concept = check_concept(db, "Presente sin salida registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -227,7 +240,7 @@ def process_morning_shift_hours(
         if lower_bound <= worked_hours_float <= upper_bound:
             # JORNADA COMPLETA
             concept= check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -248,7 +261,7 @@ def process_morning_shift_hours(
             faltante_minutes = int((8.0 - worked_hours_float - faltante_hours) * 60)
 
             concept = check_concept(db, "Tiempo faltante")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -270,7 +283,7 @@ def process_morning_shift_hours(
             extra_time = time(hour=extra_hours, minute=extra_minutes, second=0)
 
             concept = check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -286,7 +299,7 @@ def process_morning_shift_hours(
             )
 
             concept = check_concept(db, "Horas extra")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -309,9 +322,22 @@ def process_afternoon_shift_hours(
 ):
     for day in date_range:
         # Saltar sábados y domingos
+        existing_employee_hours = db.exec(
+        select(EmployeeHours)
+        .where(
+            EmployeeHours.employee_id == employee.id,
+            EmployeeHours.work_date == day,
+            EmployeeHours.payroll_status != 'archived'
+        )).all()
+
+        if existing_employee_hours:
+            for eh in existing_employee_hours:
+                db.delete(eh)
+                db.commit()
+
         if day.weekday() in (5, 6):
             concept = check_concept(db, "Día no hábil.")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -319,7 +345,7 @@ def process_afternoon_shift_hours(
                 daily_events_count=0,
                 first_check_in=None,
                 last_check_out=None,
-                payroll_status="archived",
+                payroll_status="not payable",
                 notes="Día no hábil",
                 sumary_time=None,
                 extra_hours=None,
@@ -338,7 +364,7 @@ def process_afternoon_shift_hours(
         if not ins:
             # No entrada
             concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -359,7 +385,7 @@ def process_afternoon_shift_hours(
         if not outs:
             # No salida
             concept = check_concept(db, "Presente sin salida registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -385,7 +411,7 @@ def process_afternoon_shift_hours(
         if not last_check_datetime:
             # No salida válida después del IN
             concept = check_concept(db, "Presente sin salida registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -438,7 +464,7 @@ def process_afternoon_shift_hours(
 
         if lower_bound <= worked_hours_float <= upper_bound:
             concept = check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -456,7 +482,7 @@ def process_afternoon_shift_hours(
             faltante_hours = int(8.0 - worked_hours_float)
             faltante_minutes = int((8.0 - worked_hours_float - faltante_hours) * 60)
             concept = check_concept(db, "Tiempo faltante")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -485,7 +511,7 @@ def process_afternoon_shift_hours(
             extra_time = time(hour=int(extra_hours), minute=int(extra_minutes), second=0)
 
             concept = check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -501,7 +527,7 @@ def process_afternoon_shift_hours(
             )
 
             concept = check_concept(db, "Horas extra")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -525,9 +551,22 @@ def process_night_shift_hours(
 ):
     for day in date_range:
         # Saltar sábados y domingos (día de ingreso)
+        existing_employee_hours = db.exec(
+        select(EmployeeHours)
+        .where(
+            EmployeeHours.employee_id == employee.id,
+            EmployeeHours.work_date == day,
+            EmployeeHours.payroll_status != 'archived'
+        )).all()
+
+        if existing_employee_hours:
+            for eh in existing_employee_hours:
+                db.delete(eh)
+                db.commit()
+
         if day.weekday() in (5, 6):
             concept = check_concept(db, "Día no hábil.")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db, 
                 employee=employee, 
                 concept=concept.id, 
@@ -535,7 +574,7 @@ def process_night_shift_hours(
                 daily_events_count=0, 
                 first_check_in=None, 
                 last_check_out=None, 
-                payroll_status="archived", 
+                payroll_status="not payable", 
                 notes="Día no hábil", 
                 sumary_time=None, 
                 extra_hours=None,
@@ -555,7 +594,7 @@ def process_night_shift_hours(
         if not ins:
             # No entrada
             concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -576,7 +615,7 @@ def process_night_shift_hours(
         if not outs:
             # No salida
             concept = check_concept(db, "Presente sin salida registrada")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -612,7 +651,7 @@ def process_night_shift_hours(
 
         if lower_bound <= worked_hours_float <= upper_bound:
             concept = check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -630,7 +669,7 @@ def process_night_shift_hours(
             faltante_hours = int(8.0 - worked_hours_float)
             faltante_minutes = int((8.0 - worked_hours_float - faltante_hours) * 60)
             concept = check_concept(db, "Tiempo faltante")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -650,7 +689,7 @@ def process_night_shift_hours(
             extra_time = time(hour=extra_hours, minute=extra_minutes, second=0)
 
             concept = check_concept(db, "Jornada laboral completa")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -666,7 +705,7 @@ def process_night_shift_hours(
             )
 
             concept = check_concept(db, "Horas extra")
-            create_employee_hours_if_not_exists(
+            create_employee_hours(
                 db=db,
                 employee=employee,
                 concept=concept.id,
@@ -697,7 +736,7 @@ def check_concept(db: DatabaseSession, concept_description: str) -> Concept:
 
     return concept
 
-def create_employee_hours_if_not_exists(
+def create_employee_hours(
     db: DatabaseSession,
     employee: Employee,
     concept: int,
@@ -711,19 +750,7 @@ def create_employee_hours_if_not_exists(
     extra_hours: time | None,
     register_type: RegisterType,
 ):
-
-    existing_employee_hours = db.exec(
-        select(EmployeeHours)
-        .where(
-            EmployeeHours.employee_id == employee.id,
-            EmployeeHours.work_date == day,
-            EmployeeHours.concept_id == concept
-        )
-    ).one_or_none()
-
-    if existing_employee_hours:
-        return existing_employee_hours
-
+        
     # Crear nuevo
     employee_hours = EmployeeHours(
         employee_id=employee.id,
