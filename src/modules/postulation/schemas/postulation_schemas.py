@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Any
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 
@@ -36,10 +37,11 @@ class PostulationResponse(PostulationCreate):
     id: int = Field()
     evaluated_at: datetime | None = Field(default=None)
     suitable: bool = Field(default=False)
-    ability_match: dict = Field()
+    ability_match: dict[str, Any] = Field()
     created_at: datetime = Field()
     updated_at: datetime = Field()
     status: PostulationStatus = Field()
+    motive: str | None
 
 
 class PostulationUpdate(BaseModel):
@@ -57,3 +59,4 @@ class PostulationUpdate(BaseModel):
     address_state_id: int | None = Field(default=None)
     cv_file: str | None = Field(default=None)
     status: PostulationStatus = Field()
+    motive: str | None

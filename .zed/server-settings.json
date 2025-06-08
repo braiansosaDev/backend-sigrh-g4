@@ -19,7 +19,11 @@
         "pyright": {
             "settings": {
                 "python.analysis": {
-                    "diagnosticMode": "workspace"
+                    "diagnosticMode": "workspace",
+                    "typeCheckingMode": "standard",
+                    "diagnosticSeverityOverrides": {
+                        "reportMatchNotExhaustive": "error"
+                    }
                 }
             }
         }
