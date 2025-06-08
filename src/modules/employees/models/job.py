@@ -17,5 +17,5 @@ class Job(SQLModel, table=True):
     name: str = Field(max_length=100, index=True)
     sector_id: int = Field(foreign_key="sector.id")
 
-    employee: "Employee" = Relationship(back_populates="job")
+    employees: list["Employee"] = Relationship(back_populates="job", sa_relationship_kwargs={"order_by": "Employee.id"})
     sector: Optional["Sector"] = Relationship(back_populates="job")

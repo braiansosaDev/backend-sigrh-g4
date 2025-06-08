@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from src.database.core import DatabaseSession
 from src.modules.concept.models.models import Concept
-from src.modules.employee_hours.schemas.schemas import EmployeeHoursRequest
+from src.modules.employee_hours.schemas.schemas import EmployeeHoursRequest, EmployeeHoursPatchRequest
 from src.modules.employee_hours.models.models import EmployeeHours
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.services.utils import get_employee_by_id
@@ -65,15 +65,15 @@ def post_employee_hours(
 
 
 def patch_employee_hours(
-    db: DatabaseSession, employee_hours_id: int, request: EmployeeHoursRequest
+    db: DatabaseSession, employee_hours_id: int, request: EmployeeHoursPatchRequest
 ) -> EmployeeHours:
     try:
-        employee = get_employee_by_id(db, request.employee_id)
-        concept = get_concept_by_id(db, request.concept_id)
-        shift = get_shift_by_id(db, request.shift_id)
+        # employee = get_employee_by_id(db, request.employee_id)
+        # concept = get_concept_by_id(db, request.concept_id)
+        # shift = get_shift_by_id(db, request.shift_id)
         db_employee_hours = get_employee_hours_by_id(db, employee_hours_id)
 
-        validate_employee_hours(employee, concept, shift, db_employee_hours)
+        # validate_employee_hours(employee, concept, shift, db_employee_hours)
 
         for attr, value in request.model_dump(exclude_unset=True).items():
             if hasattr(db_employee_hours, attr):

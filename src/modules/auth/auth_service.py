@@ -17,7 +17,7 @@ def auth_login(db: DatabaseSession, user_id: str, password: str) -> Employee:
     """
     employee = utils.get_employee_by_user_id(db, user_id)
 
-    if not employee or not verify_password(password, employee.password):
+    if not employee or not employee.active or not employee.password or not verify_password(password, employee.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
