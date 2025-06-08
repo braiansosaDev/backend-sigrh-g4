@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from datetime import datetime
@@ -51,9 +51,9 @@ class JobOpportunityRequest(BaseModel):
     desirable_skill_percentage: float = Field(ge=0.0, le=100.0)
 
     @field_validator("title", mode="before")
-    def title_validator(cls, title: str):
+    def title_validator(cls, title: Any):
         if type(title) is not str:
-            raise TypeError("El título no es una string.")
+            raise ValueError("El título no es una string.")
         if not title.strip():
             raise ValueError("El título no puede estar vacío.")
         elif len(title) > 100:
@@ -61,9 +61,9 @@ class JobOpportunityRequest(BaseModel):
         return title
 
     @field_validator("description", mode="before")
-    def description_validator(cls, description: str):
+    def description_validator(cls, description: Any):
         if type(description) is not str:
-            raise TypeError("La descripción no es una string.")
+            raise ValueError("La descripción no es una string.")
         if not description.strip():
             raise ValueError("La descripción no puede estar vacía.")
         elif len(description) > 1000:

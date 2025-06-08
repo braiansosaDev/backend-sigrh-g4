@@ -14,7 +14,7 @@ from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.cv_matching import matcher_schema
 from fastapi import status, HTTPException
 from typing import List, Any
-import pymupdf  # type: ignore
+import pymupdf
 import unicodedata
 import string
 import spacy
@@ -34,7 +34,7 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
-def extract_text_from_pdf(base64_pdf: str):  # type: ignore
+def extract_text_from_pdf(base64_pdf: str) -> str:
     texto: str = ""
     pdf_bytes = base64.b64decode(base64_pdf)
 
@@ -42,26 +42,29 @@ def extract_text_from_pdf(base64_pdf: str):  # type: ignore
         logger.info("Extracting text with PyMuPDF...")
         with pymupdf.open("pdf", pdf_bytes) as doc_pymupdf:
             for pagina in doc_pymupdf:
-                texto += pagina.get_text()  # type: ignore
+                # Se debe ignorar porque pymupdf no soporta
+                # adecuadamente los type hints:
+                # https://github.com/pymupdf/PyMuPDF/issues/2883
+                texto += str(pagina.get_text())  # type: ignore
     except Exception as e:
         logger.error("Unexpected exception occurred while extracting text with PyMuPDF")
         logger.error(e)
 
     try:
         logger.info("Extracting text with pypdf...")
-        if texto.strip():  # type: ignore
-            texto += " "  # type: ignore
+        if texto.strip():
+            texto += " "
         with PdfReader(BytesIO(pdf_bytes)) as doc_pypdf:
             for pagina in doc_pypdf.pages:
-                texto += pagina.extract_text(extraction_mode="plain")  # type: ignore
+                texto += pagina.extract_text(extraction_mode="plain")
     except Exception as e:
         logger.error("Unexpected error occurred while extracting text with pypdf")
         logger.error(e)
 
-    if not texto.strip():  # type: ignore
+    if not texto.strip():
         raise ValueError("Extracted text is empty!")
     logger.info(f"Extracted text:\n{texto}")
-    return texto  # type: ignore
+    return texto
 
 
 def evaluate_candidates(
@@ -69,7 +72,12 @@ def evaluate_candidates(
 ) -> List[matcher_schema.MatcherResponse]:
     job_opportunity = db.exec(
         select(JobOpportunityModel).where(JobOpportunityModel.id == job_opportunity_id)
-    ).first()
+    ).one()
+    if not job_opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No existe la oferta laboral {job_opportunity_id}",
+        )
     postulations = db.exec(
         select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)
     ).all()
@@ -77,11 +85,6 @@ def evaluate_candidates(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"No hay postulaciones para la oferta laboral {job_opportunity_id}",
-        )
-    if not job_opportunity:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"No existe la oferta laboral {job_opportunity_id}",
         )
     abilities = get_all_abilities(db, job_opportunity_id)
     model = load_spanish_model()
@@ -96,7 +99,7 @@ def evaluate_candidates(
 
     for postulation in postulations:
         normalized_text = normalize(
-            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())  # type: ignore
+            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
         )
         logger.info(f"Normalized PDF text:\n{normalized_text}")
         required_words_match = match_abilities(
