@@ -78,9 +78,9 @@ def create_leave(
         reason=request.reason,
         request_status=LeaveRequestStatus.PENDIENTE,
         document_status=(
-            LeaveDocumentStatus.VALIDACION
+            LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
             if leave_type.justification_required
-            else LeaveDocumentStatus.NO_REQUERIDO
+            else LeaveDocumentStatus.PENDIENTE_DE_CARGA
         ),
         file=request.file
     )
@@ -106,6 +106,11 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     request_employee_id = token.get("employee_id")
 
     if request_employee_id == leave_author_employee.id:
+        if not set(request.dict(exclude_unset=True).keys()).issubset({'file'}):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No podés cambiar estados de tu propia solicitud."
+            )
         if request.file is not None and request.file.strip():
             db_leave.file = request.file
         elif db_leave.leave_type.justification_required:
@@ -132,13 +137,19 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     request_employee = employee_service.get_employee(session, request_employee_id)
 
     # TODO: Cambiar el ID del permiso por un enum sincronizado al data entry
-    if (not request_employee.role or 10 not in list(map(lambda permission: permission.id, request_employee.role.permissions))):
+    if (not request_employee.role
+        or 10 not in list(map(lambda permission: permission.id, request_employee.role.permissions))
+        or not set(request.dict(exclude_unset=True).keys()).issubset({'request_status', 'document_status'})
+    ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="No tiene permiso para realizar esta acción."
+            status_code=status.HTTP_403_FORBIDDEN, detail="No tenés permiso para realizar esta acción o editar algunos campos."
         )
 
     if request.request_status is not None:
         db_leave.request_status = request.request_status
+        if request.request_status is LeaveRequestStatus.APROBADO:
+            db_leave.document_status = LeaveDocumentStatus.APROBADO
+
     if request.document_status is not None:
         db_leave.document_status = request.document_status
 

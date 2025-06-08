@@ -2,7 +2,6 @@ from pydantic import (
     BaseModel,
     Field,
     AwareDatetime,
-    FutureDate,
     model_validator,
 )
 from datetime import date
@@ -17,8 +16,8 @@ class LeaveTypePublic(BaseModel):
 
 
 class LeaveDocumentStatus(StrEnum):
-    NO_REQUERIDO = auto()
-    VALIDACION = auto()
+    PENDIENTE_DE_CARGA = auto()
+    PENDIENTE_DE_VALIDACION = auto()
     APROBADO = auto()
     RECHAZADO = auto()
 
@@ -30,8 +29,8 @@ class LeaveRequestStatus(StrEnum):
 
 
 class LeaveCreate(BaseModel):
-    start_date: FutureDate = Field()
-    end_date: FutureDate = Field()
+    start_date: date = Field()
+    end_date: date = Field()
     leave_type_id: int = Field()
     reason: Optional[str] = Field(default=None)
     file: Optional[str] = Field(min_length=1, default=None)
