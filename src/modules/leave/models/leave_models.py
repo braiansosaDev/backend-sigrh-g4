@@ -54,4 +54,4 @@ class Leave(SQLModel, table=True):
         ),
     )
 
-    employee: Optional["Employee"] = Relationship(back_populates="leaves")
+    employee: "Employee" = Relationship(back_populates="leaves")
