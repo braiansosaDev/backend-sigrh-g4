@@ -79,7 +79,7 @@ def create_leave(
         request_status=LeaveRequestStatus.PENDIENTE,
         document_status=(
             LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
-            if leave_type.justification_required
+            if request.file
             else LeaveDocumentStatus.PENDIENTE_DE_CARGA
         ),
         file=request.file
@@ -105,16 +105,37 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     leave_author_employee = employee_service.get_employee(session, db_leave.employee_id)
     request_employee_id = token.get("employee_id")
 
+    if db_leave.request_status in {LeaveRequestStatus.APROBADO, LeaveRequestStatus.RECHAZADO}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La solicitud ya está cerrada y no se puede editar."
+        )
+
     if request_employee_id == leave_author_employee.id:
         if not set(request.dict(exclude_unset=True).keys()).issubset({'file'}):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No podés cambiar estados de tu propia solicitud."
             )
+
+        if db_leave.document_status in {LeaveDocumentStatus.APROBADO, LeaveDocumentStatus.RECHAZADO}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="La documentación ya fue evaluada y no se puede editar."
+            )
+
         if request.file is not None and request.file.strip():
+
             db_leave.file = request.file
+
+            if db_leave.document_status == LeaveDocumentStatus.PENDIENTE_DE_CARGA:
+                db_leave.document_status = LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
+
         elif db_leave.leave_type.justification_required:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio."
+            )
 
         try:
             session.add(db_leave)
@@ -142,16 +163,17 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
         or not set(request.dict(exclude_unset=True).keys()).issubset({'request_status', 'document_status'})
     ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="No tenés permiso para realizar esta acción o editar algunos campos."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para realizar esta acción o editar algunos campos."
         )
+
+    if request.document_status is not None:
+        db_leave.document_status = request.document_status
 
     if request.request_status is not None:
         db_leave.request_status = request.request_status
         if request.request_status is LeaveRequestStatus.APROBADO:
             db_leave.document_status = LeaveDocumentStatus.APROBADO
-
-    if request.document_status is not None:
-        db_leave.document_status = request.document_status
 
     try:
         session.add(db_leave)
