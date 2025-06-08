@@ -1,4 +1,4 @@
-from typing import Sequence, cast, Any
+from typing import Sequence, cast, Any, Optional
 from fastapi import HTTPException, status
 from sqlmodel import func, select
 from src.database.core import DatabaseSession
@@ -7,6 +7,7 @@ from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.job import Job
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.employee_models import CreateEmployee
+from src.modules.employees.services import sector_service
 from sqlalchemy.orm import selectinload
 
 
@@ -111,11 +112,16 @@ def get_employee_by_user_id(db: DatabaseSession, user_id: str) -> Employee:
     return employee
 
 
-def get_all_employees(db: DatabaseSession) -> Sequence[Employee]:
-    return db.exec(
-        select(Employee)
-        .order_by(cast(Any, Employee.id))
-    ).all()
+def get_all_employees(db: DatabaseSession, sector_id: Optional[int]) -> Sequence[Employee]:
+    stmt = select(Employee).order_by(cast(Any, Employee.id))
+    if sector_id is not None:
+        # Para dar error si no existe el sector
+        sector_service.get_sector_by_id(db, sector_id)
+
+        stmt = stmt.join(
+            Job, cast(Any, Employee.job_id == Job.id)
+        ).where(Job.sector_id == sector_id)
+    return db.exec(stmt).all()
 
 
 def create_user_id(db: DatabaseSession, employee_request: CreateEmployee) -> str:
