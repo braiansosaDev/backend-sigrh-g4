@@ -1,9 +1,11 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast, Any
 from fastapi import HTTPException, status
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
+from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
 from src.modules.leave.schemas.leave_schemas import (
     LeaveDocumentStatus,
     LeaveRequestStatus,
@@ -11,7 +13,7 @@ from src.modules.leave.schemas.leave_schemas import (
     LeaveUpdate,
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
-from src.modules.employees.services import employee_service
+from src.modules.employees.services import employee_service, sector_service
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -36,14 +38,24 @@ def get_leaves(
     document_status: Optional[LeaveDocumentStatus],
     request_status: Optional[LeaveRequestStatus],
     employee_id: Optional[int],
+    sector_id: Optional[int],
 ) -> Sequence[Leave]:
-    stmt = select(Leave)
+    stmt = select(Leave).order_by(cast(Any, Leave.id))
     if document_status is not None:
         stmt = stmt.where(Leave.document_status == document_status)
     if request_status is not None:
         stmt = stmt.where(Leave.request_status == request_status)
     if employee_id is not None:
         stmt = stmt.where(Leave.employee_id == employee_id)
+    if sector_id is not None:
+        # Para dar error si no existe el sector
+        sector_service.get_sector_by_id(session, sector_id)
+
+        stmt = stmt.join(
+            Employee, cast(Any, Leave.employee_id == Employee.id)
+        ).join(
+            Job, cast(Any, Employee.job_id == Job.id)
+        ).where(Job.sector_id == sector_id)
     return session.exec(stmt).all()
 
 
@@ -68,7 +80,10 @@ def create_leave(
         )
 
     if leave_type.justification_required and not request.file:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{leave_type.type}' requiere archivo de justificación obligatorio.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El tipo de licencia '{leave_type.type}' requiere archivo de justificación obligatorio.",
+        )
 
     db_leave = Leave(
         employee_id=employee_id,
@@ -79,10 +94,10 @@ def create_leave(
         request_status=LeaveRequestStatus.PENDIENTE,
         document_status=(
             LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
-            if leave_type.justification_required
+            if request.file
             else LeaveDocumentStatus.PENDIENTE_DE_CARGA
         ),
-        file=request.file
+        file=request.file,
     )
 
     try:
@@ -99,11 +114,22 @@ def create_leave(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int, request: LeaveUpdate):
+def update_leave(
+    session: DatabaseSession,
+    token: TokenDependency,
+    leave_id: int,
+    request: LeaveUpdate,
+):
     db_leave: Leave = get_leave(session, leave_id)
 
     leave_author_employee = employee_service.get_employee(session, db_leave.employee_id)
     request_employee_id = token.get("employee_id")
+
+    if db_leave.request_status in {LeaveRequestStatus.APROBADO, LeaveRequestStatus.RECHAZADO}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="La solicitud ya está cerrada y no se puede editar."
+        )
 
     if request_employee_id == leave_author_employee.id:
         if not set(request.dict(exclude_unset=True).keys()).issubset({'file'}):
@@ -111,10 +137,25 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No podés cambiar estados de tu propia solicitud."
             )
+
+        if db_leave.document_status in {LeaveDocumentStatus.APROBADO, LeaveDocumentStatus.RECHAZADO}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="La documentación ya fue evaluada y no se puede editar."
+            )
+
         if request.file is not None and request.file.strip():
+
             db_leave.file = request.file
+
+            if db_leave.document_status == LeaveDocumentStatus.PENDIENTE_DE_CARGA:
+                db_leave.document_status = LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
+
         elif db_leave.leave_type.justification_required:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"El tipo de licencia '{db_leave.leave_type.type}' requiere archivo de justificación obligatorio.",
+            )
 
         try:
             session.add(db_leave)
@@ -131,7 +172,7 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
     if request_employee_id is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se encuentra el employee_id en el token."
+            detail="No se encuentra el employee_id en el token.",
         )
 
     request_employee = employee_service.get_employee(session, request_employee_id)
@@ -142,16 +183,17 @@ def update_leave(session: DatabaseSession, token: TokenDependency, leave_id: int
         or not set(request.dict(exclude_unset=True).keys()).issubset({'request_status', 'document_status'})
     ):
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="No tenés permiso para realizar esta acción o editar algunos campos."
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para realizar esta acción o editar algunos campos."
         )
+
+    if request.document_status is not None:
+        db_leave.document_status = request.document_status
 
     if request.request_status is not None:
         db_leave.request_status = request.request_status
         if request.request_status is LeaveRequestStatus.APROBADO:
             db_leave.document_status = LeaveDocumentStatus.APROBADO
-
-    if request.document_status is not None:
-        db_leave.document_status = request.document_status
 
     try:
         session.add(db_leave)

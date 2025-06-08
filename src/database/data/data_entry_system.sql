@@ -148,7 +148,10 @@ INSERT INTO leave_type (id, type, justification_required) VALUES
 (11, 'Licencia por donación de sangre', False),
 (12, 'Licencia por fuerza mayor', False),
 (13, 'Licencia por mudanza', True),
-(14, 'Licencia por trámite personal urgente', False)
+(14, 'Licencia por trámite personal urgente', False),
+(15, 'Vacaciones', False),
+(16, 'Licencia médica por enfermedad grave', True),
+(17, 'Licencia con otros motivos', False)
 ON CONFLICT (id) DO UPDATE SET
 type = EXCLUDED.type,
 justification_required = EXCLUDED.justification_required;

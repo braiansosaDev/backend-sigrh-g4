@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Optional
 from fastapi import HTTPException, status
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
@@ -18,8 +18,8 @@ def count_active_employees(db: DatabaseSession) -> int:
     return result
 
 
-def get_all_employees(db: DatabaseSession) -> Sequence[Employee]:
-    employees = utils.get_all_employees(db)
+def get_all_employees(db: DatabaseSession, sector_id: Optional[int]) -> Sequence[Employee]:
+    employees = utils.get_all_employees(db, sector_id)
 
     if employees is None:
         raise HTTPException(
@@ -52,10 +52,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
     try:
         # Convertir documentos
         documents = (
-            [
-                Document(**doc.model_dump())
-                for doc in employee_request.documents
-            ]
+            [Document(**doc.model_dump()) for doc in employee_request.documents]
             if employee_request.documents
             else []
         )
@@ -107,7 +104,9 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         return db_employee
     except IntegrityError as e:
         db.rollback()
-        logger.error(f"Unexpected IntegrityError occurred while creating Employee:\n{e}")
+        logger.error(
+            f"Unexpected IntegrityError occurred while creating Employee:\n{e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Ocurrió un error inesperado, probablemente ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",

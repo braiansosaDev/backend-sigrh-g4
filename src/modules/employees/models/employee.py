@@ -13,10 +13,13 @@ if TYPE_CHECKING:
     from src.modules.employees.models.job import Job
     from src.modules.employees.models.state import State
     from src.modules.employees.models.work_history import WorkHistory
-    from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
+    from src.modules.opportunity.models.job_opportunity_models import (
+        JobOpportunityModel,
+    )
     from src.modules.face_recognition.models.face_recognition import FaceRecognition
     from src.modules.shift.models.models import Shift
     from src.modules.role.models.role_models import Role
+    from src.modules.leave.models.leave_models import Leave
 
 
 class Employee(SQLModel, table=True):
@@ -59,17 +62,32 @@ class Employee(SQLModel, table=True):
     )
 
     work_histories: list["WorkHistory"] = Relationship(
-        back_populates="employee", cascade_delete=True, sa_relationship_kwargs={"order_by": "WorkHistory.id"}
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "WorkHistory.id"},
     )
     documents: list["Document"] = Relationship(
-        back_populates="employee", cascade_delete=True, sa_relationship_kwargs={"order_by": "Document.id"}
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "Document.id"},
     )
     employee_hours: list["EmployeeHours"] = Relationship(
-        back_populates="employee", cascade_delete=True, sa_relationship_kwargs={"order_by": "EmployeeHours.id"}
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "EmployeeHours.id"},
     )
     clock_events: list["ClockEvents"] = Relationship(
-        back_populates="employee", cascade_delete=True, sa_relationship_kwargs={"order_by": "ClockEvents.id"}
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "ClockEvents.id"},
     )
     job_opportunity: list["JobOpportunityModel"] = Relationship(
-        back_populates="employee", cascade_delete=True, sa_relationship_kwargs={"order_by": "JobOpportunityModel.id"}
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "JobOpportunityModel.id"},
+    )
+    leaves: list["Leave"] = Relationship(
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "Leave.id"},
     )
