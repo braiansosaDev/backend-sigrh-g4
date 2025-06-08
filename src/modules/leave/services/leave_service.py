@@ -1,4 +1,4 @@
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast, Any
 from fastapi import HTTPException, status
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
@@ -13,31 +13,10 @@ from src.modules.leave.schemas.leave_schemas import (
     LeaveUpdate,
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
-from src.modules.employees.services import employee_service
-from src.modules.employees.models.sector import Sector
+from src.modules.employees.services import employee_service, sector_service
 import logging
 
 logger = logging.getLogger("uvicorn.error")
-
-
-def get_leaves_of_employees_by_sector(session: DatabaseSession, sector_id: int):
-    sector = session.exec(select(Sector).where(Sector.id == sector_id)).first()
-    leaves = session.exec(
-        select(Leave)
-        .join(Employee, Leave.employee_id == Employee.id)
-        .join(Job, Employee.job_id == Job.id)
-        .where(Job.sector_id == sector_id)
-    ).all()
-
-    if not sector:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Sector no encontrado"
-        )
-    if not leaves:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Recurso no encontrado"
-        )
-    return leaves
 
 
 def get_leave_or_none(session: DatabaseSession, leave_id: int) -> Leave | None:
@@ -59,14 +38,24 @@ def get_leaves(
     document_status: Optional[LeaveDocumentStatus],
     request_status: Optional[LeaveRequestStatus],
     employee_id: Optional[int],
+    sector_id: Optional[int],
 ) -> Sequence[Leave]:
-    stmt = select(Leave)
+    stmt = select(Leave).order_by(cast(Any, Leave.id))
     if document_status is not None:
         stmt = stmt.where(Leave.document_status == document_status)
     if request_status is not None:
         stmt = stmt.where(Leave.request_status == request_status)
     if employee_id is not None:
         stmt = stmt.where(Leave.employee_id == employee_id)
+    if sector_id is not None:
+        # Para dar error si no existe el sector
+        sector_service.get_sector_by_id(session, sector_id)
+
+        stmt = stmt.join(
+            Employee, cast(Any, Leave.employee_id == Employee.id)
+        ).join(
+            Job, cast(Any, Employee.job_id == Job.id)
+        ).where(Job.sector_id == sector_id)
     return session.exec(stmt).all()
 
 

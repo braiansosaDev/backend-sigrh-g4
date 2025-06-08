@@ -15,22 +15,16 @@ from src.modules.leave.services import leave_service
 leave_router = APIRouter(prefix="/leaves", tags=["Leaves"])
 
 
-@leave_router.get(
-    "/{sector_id}", response_model=list[LeavePublic], status_code=status.HTTP_200_OK
-)
-async def get_leaves_of_employees_by_sector(session: DatabaseSession, sector_id: int):
-    return leave_service.get_leaves_of_employees_by_sector(session, sector_id)
-
-
 @leave_router.get("/", response_model=list[LeavePublic], status_code=status.HTTP_200_OK)
 async def get_leaves(
     session: DatabaseSession,
     document_status: Optional[LeaveDocumentStatus] = None,
     request_status: Optional[LeaveRequestStatus] = None,
     employee_id: Optional[int] = None,
+    sector_id: Optional[int] = None,
 ):
     return leave_service.get_leaves(
-        session, document_status, request_status, employee_id
+        session, document_status, request_status, employee_id, sector_id
     )
 
 

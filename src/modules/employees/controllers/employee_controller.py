@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
@@ -33,17 +34,9 @@ Returns:
 )
 async def get_all_employees(
     db: DatabaseSession,
+    sector_id: Optional[int] = None
 ):
-    return employee_service.get_all_employees(db)
-
-
-@employee_router.get(
-    "/{sector_id}",
-    status_code=status.HTTP_200_OK,
-    response_model=list[EmployeeResponse],
-)
-async def get_all_employees_by_sector(db: DatabaseSession, sector_id: int):
-    return employee_service.get_all_employees_by_sector(db, sector_id)
+    return employee_service.get_all_employees(db, sector_id)
 
 
 @employee_router.get(
