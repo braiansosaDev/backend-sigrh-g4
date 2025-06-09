@@ -6,16 +6,59 @@ from src.modules.clock_events.models.models import ClockEvents
 from src.modules.clock_events.schemas.schemas import ClockEventTypes
 from src.modules.concept.models.models import Concept
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.schemas.employee_models import EmployeeResponse
 from src.modules.payroll_calculator.schemas import (
     ConceptSchema,
     EmployeeHoursSchema,
+    PayrollPendingValidationResponse,
     PayrollRequest,
     PayrollResponse,
     ShiftSchema,
+    PayrollPendingValidationRequest
 )
 from src.modules.employee_hours.models.models import EmployeeHours, RegisterType, payType
 from sqlmodel import delete, select
 
+
+def get_pending_validation_hours(
+    db: DatabaseSession, request: PayrollPendingValidationRequest
+) -> list[PayrollResponse]:
+    if request.start_date and request.end_date and request.end_date < request.start_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="End date must be greater than start date",
+        )
+
+    query = select(EmployeeHours).where(EmployeeHours.payroll_status == "PENDING_VALIDATION")
+
+    if request.employee_id:
+        query = query.where(EmployeeHours.employee_id.in_(request.employee_id))
+
+    if request.start_date:
+        query = query.where(EmployeeHours.work_date >= request.start_date)
+    if request.end_date:
+        query = query.where(EmployeeHours.work_date <= request.end_date)
+
+    employee_hours_list = db.exec(query).all()
+
+    responses = []
+    for eh in employee_hours_list:
+        # Acá asumimos que las relaciones están disponibles vía foreign keys
+        concept = db.get(Concept, eh.concept_id)
+        employee = db.exec(
+            select(Employee).where(Employee.id == eh.employee_id)
+        ).one_or_none()
+
+        if not employee or not employee.shift:
+            continue  # o lanzá error si es crítico
+
+        responses.append(PayrollPendingValidationResponse(
+            employee=Employee.model_validate(employee),
+            employee_hours=EmployeeHoursSchema.model_validate(eh),
+            concept=ConceptSchema.model_validate(concept),
+            shift=ShiftSchema.model_validate(employee.shift),
+        ))
+    return responses
 
 def get_employee_by_id(db: DatabaseSession, employee_id: int) -> Employee:
     employee = db.exec(select(Employee).where(Employee.id == employee_id)).one_or_none()
@@ -84,7 +127,6 @@ def filter_and_sort_hours(
         key=lambda eh: eh.work_date,
     )
 
-
 def calculate_hours(db: DatabaseSession, request: PayrollRequest):
     if request.end_date < request.start_date:
         raise HTTPException(
@@ -130,7 +172,6 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing hours: {str(e)}",
         )
-
 
 def process_morning_shift_hours(
     db: DatabaseSession,
@@ -541,7 +582,6 @@ def process_afternoon_shift_hours(
                 extra_hours=extra_time,
                 register_type=RegisterType.PRESENCIA,
             )
-
 
 def process_night_shift_hours(
     db: DatabaseSession,

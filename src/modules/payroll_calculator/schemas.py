@@ -1,6 +1,8 @@
 from datetime import date, time
+from typing import List, Optional
 from pydantic import BaseModel
 
+from src.modules.employees.models.employee import Employee
 
 class PayrollRequest(BaseModel):
     employee_id: int
@@ -43,8 +45,18 @@ class EmployeeHoursSchema(BaseModel):
 
     model_config = {"from_attributes": True}
 
-
 class PayrollResponse(BaseModel):
+    employee_hours: EmployeeHoursSchema
+    concept: ConceptSchema
+    shift: ShiftSchema
+
+class PayrollPendingValidationRequest(BaseModel):
+    employee_id: Optional[List[int]] = None
+    start_date: Optional[date] = None
+    end_date: Optional[date] = None
+
+class PayrollPendingValidationResponse(BaseModel):
+    employee: Employee
     employee_hours: EmployeeHoursSchema
     concept: ConceptSchema
     shift: ShiftSchema

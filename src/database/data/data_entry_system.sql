@@ -102,7 +102,8 @@ INSERT INTO role (id, name, description) VALUES
 (4, 'Empleado', 'Empleado de la empresa'),
 (5, 'Supervisor - Empleados', 'Supervisor de los empleados'),
 (6, 'Gerente RRHH', 'Gerente del área de Recursos Humanos'),
-(7, 'Reclutador', 'Analista de RRHH que es Reclutador de talento')
+(7, 'Reclutador', 'Analista de RRHH que es Reclutador de talento'),
+(8, 'Dev', 'Desarrollador del sistema')
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;
@@ -110,15 +111,15 @@ SELECT setval(pg_get_serial_sequence('role', 'id'), (SELECT MAX(id) FROM role));
 
 -- Cargar permisos de roles
 INSERT INTO role_permission (role_id, permission_id) VALUES
-(1,1), (1,7), (1,5), (1,9), (1,5),
---(2,8), (2,1), (2,2), (2,6), (2,5),
--- Se agregaron todos los permisos a root para facilitar desarrollo
-(2,1), (2,2), (2,3), (2,4), (2,5), (2,6), (2,7), (2,8), (2,9), (2,10), (2,11), (2,12), (2,13),
+(1,1), (1,7), (1,5), (1,9), (1,5), (1, 10),
+(2,8), (2,1), (2,2), (2,6), (2,5),
 (3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4),
 (4,9),
-(5,7), (5,11), (5,9), (5,10),
+(5,7), (5,11), (5,9),
 (6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4),
-(7,3)
+(7,3),
+-- Nuevo rol: Developer
+(8,1), (8,2), (8,3), (8,4), (8,5), (8,6), (8,7), (8,8), (8,9), (8,10), (8,11), (8,12), (8,13)
 ON CONFLICT DO NOTHING;
 
 -- Cargar shifts
