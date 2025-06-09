@@ -1,5 +1,6 @@
 from typing import Sequence, Optional
 from fastapi import HTTPException, status
+from src.modules.auth.token import TokenDependency
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
@@ -161,6 +162,76 @@ def update_employee(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Error de validación: Usuario, DNI, Mail o Telefono ya está siendo utilizado",
         )
+
+# TODO: Remplazar por el de abajo
+def change_password(
+    db: DatabaseSession,
+    employee_id: int,
+    password: str
+) -> None:
+
+    if not password.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La password no puede ser vacía."
+        )
+
+    db_employee = get_employee(db, employee_id)
+    db_employee.password = get_password_hash(password)
+
+    try:
+        db.add(db_employee)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.info(f"An unexpected IntegrityError occurred while changing password of employee {employee_id}")
+        raise
+
+
+def change_password_token(
+    db: DatabaseSession,
+    token: TokenDependency,
+    employee_id: int,
+    password: str
+) -> None:
+    request_employee_id = token.get("employee_id")
+    if request_employee_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se encuentra el ID de empleado en el token."
+        )
+
+    request_employee = get_employee(db, request_employee_id)
+
+    if (
+        request_employee.id != employee_id and (
+            not request_employee.role
+            # TODO: Cambiar a enum de permissions por ID
+            # 1 = editar ABM empleados
+            #or 1 not in set(map(lambda p: p.id, request_employee.role.permissions))
+
+            # Administrador root
+            or not request_employee.role.id == 2
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para realizar esta acción."
+        )
+
+    if not password.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña no puede estar vacía")
+
+    db_employee = get_employee(db, employee_id)
+    db_employee.password = get_password_hash(password)
+
+    try:
+        db.add(db_employee)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.info(f"An unexpected IntegrityError has occurred while changing password of employee {employee_id}")
+        raise
 
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:

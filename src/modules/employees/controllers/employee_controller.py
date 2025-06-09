@@ -88,6 +88,36 @@ async def update_employee(
     return employee_service.update_employee(db, employee_id, update_request)
 
 
+# TODO: Remplazar por el de abajo
+@employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    db: DatabaseSession,
+    employee_id: int,
+    password: str
+):
+    return employee_service.change_password(
+        db,
+        employee_id,
+        password
+    )
+
+
+# @employee_router.post("/change_password_token", status_code=status.HTTP_204_NO_CONTENT)
+# async def change_password_token(
+#     db: DatabaseSession,
+#     token: TokenDependency,
+#     employee_id: int,
+#     password: str
+# ):
+#     return employee_service.change_password_token(
+#         db,
+#         token,
+#         employee_id,
+#         password
+#     )
+
+
+
 """Endpoint para eliminar un empleado.
 El empleado debe proporcionar su ID.
 El ID debe ser un número entero positivo.
