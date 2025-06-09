@@ -3,8 +3,10 @@ from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
 from src.modules.employees.schemas.employee_models import (
+    ChangePasswordRequest,
     CreateEmployee,
     EmployeeResponse,
+    UpdateEmployee,
 )
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
@@ -83,7 +85,7 @@ Returns:
 async def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: CreateEmployee,
+    update_request: UpdateEmployee,
 ):
     return employee_service.update_employee(db, employee_id, update_request)
 
@@ -92,13 +94,12 @@ async def update_employee(
 @employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
 async def change_password(
     db: DatabaseSession,
-    employee_id: int,
-    password: str
+    model_request: ChangePasswordRequest
 ):
     return employee_service.change_password(
         db,
-        employee_id,
-        password
+        model_request.employee_id,
+        model_request.password
     )
 
 

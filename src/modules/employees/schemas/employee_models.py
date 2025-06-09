@@ -11,6 +11,9 @@ from src.modules.employees.schemas.job_models import JobResponse
 from src.modules.role.schemas.role_schemas import RolePublic
 from src.modules.shift.models.models import Shift
 
+class ChangePasswordRequest(BaseModel):
+    employee_id: int
+    password: str
 
 class EmployeeResponse(BaseModel):
     """

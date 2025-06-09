@@ -4,7 +4,7 @@ from src.modules.auth.token import TokenDependency
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee
+from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.modules.auth.crypt import get_password_hash
@@ -123,7 +123,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
 def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: CreateEmployee,
+    update_request: UpdateEmployee,
 ) -> Employee:
     """
     Actualiza los datos de un empleado en la base de datos.
@@ -144,9 +144,9 @@ def update_employee(
     try:
         update_data = update_request.model_dump(exclude_unset=True)
 
-        # Si se actualiza la contraseña, se rehashea
-        if "password" in update_data:
-            update_data["password"] = get_password_hash(update_data["password"])
+        # # Si se actualiza la contraseña, se rehashea
+        # if "password" in update_data:
+        #     update_data["password"] = get_password_hash(update_data["password"])
 
         for attr, value in update_data.items():
             if hasattr(employee, attr):
