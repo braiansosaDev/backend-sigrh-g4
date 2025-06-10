@@ -5,3 +5,4 @@ sigrh.db
 .venv
 .postgres-password
 .vscode
+pyrightconfig.json

@@ -80,7 +80,7 @@ def verify_face(
                     employee_id=face.employee_id,
                 )
 
-    return OperationStatus(success=False, message="No match found.")
+    return OperationStatus(employee_id=None, success=False, message="No match found.")
 
 
 
@@ -148,7 +148,7 @@ def register_attendance(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="Employee not found."
                     )
-                
+
                 post_clock_event(db,ClockEventRequest(
                         employee_id= employee.id,
                         event_type= event_type,
@@ -163,4 +163,4 @@ def register_attendance(
                     employee_id=employee.id,
                 )
 
-    return OperationStatus(success=False, message="No match found.")
+    return OperationStatus(employee_id=None, success=False, message="No match found.")

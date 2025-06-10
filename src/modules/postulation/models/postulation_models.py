@@ -1,3 +1,4 @@
+from typing import Any
 from sqlmodel import SQLModel, Field, Column, JSON
 from sqlalchemy import func
 from datetime import datetime
@@ -24,9 +25,10 @@ class Postulation(SQLModel, table=True):
     cv_file: str = Field()
     evaluated_at: datetime | None = Field(default=None)
     suitable: bool = Field(default=False)
-    ability_match: dict = Field(sa_column=Column(JSON), default_factory=dict)
+    ability_match: dict[str, Any] = Field(sa_column=Column(JSON), default_factory=dict)
     created_at: datetime = Field(default=func.now())
     updated_at: datetime = Field(
         default=func.now(), sa_column_kwargs={"onupdate": func.now()}
     )
     status: PostulationStatus = Field(default=PostulationStatus.PENDIENTE)
+    motive: str = Field(nullable=True)

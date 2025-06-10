@@ -7,7 +7,7 @@ class PermissionCreate(BaseModel):
 
 
 class PermissionPublic(PermissionCreate):
-    id: str = Field(min_length=1, max_length=100)
+    id: int = Field()
 
 
 class PermissionUpdate(BaseModel):

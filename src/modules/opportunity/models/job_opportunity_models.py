@@ -6,6 +6,10 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityWorkMode,
     JobOpportunityAbilityImportance,
 )
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 
 class JobOpportunityBaseModel(SQLModel):

@@ -1,5 +1,8 @@
 from sqlmodel import Field, Relationship, SQLModel
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.modules.employees.models.employee import Employee
 
 
 class State(SQLModel, table=True):
@@ -12,4 +15,4 @@ class State(SQLModel, table=True):
     name: str = Field(max_length=100, index=True)
     country_id: int = Field(foreign_key="country.id")
 
-    employee: "Employee" = Relationship(back_populates="state")
+    employees: list["Employee"] = Relationship(back_populates="state", sa_relationship_kwargs={"order_by": "Employee.id"})

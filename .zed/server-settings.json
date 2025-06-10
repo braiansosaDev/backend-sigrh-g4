@@ -14,5 +14,18 @@
             ],
             "format_on_save": "off"
         }
+    },
+    "lsp": {
+        "pyright": {
+            "settings": {
+                "python.analysis": {
+                    "diagnosticMode": "workspace",
+                    "typeCheckingMode": "standard",
+                    "diagnosticSeverityOverrides": {
+                        "reportMatchNotExhaustive": "error"
+                    }
+                }
+            }
+        }
     }
 }

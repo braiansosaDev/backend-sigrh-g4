@@ -10,7 +10,7 @@ from sqlmodel import select, col
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
-from typing import Sequence
+from typing import Sequence, cast, Any
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -46,7 +46,9 @@ def get_all_postulations(
     query = select(Postulation)
     if job_opportunity_id is not None:
         query = query.where(Postulation.job_opportunity_id == job_opportunity_id)
-    return db.exec(query.order_by(Postulation.id)).all()
+    return db.exec(
+        query.order_by(cast(Any, Postulation.id))
+    ).all()
 
 
 def get_postulation_by_id(
@@ -77,7 +79,7 @@ def create_postulation(db: DatabaseSession, request: PostulationCreate) -> Postu
                 detail=f"Se alcanzó el límite de postulaciones ({MAX_POSTULATIONS_PER_OPPORTUNITY}) para esta convocatoria",
             )
 
-        postulation = Postulation(**request.dict())
+        postulation = Postulation(**request.model_dump())
 
         db.add(postulation)
         db.commit()
@@ -93,7 +95,7 @@ def create_postulation(db: DatabaseSession, request: PostulationCreate) -> Postu
             )
         else:
             logger.error(
-                f"Unexpected error occurred while creating postulation with data {request.dict()}"
+                f"Unexpected error occurred while creating postulation with data {request.model_dump()}"
             )
             raise
 

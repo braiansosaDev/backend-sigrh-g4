@@ -1,19 +1,20 @@
-from fastapi import HTTPException
-import fitz
-from pypdf import PdfReader
 from io import BytesIO
 from spacy.language import Language
 from spacy.tokens import Doc
 from spacy.tokens.span import Span
 from spacy.matcher import PhraseMatcher
-from src.cv_matching import schema
+from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityResponse,
 )
 from src.modules.opportunity.services import opportunity_service
 from src.modules.postulation.models.postulation_models import Postulation
+from src.modules.cv_matching import matcher_schema
+from fastapi import status, HTTPException
 from typing import List, Any
+import pymupdf
 import unicodedata
 import string
 import spacy
@@ -21,33 +22,10 @@ import base64
 import logging
 import re
 import itertools
-from sqlalchemy import func
-from sqlmodel import select
-
+from datetime import datetime
+from pypdf import PdfReader
 
 logger = logging.getLogger("uvicorn.error")
-
-def get_all_postulations(
-    db: DatabaseSession, job_opportunity_id: int
-) -> List[schema.PostulationResponse]:
-    postulations = db.exec(select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)).all()
-
-    if not postulations:
-        raise HTTPException(status_code=404, detail="Postulation not found")
-
-    formatted_postulations = []
-    for postulation in postulations:
-        postulation_dict = postulation.dict()
-        try:
-            # Decodifica base64 a bytes, luego a utf-8
-            postulation_dict["cv_file"] = base64.b64decode(postulation.cv_file).decode(
-                "utf-8"
-            )
-        except Exception:
-            postulation_dict["cv_file"] = ""
-        formatted_postulations.append(postulation_dict)
-
-    return formatted_postulations
 
 
 def get_all_abilities(
@@ -56,29 +34,58 @@ def get_all_abilities(
     return opportunity_service.get_opportunity_with_abilities(db, job_opportunity_id)
 
 
-def extract_text_from_pdf(base64_pdf: str):
+def extract_text_from_pdf(base64_pdf: str) -> str:
+    texto: str = ""
+    pdf_bytes = base64.b64decode(base64_pdf)
+
     try:
-        pdf_bytes = base64.b64decode(base64_pdf)
-        doc = fitz.open("pdf", pdf_bytes)
-        texto = ""
-        for pagina in doc:
-            texto += pagina.get_text()
-        #return texto
-        texto += " "
-        doc_pypdf = PdfReader(BytesIO(pdf_bytes))
-        #texto: str = ""
-        for pagina in doc_pypdf.pages:
-            texto += pagina.extract_text(extraction_mode="plain")
-        logger.info(f"Extracted text:\n{texto}")
-        return texto
+        logger.info("Extracting text with PyMuPDF...")
+        with pymupdf.open("pdf", pdf_bytes) as doc_pymupdf:
+            for pagina in doc_pymupdf:
+                # Se debe ignorar porque pymupdf no soporta
+                # adecuadamente los type hints:
+                # https://github.com/pymupdf/PyMuPDF/issues/2883
+                texto += str(pagina.get_text())  # type: ignore
     except Exception as e:
-        return ""
+        logger.error("Unexpected exception occurred while extracting text with PyMuPDF")
+        logger.error(e)
+
+    try:
+        logger.info("Extracting text with pypdf...")
+        if texto.strip():
+            texto += " "
+        with PdfReader(BytesIO(pdf_bytes)) as doc_pypdf:
+            for pagina in doc_pypdf.pages:
+                texto += pagina.extract_text(extraction_mode="plain")
+    except Exception as e:
+        logger.error("Unexpected error occurred while extracting text with pypdf")
+        logger.error(e)
+
+    if not texto.strip():
+        raise ValueError("Extracted text is empty!")
+    logger.info(f"Extracted text:\n{texto}")
+    return texto
 
 
 def evaluate_candidates(
     db: DatabaseSession, job_opportunity_id: int
-) -> List[schema.MatcherResponse]:
-    postulations = db.exec(select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id))
+) -> List[matcher_schema.MatcherResponse]:
+    job_opportunity = db.exec(
+        select(JobOpportunityModel).where(JobOpportunityModel.id == job_opportunity_id)
+    ).one()
+    if not job_opportunity:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No existe la oferta laboral {job_opportunity_id}",
+        )
+    postulations = db.exec(
+        select(Postulation).where(Postulation.job_opportunity_id == job_opportunity_id)
+    ).all()
+    if not postulations:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"No hay postulaciones para la oferta laboral {job_opportunity_id}",
+        )
     abilities = get_all_abilities(db, job_opportunity_id)
     model = load_spanish_model()
 
@@ -88,7 +95,7 @@ def evaluate_candidates(
     normalized_required_words = normalize_words(required_abilities)
     normalized_desired_words = normalize_words(desired_abilities)
 
-    response = []
+    response: list[matcher_schema.MatcherResponse] = []
 
     for postulation in postulations:
         normalized_text = normalize(
@@ -96,14 +103,18 @@ def evaluate_candidates(
         )
         logger.info(f"Normalized PDF text:\n{normalized_text}")
         required_words_match = match_abilities(
-            normalized_text, normalized_required_words, model, similarity_threshold=0.79, minimum_percentage=1.0
+            normalized_text,
+            normalized_required_words,
+            model,
+            similarity_threshold=0.79,
+            minimum_percentage=job_opportunity.required_skill_percentage,
         )
         desired_words_match = match_abilities(
-            normalized_text, normalized_desired_words, model, similarity_threshold=0.79, minimum_percentage=0.50
-        )
-
-        ability_match = (
-            required_words_match["WORDS_FOUND"] + desired_words_match["WORDS_FOUND"]
+            normalized_text,
+            normalized_desired_words,
+            model,
+            similarity_threshold=0.79,
+            minimum_percentage=job_opportunity.desirable_skill_percentage,
         )
         suitable = required_words_match["SUITABLE"] and desired_words_match["SUITABLE"]
 
@@ -112,32 +123,36 @@ def evaluate_candidates(
             name=postulation.name,
             surname=postulation.surname,
             suitable=suitable,
-            ability_match=ability_match,
+            required_words_found=required_words_match["WORDS_FOUND"],
+            desired_words_found=desired_words_match["WORDS_FOUND"],
+            required_words_not_found=required_words_match["WORDS_NOT_FOUND"],
+            desired_words_not_found=desired_words_match["WORDS_NOT_FOUND"],
         )
         response.append(matcher)
 
-        postulation.evaluated_at = func.now()
+        postulation.evaluated_at = datetime.now()
         postulation.suitable = suitable
         postulation.ability_match = {
-            "required_words": required_words_match["WORDS_FOUND"],
-            "desired_words": desired_words_match["WORDS_FOUND"],
+            "required_words_found": required_words_match["WORDS_FOUND"],
+            "desired_words_found": desired_words_match["WORDS_FOUND"],
+            "required_words_not_found": required_words_match["WORDS_NOT_FOUND"],
+            "desired_words_not_found": desired_words_match["WORDS_NOT_FOUND"],
         }
-        postulation.status = "ACEPTADA" if suitable else "NO_ACEPTADA"
 
     db.commit()
 
     return response
 
 
-def extract_desirable_abilities(abilities):
-    desired_abilities = []
+def extract_desirable_abilities(abilities: JobOpportunityResponse):
+    desired_abilities: list[str] = []
     for ability in abilities.desirable_abilities:
         desired_abilities.append(ability.name)
     return desired_abilities
 
 
-def extract_required_abilities(abilities):
-    required_abilities = []
+def extract_required_abilities(abilities: JobOpportunityResponse):
+    required_abilities: list[str] = []
     for ability in abilities.required_abilities:
         required_abilities.append(ability.name)
     return required_abilities
@@ -157,7 +172,7 @@ def normalize(text: str) -> str:
     return text
 
 
-def normalize_words(words: list) -> list[str]:
+def normalize_words(words: list[str]) -> list[str]:
     normalized_words = [normalize(word) for word in words]
     return normalized_words
 
@@ -167,7 +182,7 @@ def match_phrase(tokens: Doc, ability: str, model: Language) -> bool:
     matcher.add("TerminologyList", [model.make_doc(ability)])
 
     matches = matcher(tokens)
-    matches_list = []
+    matches_list: list[Span] = []
     if not matches:
         logger.info(f"Did not find {ability} with PhraseMatcher")
         return False
@@ -191,8 +206,8 @@ def match_abilities(text: str, abilities: list[str], model: Language, *, similar
     al mínimo porcentaje requerido del total de habilidades.
     """
 
-    if minimum_percentage <= 0:
-        raise ValueError("minimum_percentage must be a positive value")
+    if minimum_percentage < 0:
+        raise ValueError("minimum_percentage must be a positive value or zero")
 
     logger.info(f"Finding required abilities {abilities} with threshold {similarity_threshold} and minimum percentage {minimum_percentage}")
 
@@ -344,7 +359,9 @@ def match_abilities(text: str, abilities: list[str], model: Language, *, similar
         if ability not in processed_abilities:
             result["WORDS_NOT_FOUND"].append(ability)
 
-    result["SUITABLE"] = (len(result["WORDS_FOUND"]) / len(abilities)) >= minimum_percentage
+    result["SUITABLE"] = (
+        len(result["WORDS_FOUND"]) / len(abilities)
+    ) >= minimum_percentage / 100
     return result
 
 

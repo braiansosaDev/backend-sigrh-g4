@@ -1,9 +1,10 @@
-from typing import List
+from typing import Optional
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
 from src.modules.employees.services import employee_service
 from src.auth.login_request import LoginRequest
 from src.modules.employees.schemas.employee_models import (
+    ChangePasswordRequest,
     CreateEmployee,
     EmployeeResponse,
     UpdateEmployee,
@@ -22,7 +23,7 @@ async def count_active_employees(
     return {"active_count": employee_service.count_active_employees(db)}
 
 
-"""Enpoint para buscar a un empleado por su ID. 
+"""Enpoint para buscar a un empleado por su ID.
 Returns:
     EmployeeResponse: Devuelve los datos del empleado.
 """
@@ -31,12 +32,13 @@ Returns:
 @employee_router.get(
     "/",
     status_code=status.HTTP_200_OK,
-    response_model=List[EmployeeResponse],
+    response_model=list[EmployeeResponse],
 )
 async def get_all_employees(
     db: DatabaseSession,
+    sector_id: Optional[int] = None
 ):
-    return employee_service.get_all_employees(db)
+    return employee_service.get_all_employees(db, sector_id)
 
 
 @employee_router.get(
@@ -83,9 +85,38 @@ Returns:
 async def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: CreateEmployee,
+    update_request: UpdateEmployee,
 ):
     return employee_service.update_employee(db, employee_id, update_request)
+
+
+# TODO: Remplazar por el de abajo
+@employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password(
+    db: DatabaseSession,
+    model_request: ChangePasswordRequest
+):
+    return employee_service.change_password(
+        db,
+        model_request.employee_id,
+        model_request.password
+    )
+
+
+# @employee_router.post("/change_password_token", status_code=status.HTTP_204_NO_CONTENT)
+# async def change_password_token(
+#     db: DatabaseSession,
+#     token: TokenDependency,
+#     employee_id: int,
+#     password: str
+# ):
+#     return employee_service.change_password_token(
+#         db,
+#         token,
+#         employee_id,
+#         password
+#     )
+
 
 
 """Endpoint para eliminar un empleado.

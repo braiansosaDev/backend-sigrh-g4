@@ -13,10 +13,13 @@ if TYPE_CHECKING:
     from src.modules.employees.models.job import Job
     from src.modules.employees.models.state import State
     from src.modules.employees.models.work_history import WorkHistory
-    from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
+    from src.modules.opportunity.models.job_opportunity_models import (
+        JobOpportunityModel,
+    )
     from src.modules.face_recognition.models.face_recognition import FaceRecognition
     from src.modules.shift.models.models import Shift
     from src.modules.role.models.role_models import Role
+    from src.modules.leave.models.leave_models import Leave
 
 
 class Employee(SQLModel, table=True):
@@ -34,8 +37,8 @@ class Employee(SQLModel, table=True):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(unique=True, max_length=100)
     active: bool = Field(default=False)
-    role: int = Field(foreign_key="role.id")
-    password: str = Field(max_length=100, nullable=True)
+    role_id: int | None = Field(foreign_key="role.id", default=None)
+    password: str | None = Field(max_length=100, nullable=True)
     phone: str = Field(unique=True, max_length=20)
     salary: Decimal = Field(gt=0)
     job_id: int = Field(foreign_key="job.id", nullable=True)
@@ -49,27 +52,42 @@ class Employee(SQLModel, table=True):
     address_country_id: int = Field(foreign_key="country.id", nullable=True)
     shift_id: int = Field(foreign_key="shift.id", nullable=True)
 
-    job: Optional["Job"] = Relationship(back_populates="employee")
-    state: Optional["State"] = Relationship(back_populates="employee")
-    country: Optional["Country"] = Relationship(back_populates="employee")
-    shift: "Shift" = Relationship(back_populates="employee")
+    role: Optional["Role"] = Relationship()
+    job: Optional["Job"] = Relationship(back_populates="employees")
+    state: Optional["State"] = Relationship(back_populates="employees")
+    country: Optional["Country"] = Relationship(back_populates="employees")
+    shift: "Shift" = Relationship(back_populates="employees")
     face_recognition: Optional["FaceRecognition"] = Relationship(
         back_populates="employee"
     )
 
     work_histories: list["WorkHistory"] = Relationship(
-        back_populates="employee", cascade_delete=True
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "WorkHistory.id"},
     )
     documents: list["Document"] = Relationship(
-        back_populates="employee", cascade_delete=True
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "Document.id"},
     )
     employee_hours: list["EmployeeHours"] = Relationship(
-        back_populates="employee", cascade_delete=True
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "EmployeeHours.id"},
     )
     clock_events: list["ClockEvents"] = Relationship(
-        back_populates="employee", cascade_delete=True
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "ClockEvents.id"},
     )
     job_opportunity: list["JobOpportunityModel"] = Relationship(
-        back_populates="employee", cascade_delete=True
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "JobOpportunityModel.id"},
     )
-    role_entity: "Role" = Relationship()
+    leaves: list["Leave"] = Relationship(
+        back_populates="employee",
+        cascade_delete=True,
+        sa_relationship_kwargs={"order_by": "Leave.id"},
+    )

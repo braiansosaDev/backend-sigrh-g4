@@ -1,17 +1,17 @@
-from typing import List
+from typing import Sequence, Optional
 from fastapi import HTTPException, status
+from src.modules.auth.token import TokenDependency
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import (
-    CreateEmployee,
-    EmployeeResponse,
-    UpdateEmployee,
-)
+from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
+import logging
+
+logger = logging.getLogger("uvicorn.error")
 
 
 def count_active_employees(db: DatabaseSession) -> int:
@@ -19,8 +19,8 @@ def count_active_employees(db: DatabaseSession) -> int:
     return result
 
 
-def get_all_employees(db: DatabaseSession) -> List[EmployeeResponse]:
-    employees = utils.get_all_employees(db)
+def get_all_employees(db: DatabaseSession, sector_id: Optional[int]) -> Sequence[Employee]:
+    employees = utils.get_all_employees(db, sector_id)
 
     if employees is None:
         raise HTTPException(
@@ -82,7 +82,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
             type_dni=employee_request.type_dni,
             personal_email=employee_request.personal_email,
             active=employee_request.active,
-            role=employee_request.role,
+            role_id=employee_request.role_id,
             password=hashed_password,
             phone=employee_request.phone,
             salary=employee_request.salary,
@@ -105,10 +105,12 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
         return db_employee
     except IntegrityError as e:
         db.rollback()
-        # Podés refinar el mensaje si querés analizar `str(e.orig)`
+        logger.error(
+            f"Unexpected IntegrityError occurred while creating Employee:\n{e}"
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
+            detail="Ocurrió un error inesperado, probablemente ya existe un empleado con datos únicos duplicados (DNI, email, user_id, etc).",
         )
     except Exception as e:
         db.rollback()
@@ -121,7 +123,7 @@ def create_employee(db: DatabaseSession, employee_request: CreateEmployee) -> Em
 def update_employee(
     db: DatabaseSession,
     employee_id: int,
-    update_request: CreateEmployee,
+    update_request: UpdateEmployee,
 ) -> Employee:
     """
     Actualiza los datos de un empleado en la base de datos.
@@ -142,9 +144,9 @@ def update_employee(
     try:
         update_data = update_request.model_dump(exclude_unset=True)
 
-        # Si se actualiza la contraseña, se rehashea
-        if "password" in update_data:
-            update_data["password"] = get_password_hash(update_data["password"])
+        # # Si se actualiza la contraseña, se rehashea
+        # if "password" in update_data:
+        #     update_data["password"] = get_password_hash(update_data["password"])
 
         for attr, value in update_data.items():
             if hasattr(employee, attr):
@@ -161,6 +163,76 @@ def update_employee(
             detail="Error de validación: Usuario, DNI, Mail o Telefono ya está siendo utilizado",
         )
 
+# TODO: Remplazar por el de abajo
+def change_password(
+    db: DatabaseSession,
+    employee_id: int,
+    password: str
+) -> None:
+
+    if not password.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La password no puede ser vacía."
+        )
+
+    db_employee = get_employee(db, employee_id)
+    db_employee.password = get_password_hash(password)
+
+    try:
+        db.add(db_employee)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.info(f"An unexpected IntegrityError occurred while changing password of employee {employee_id}")
+        raise
+
+
+def change_password_token(
+    db: DatabaseSession,
+    token: TokenDependency,
+    employee_id: int,
+    password: str
+) -> None:
+    request_employee_id = token.get("employee_id")
+    if request_employee_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No se encuentra el ID de empleado en el token."
+        )
+
+    request_employee = get_employee(db, request_employee_id)
+
+    if (
+        request_employee.id != employee_id and (
+            not request_employee.role
+            # TODO: Cambiar a enum de permissions por ID
+            # 1 = editar ABM empleados
+            #or 1 not in set(map(lambda p: p.id, request_employee.role.permissions))
+
+            # Administrador root
+            or not request_employee.role.id == 2
+        )
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para realizar esta acción."
+        )
+
+    if not password.strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña no puede estar vacía")
+
+    db_employee = get_employee(db, employee_id)
+    db_employee.password = get_password_hash(password)
+
+    try:
+        db.add(db_employee)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        logger.info(f"An unexpected IntegrityError has occurred while changing password of employee {employee_id}")
+        raise
+
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:
     """
@@ -172,7 +244,7 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
         None
     """
     employee = utils.get_employee_by_id(db, employee_id)
-    work_history = utils.get_work_history_of_employee(db, employee_id)
+    work_histories = employee.work_histories
     documents = utils.get_documents_of_employee(db, employee_id)
 
     if employee is None:
@@ -184,7 +256,7 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
         db.delete(document)
         db.commit()
 
-    for history in work_history:
+    for history in work_histories:
         db.delete(history)
         db.commit()
 

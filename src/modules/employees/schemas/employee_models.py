@@ -8,10 +8,12 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.state import State
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.schemas.job_models import JobResponse
-from src.modules.role.models.role_models import Role
 from src.modules.role.schemas.role_schemas import RolePublic
 from src.modules.shift.models.models import Shift
 
+class ChangePasswordRequest(BaseModel):
+    employee_id: int
+    password: str
 
 class EmployeeResponse(BaseModel):
     """
@@ -27,8 +29,7 @@ class EmployeeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[int] = None
-    password: Optional[str]
+    role_id: Optional[int] = None
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -63,7 +64,7 @@ class MeResponse(BaseModel):
     type_dni: str
     personal_email: EmailStr
     active: bool
-    role: Optional[int] = None
+    role_id: Optional[int] = None
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -78,7 +79,7 @@ class MeResponse(BaseModel):
     job: Optional[JobResponse] = None
     state: Optional[State] = None
     country: Optional[Country] = None
-    role_entity: Optional[RolePublic] = None
+    role: Optional[RolePublic] = None
 
 
 class UpdateEmployee(BaseModel):
@@ -88,8 +89,7 @@ class UpdateEmployee(BaseModel):
     type_dni: Optional[str] = None
     personal_email: Optional[EmailStr] = None
     active: Optional[bool] = None
-    role: Optional[int] = None
-    password: Optional[str] = None
+    role_id: Optional[int] = None
     phone: Optional[str] = None
     salary: Optional[Decimal] = None
     job_id: Optional[int] = None
@@ -120,12 +120,11 @@ class CreateEmployee(BaseModel):
     type_dni: str = Field(max_length=10)
     personal_email: EmailStr = Field(max_length=100)
     active: bool = Field(default=False)
-    role: Optional[int] = None
+    role_id: Optional[int] = None
     password: Optional[str] = None
-    user_id: Optional[str] = None
     phone: str = Field(max_length=20)
     salary: Decimal = Field(gt=0)
-    job_id: Optional[int] = None
+    job_id: int
     shift_id: int
     birth_date: date
     hire_date: date = Field(default=date.today())
@@ -133,8 +132,8 @@ class CreateEmployee(BaseModel):
     address_street: str = Field(max_length=100)
     address_city: str = Field(max_length=100)
     address_cp: str = Field(max_length=100)
-    address_state_id: Optional[int] = None
-    address_country_id: Optional[int] = None
+    address_state_id: int
+    address_country_id: int
     work_histories: Optional[list[WorkHistory]] = None
     documents: Optional[list[Document]] = None
 
@@ -169,7 +168,7 @@ class CreateEmployee(BaseModel):
         "address_street",
         "address_city",
         "address_cp",
-        mode="before",
+        mode="after",
     )
     @classmethod
     def non_empty_strings(cls, v, field):
