@@ -2,13 +2,16 @@ from typing import Sequence, Optional
 from fastapi import HTTPException, status
 from src.modules.auth.token import TokenDependency
 from src.modules.employees.models.employee import Employee
+from src.modules.employees.models.job import Job
+from src.modules.employees.models.sector import Sector
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee, UpdateEmployee
+from src.modules.employees.schemas.employee_models import CreateEmployee, EmployeeResponse, UpdateEmployee, EmployeeCountBySector
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.modules.auth.crypt import get_password_hash
 from src.modules.employees.services import utils
+from sqlmodel import func, select
 import logging
 
 logger = logging.getLogger("uvicorn.error")
@@ -19,7 +22,9 @@ def count_active_employees(db: DatabaseSession) -> int:
     return result
 
 
-def get_all_employees(db: DatabaseSession, sector_id: Optional[int]) -> Sequence[Employee]:
+def get_all_employees(
+    db: DatabaseSession, sector_id: Optional[int]
+) -> Sequence[Employee]:
     employees = utils.get_all_employees(db, sector_id)
 
     if employees is None:
@@ -163,17 +168,13 @@ def update_employee(
             detail="Error de validación: Usuario, DNI, Mail o Telefono ya está siendo utilizado",
         )
 
-# TODO: Remplazar por el de abajo
-def change_password(
-    db: DatabaseSession,
-    employee_id: int,
-    password: str
-) -> None:
 
+# TODO: Remplazar por el de abajo
+def change_password(db: DatabaseSession, employee_id: int, password: str) -> None:
     if not password.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="La password no puede ser vacía."
+            detail="La password no puede ser vacía.",
         )
 
     db_employee = get_employee(db, employee_id)
@@ -184,43 +185,42 @@ def change_password(
         db.commit()
     except IntegrityError:
         db.rollback()
-        logger.info(f"An unexpected IntegrityError occurred while changing password of employee {employee_id}")
+        logger.info(
+            f"An unexpected IntegrityError occurred while changing password of employee {employee_id}"
+        )
         raise
 
 
 def change_password_token(
-    db: DatabaseSession,
-    token: TokenDependency,
-    employee_id: int,
-    password: str
+    db: DatabaseSession, token: TokenDependency, employee_id: int, password: str
 ) -> None:
     request_employee_id = token.get("employee_id")
     if request_employee_id is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="No se encuentra el ID de empleado en el token."
+            detail="No se encuentra el ID de empleado en el token.",
         )
 
     request_employee = get_employee(db, request_employee_id)
 
-    if (
-        request_employee.id != employee_id and (
-            not request_employee.role
-            # TODO: Cambiar a enum de permissions por ID
-            # 1 = editar ABM empleados
-            #or 1 not in set(map(lambda p: p.id, request_employee.role.permissions))
-
-            # Administrador root
-            or not request_employee.role.id == 2
-        )
+    if request_employee.id != employee_id and (
+        not request_employee.role
+        # TODO: Cambiar a enum de permissions por ID
+        # 1 = editar ABM empleados
+        # or 1 not in set(map(lambda p: p.id, request_employee.role.permissions))
+        # Administrador root
+        or not request_employee.role.id == 2
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="No tenés permiso para realizar esta acción."
+            detail="No tenés permiso para realizar esta acción.",
         )
 
     if not password.strip():
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="La contraseña no puede estar vacía")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña no puede estar vacía",
+        )
 
     db_employee = get_employee(db, employee_id)
     db_employee.password = get_password_hash(password)
@@ -230,7 +230,9 @@ def change_password_token(
         db.commit()
     except IntegrityError:
         db.rollback()
-        logger.info(f"An unexpected IntegrityError has occurred while changing password of employee {employee_id}")
+        logger.info(
+            f"An unexpected IntegrityError has occurred while changing password of employee {employee_id}"
+        )
         raise
 
 
@@ -262,3 +264,44 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
 
     db.delete(employee)
     db.commit()
+
+
+def get_employee_count_by_sector(db: DatabaseSession):
+    amount_by_sectors: dict[str, dict[str, int]] = {}
+    sector_names = [row for row in db.exec(select(Sector.name)).all()]
+    employees_by_sector: dict[str, list[EmployeeResponse]] = {name: [] for name in sector_names}
+
+    stmt = (
+        select(Sector.name, Employee.active, func.count(Employee.id))
+        .join(Job, Job.id == Employee.job_id)
+        .join(Sector, Sector.id == Job.sector_id)
+        .group_by(Sector.name, Employee.active)
+    )
+
+    results = db.exec(stmt).all()
+
+    for sector, active, amount in results:
+        if sector not in amount_by_sectors:
+            amount_by_sectors[sector] = {"Activos": 0, "Inactivos": 0}
+        if active:
+            amount_by_sectors[sector]["Activos"] = amount
+        else:
+            amount_by_sectors[sector]["Inactivos"] = amount
+
+    stmt_employees = (
+        select(Employee, Sector.name)
+        .join(Job, Job.id == Employee.job_id)
+        .join(Sector, Sector.id == Job.sector_id)
+    )
+    results_employees = db.exec(stmt_employees).all()
+
+    for employee, sector_name in results_employees:
+        if sector_name in employees_by_sector:
+            employees_by_sector[sector_name].append(EmployeeResponse.model_validate(employee, from_attributes=True))
+
+    return EmployeeCountBySector(
+        amount_by_sectors=amount_by_sectors,
+        employees_by_sector=employees_by_sector
+    )
+
+    

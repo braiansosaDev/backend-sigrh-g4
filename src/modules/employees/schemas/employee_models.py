@@ -1,6 +1,6 @@
 from decimal import Decimal
 from typing import Optional
-from pydantic import EmailStr, Field, BaseModel, field_validator
+from pydantic import ConfigDict, EmailStr, Field, BaseModel, field_validator
 from datetime import date
 from src.modules.employees.models.country import Country
 from src.modules.employees.models.documents import Document
@@ -11,9 +11,11 @@ from src.modules.employees.schemas.job_models import JobResponse
 from src.modules.role.schemas.role_schemas import RolePublic
 from src.modules.shift.models.models import Shift
 
+
 class ChangePasswordRequest(BaseModel):
     employee_id: int
     password: str
+
 
 class EmployeeResponse(BaseModel):
     """
@@ -49,6 +51,7 @@ class EmployeeResponse(BaseModel):
     country: Optional[Country] = None
     shift: Optional[Shift] = None
 
+    model_config = ConfigDict(from_attributes=True)
 
 class MeResponse(BaseModel):
     """
@@ -175,3 +178,41 @@ class CreateEmployee(BaseModel):
         if not v.strip():
             raise ValueError(f"El campo '{field.field_name}' no puede estar vacío.")
         return v
+
+
+class EmployeeCountBySector(BaseModel):
+    amount_by_sectors: dict[str, dict[str, int]] = {
+        "Desarrollo": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+        "Recursos Humanos": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+        "Administración": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+        "Diseño": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+        "Contabilidad": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+        "Proyectos": {
+            "Activos": 0,
+            "Inactivos": 0,
+        },
+    }
+
+    employees_by_sector: dict[str, list[EmployeeResponse]] = {
+        "Desarrollo": [],
+        "Recursos Humanos": [],
+        "Administración": [],
+        "Diseño": [],
+        "Contabilidad": [],
+        "Proyectos": [],
+    }

@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
+from src.modules.employees.schemas import employee_models
 from src.modules.employees.services import employee_service
 from src.modules.employees.schemas.employee_models import (
     ChangePasswordRequest,
@@ -10,6 +11,22 @@ from src.modules.employees.schemas.employee_models import (
 )
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
+
+@employee_router.get(
+    "/sector-count",
+    status_code=status.HTTP_200_OK,
+    response_model=employee_models.EmployeeCountBySector,
+)
+async def get_employee_count_by_sector(db: DatabaseSession):
+    return employee_service.get_employee_count_by_sector(db)
+
+
+@employee_router.get(
+    "/job-count",
+    status_code=status.HTTP_200_OK,
+)
+async def get_employee_count_by_job():
+    pass
 
 
 @employee_router.post(
@@ -34,10 +51,7 @@ Returns:
     status_code=status.HTTP_200_OK,
     response_model=list[EmployeeResponse],
 )
-async def get_all_employees(
-    db: DatabaseSession,
-    sector_id: Optional[int] = None
-):
+async def get_all_employees(db: DatabaseSession, sector_id: Optional[int] = None):
     return employee_service.get_all_employees(db, sector_id)
 
 
@@ -92,14 +106,9 @@ async def update_employee(
 
 # TODO: Remplazar por el de abajo
 @employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
-async def change_password(
-    db: DatabaseSession,
-    model_request: ChangePasswordRequest
-):
+async def change_password(db: DatabaseSession, model_request: ChangePasswordRequest):
     return employee_service.change_password(
-        db,
-        model_request.employee_id,
-        model_request.password
+        db, model_request.employee_id, model_request.password
     )
 
 
@@ -116,7 +125,6 @@ async def change_password(
 #         employee_id,
 #         password
 #     )
-
 
 
 """Endpoint para eliminar un empleado.
