@@ -12,6 +12,7 @@ from src.modules.employees.schemas.employee_models import (
 
 employee_router = APIRouter(prefix="/employees", tags=["Employees"])
 
+
 @employee_router.get(
     "/sector-count",
     status_code=status.HTTP_200_OK,
@@ -24,9 +25,10 @@ async def get_employee_count_by_sector(db: DatabaseSession):
 @employee_router.get(
     "/job-count",
     status_code=status.HTTP_200_OK,
+    response_model=employee_models.EmployeeCountByJob,
 )
-async def get_employee_count_by_job():
-    pass
+async def get_employee_count_by_job(db: DatabaseSession):
+    return employee_service.get_employee_count_by_job(db)
 
 
 @employee_router.post(

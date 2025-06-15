@@ -6,7 +6,13 @@ from src.modules.employees.models.job import Job
 from src.modules.employees.models.sector import Sector
 from src.modules.employees.models.work_history import WorkHistory
 from src.modules.employees.models.documents import Document
-from src.modules.employees.schemas.employee_models import CreateEmployee, EmployeeResponse, UpdateEmployee, EmployeeCountBySector
+from src.modules.employees.schemas.employee_models import (
+    CreateEmployee,
+    EmployeeCountByJob,
+    EmployeeResponse,
+    UpdateEmployee,
+    EmployeeCountBySector,
+)
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
 from src.modules.auth.crypt import get_password_hash
@@ -268,40 +274,59 @@ def delete_employee(db: DatabaseSession, employee_id: int) -> None:
 
 def get_employee_count_by_sector(db: DatabaseSession):
     amount_by_sectors: dict[str, dict[str, int]] = {}
-    sector_names = [row for row in db.exec(select(Sector.name)).all()]
-    employees_by_sector: dict[str, list[EmployeeResponse]] = {name: [] for name in sector_names}
+
+    # Obtén todos los sectores de la base de datos
+    sectors = db.exec(select(Sector)).all()
+    for sector in sectors:
+        amount_by_sectors[sector.name] = {
+            "Sector_id": sector.id,
+            "Activos": 0,
+            "Inactivos": 0,
+        }
 
     stmt = (
-        select(Sector.name, Employee.active, func.count(Employee.id))
+        select(Sector.name, Sector.id, Employee.active, func.count(Employee.id))
         .join(Job, Job.id == Employee.job_id)
         .join(Sector, Sector.id == Job.sector_id)
-        .group_by(Sector.name, Employee.active)
+        .group_by(Sector.name, Sector.id, Employee.active)
     )
-
     results = db.exec(stmt).all()
 
-    for sector, active, amount in results:
+    for sector, sector_id, active, amount in results:
         if sector not in amount_by_sectors:
-            amount_by_sectors[sector] = {"Activos": 0, "Inactivos": 0}
+            amount_by_sectors[sector] = {
+                "Sector_id": sector_id,
+                "Activos": 0,
+                "Inactivos": 0,
+            }
         if active:
             amount_by_sectors[sector]["Activos"] = amount
         else:
             amount_by_sectors[sector]["Inactivos"] = amount
 
-    stmt_employees = (
-        select(Employee, Sector.name)
-        .join(Job, Job.id == Employee.job_id)
-        .join(Sector, Sector.id == Job.sector_id)
+    return EmployeeCountBySector(amount_by_sectors=amount_by_sectors)
+
+
+def get_employee_count_by_job(db: DatabaseSession):
+    amount_by_jobs: dict[str, dict[str, int]] = {}
+
+    jobs = db.exec(select(Job)).all()
+    for job in jobs:
+        amount_by_jobs[job.name] = {"Job_id": job.id, "Activos": 0, "Inactivos": 0}
+
+    stmt = (
+        select(Job.name, Job.id, Employee.active, func.count(Employee.id))
+        .join(Employee, Employee.job_id == Job.id)
+        .group_by(Job.name, Job.id, Employee.active)
     )
-    results_employees = db.exec(stmt_employees).all()
+    results = db.exec(stmt).all()
 
-    for employee, sector_name in results_employees:
-        if sector_name in employees_by_sector:
-            employees_by_sector[sector_name].append(EmployeeResponse.model_validate(employee, from_attributes=True))
+    for job_name, job_id, active, amount in results:
+        if job_name not in amount_by_jobs:
+            amount_by_jobs[job_name] = {"Job_id": job_id, "Activos": 0, "Inactivos": 0}
+        if active:
+            amount_by_jobs[job_name]["Activos"] = amount
+        else:
+            amount_by_jobs[job_name]["Inactivos"] = amount
 
-    return EmployeeCountBySector(
-        amount_by_sectors=amount_by_sectors,
-        employees_by_sector=employees_by_sector
-    )
-
-    
+    return EmployeeCountByJob(amount_by_jobs=amount_by_jobs)
