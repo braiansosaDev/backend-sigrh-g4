@@ -183,32 +183,7 @@ class CreateEmployee(BaseModel):
 
 class EmployeeCountBySector(BaseModel):
     amount_by_sectors: dict[str, dict[str, int]] = {
-        "Desarrollo": {
-            "Sector_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Recursos Humanos": {
-            "Sector_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Administración": {
-            "Sector_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Diseño": {
-            "Sector_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Contabilidad": {
-            "Sector_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Proyectos": {
+        "Sector_name": {
             "Sector_id": 0,
             "Activos": 0,
             "Inactivos": 0,
@@ -218,32 +193,7 @@ class EmployeeCountBySector(BaseModel):
 
 class EmployeeCountByJob(BaseModel):
     amount_by_jobs: dict[str, dict[str, int]] = {
-        "Desarrollo": {
-            "Job_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Analista de Recursos Humanos": {
-            "Job_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Contador": {
-            "Job_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Diseñador Gráfico": {
-            "Job_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Gerente de Proyectos": {
-            "Job_id": 0,
-            "Activos": 0,
-            "Inactivos": 0,
-        },
-        "Asistente Administrativo": {
+        "Job_name": {
             "Job_id": 0,
             "Activos": 0,
             "Inactivos": 0,
