@@ -1,14 +1,15 @@
-from fastapi import APIRouter, status
-from typing import Optional
+from fastapi import APIRouter, status, Query
+from typing import Annotated
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
 from src.modules.leave.schemas.leave_schemas import (
-    LeaveDocumentStatus,
+    GetRequest,
     LeavePublic,
-    LeaveRequestStatus,
     LeaveCreate,
     LeaveUpdate,
     LeaveTypePublic,
+    ReportRequest,
+    ReportResponse,
 )
 from src.modules.leave.services import leave_service
 
@@ -18,14 +19,22 @@ leave_router = APIRouter(prefix="/leaves", tags=["Leaves"])
 @leave_router.get("/", response_model=list[LeavePublic], status_code=status.HTTP_200_OK)
 async def get_leaves(
     session: DatabaseSession,
-    document_status: Optional[LeaveDocumentStatus] = None,
-    request_status: Optional[LeaveRequestStatus] = None,
-    employee_id: Optional[int] = None,
-    sector_id: Optional[int] = None,
+    request: Annotated[GetRequest, Query()],
 ):
     return leave_service.get_leaves(
-        session, document_status, request_status, employee_id, sector_id
+        session, request
     )
+
+
+@leave_router.get(
+    "/report", response_model=ReportResponse, status_code=status.HTTP_200_OK
+)
+async def get_report(
+    session: DatabaseSession,
+    token: TokenDependency,
+    request: Annotated[ReportRequest, Query()],
+):
+    return leave_service.report(session, token, request)
 
 
 @leave_router.get(

@@ -1,16 +1,20 @@
-from typing import Optional, Sequence, cast, Any
+from typing import Sequence, cast, Any
 from fastapi import HTTPException, status
 from sqlmodel import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.sql import ColumnElement, func
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.job import Job
 from src.modules.leave.schemas.leave_schemas import (
+    GetRequest,
     LeaveDocumentStatus,
     LeaveRequestStatus,
     LeaveCreate,
     LeaveUpdate,
+    ReportRequest,
+    ReportResponse,
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
 from src.modules.employees.services import employee_service, sector_service
@@ -35,27 +39,39 @@ def get_leave(session: DatabaseSession, leave_id: int) -> Leave:
 
 def get_leaves(
     session: DatabaseSession,
-    document_status: Optional[LeaveDocumentStatus],
-    request_status: Optional[LeaveRequestStatus],
-    employee_id: Optional[int],
-    sector_id: Optional[int],
+    request: GetRequest,
 ) -> Sequence[Leave]:
     stmt = select(Leave).order_by(cast(Any, Leave.id))
-    if document_status is not None:
-        stmt = stmt.where(Leave.document_status == document_status)
-    if request_status is not None:
-        stmt = stmt.where(Leave.request_status == request_status)
-    if employee_id is not None:
-        stmt = stmt.where(Leave.employee_id == employee_id)
-    if sector_id is not None:
-        # Para dar error si no existe el sector
-        sector_service.get_sector_by_id(session, sector_id)
+    if request.document_statuses is not None:
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.document_status).in_(request.document_statuses)
+        )
+    if request.request_statuses is not None:
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.request_status).in_(request.request_statuses)
+        )
+    if request.employee_ids is not None:
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.employee_id).in_(request.employee_ids)
+        )
+    if request.leave_type_ids is not None:
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.leave_type_id).in_(request.leave_type_ids)
+        )
+    if request.from_creation_date:
+        stmt = stmt.where(Leave.request_date >= request.from_creation_date)
+    if request.until_creation_date:
+        stmt = stmt.where(Leave.request_date <= request.until_creation_date)
+    if request.sector_ids is not None:
+        # Para dar error si no existe algún sector
+        for i in request.sector_ids:
+            sector_service.get_sector_by_id(session, i)
 
         stmt = stmt.join(
             Employee, cast(Any, Leave.employee_id == Employee.id)
         ).join(
             Job, cast(Any, Employee.job_id == Job.id)
-        ).where(Job.sector_id == sector_id)
+        ).where(cast(ColumnElement, Job.sector_id).in_(request.sector_ids))
     return session.exec(stmt).all()
 
 
@@ -227,3 +243,82 @@ def get_leave_type(session: DatabaseSession, leave_type_id: int) -> LeaveType:
             detail=f"El tipo de licencia con ID {leave_type_id} no existe.",
         )
     return result
+
+
+def report(
+    session: DatabaseSession,
+    token: TokenDependency,
+    request: ReportRequest,
+) -> ReportResponse:
+    stmt = select(Leave.leave_type_id, func.count()).select_from(Leave)
+
+    if request.leave_type_ids:
+        # leave_type_ids = list(
+        #         map(lambda leave_type: leave_type.id, request.leave_types or [])
+        #     )
+
+        # Para devolver 404 si algún tipo de licencia no existe
+        for i in request.leave_type_ids:
+            get_leave_type(session, i)
+
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.leave_type_id).in_(request.leave_type_ids)
+        )
+
+    if request.from_creation_date:
+        stmt = stmt.where(Leave.request_date >= request.from_creation_date)
+
+    if request.until_creation_date:
+        stmt = stmt.where(Leave.request_date <= request.until_creation_date)
+
+    if request.request_statuses:
+        stmt = stmt.where(
+            cast(ColumnElement, Leave.request_status)
+            .in_(request.request_statuses)
+        )
+
+    if request.sector_ids:
+
+        for i in request.sector_ids:
+            # Para devolver 404 si el sector no existe
+            sector_service.get_sector_by_id(session, i)
+
+        stmt = (
+            stmt.join(Employee, cast(Any, Employee.id == Leave.employee_id))
+            .join(Job, cast(Any, Employee.job_id == Job.id))
+            .where(cast(ColumnElement, Job.sector_id).in_(request.sector_ids))
+        )
+
+    stmt = stmt.group_by(
+        cast(ColumnElement, Leave.leave_type_id)
+    )
+
+    result_count: Sequence[tuple[int, int]] = session.exec(stmt).all()
+
+    found_leave_type_ids = set()
+    for id, count in result_count:
+        found_leave_type_ids.add(id)
+
+    stmt = (
+        select(LeaveType.id, LeaveType.type)
+        .select_from(LeaveType)
+        .where(cast(ColumnElement, LeaveType.id).in_(found_leave_type_ids))
+    )
+
+    # Esto para que Pyright deje de decir que el LeaveType.id puede ser None
+    # cuando realmente no puede serlo porque viene de la database.
+    # No se usa "#type: ignore" para que siga detectando si cambia el tipo de
+    # resultado de la query.
+    temp: Sequence[tuple[int, str]] | Sequence[tuple[None, str]] = session.exec(stmt).all()
+    result_names: Sequence[tuple[int, str]] = cast(Sequence[tuple[int, str]], temp)
+    del temp
+
+    report: dict[int, tuple[str, int]] = {}
+    for tuple_id_count, tuple_id_type in zip(result_count, result_names):
+        if tuple_id_count[0] != tuple_id_type[0]:
+            continue
+        report[tuple_id_count[0]] = (tuple_id_type[1], tuple_id_count[1])
+
+    return ReportResponse(
+        report=report
+    )
