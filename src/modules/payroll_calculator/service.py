@@ -7,6 +7,8 @@ from src.modules.clock_events.schemas.schemas import ClockEventTypes
 from src.modules.concept.models.models import Concept
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.schemas.employee_models import EmployeeResponse
+from src.modules.leave.models.leave_models import Leave, LeaveType
+from src.modules.leave.schemas.leave_schemas import LeaveRequestStatus
 from src.modules.payroll_calculator.schemas import (
     ConceptSchema,
     EmployeeHoursSchema,
@@ -173,6 +175,23 @@ def calculate_hours(db: DatabaseSession, request: PayrollRequest):
             detail=f"Error processing hours: {str(e)}",
         )
 
+def validate_leave(
+    db: DatabaseSession,
+    employee_id: int,
+    day: date
+)-> Leave | None:
+    # Verificar si el empleado tiene una licencia activa en la fecha especificada
+    leave = db.exec(
+        select(Leave).where(
+            Leave.employee_id == employee_id,
+            Leave.start_date <= day,
+            Leave.end_date >= day,
+            Leave.request_status == LeaveRequestStatus.APROBADO,
+        )
+    ).one_or_none()
+    
+    return leave
+
 def process_morning_shift_hours(
     db: DatabaseSession,
     employee: Employee,
@@ -217,22 +236,45 @@ def process_morning_shift_hours(
         outs = [ev for ev in daily_events if ev.event_type == ClockEventTypes.OUT]
 
         # EL EMPLEADO NO REGISTRÓ UNA ENTRADA EN TODO EL DÍA
+        # Si el empleado tiene una licencia activa, registrar como ausente con permiso
         if not ins:
-            concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours(
-                db=db,
-                employee=employee,
-                concept=concept.id,
-                day=day,
-                daily_events_count=0,
-                first_check_in=None,
-                last_check_out=None,
-                payroll_status="not payable",
-                notes="El empleado no registró entrada en el día.",
-                sumary_time=None,
-                extra_hours=None,
-                register_type=RegisterType.AUSENCIA,
-            )    
+            has_leave = validate_leave(db, employee.id, day)
+        
+            if has_leave != None:
+            # Si el empleado tiene una licencia activa, registrar como ausente con permiso
+                concept = check_concept(db, "Ausente con licencia")
+                leave_type = db.exec(select(LeaveType).where(LeaveType.id == has_leave.leave_type_id)).one_or_none()
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="payable",
+                    notes=f"El empleado se encuentra con licencia de tipo: '{leave_type.type}'",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA_JUSTIFICADA,
+                )
+            # Si no tiene licencia, registrar como ausente sin entrada
+            else:
+                concept = check_concept(db, "Ausente sin entrada registrada")
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="not payable",
+                    notes="El empleado no registró entrada en el día.",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA,
+                )    
             continue
 
         first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
@@ -403,22 +445,44 @@ def process_afternoon_shift_hours(
         outs = outs_today + outs_tomorrow
 
         if not ins:
+            has_leave = validate_leave(db, employee.id, day)
+        
+            if has_leave != None:
+            # Si el empleado tiene una licencia activa, registrar como ausente con permiso
+                concept = check_concept(db, "Ausente con licencia")
+                leave_type = db.exec(select(LeaveType).where(LeaveType.id == has_leave.leave_type_id)).one_or_none()
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="payable",
+                    notes=f"El empleado se encuentra con licencia de tipo: '{leave_type.type}'",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA_JUSTIFICADA,
+                )
+            # Si no tiene licencia, registrar como ausente sin entrada
+            else:
             # No entrada
-            concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours(
-                db=db,
-                employee=employee,
-                concept=concept.id,
-                day=day,
-                daily_events_count=0,
-                first_check_in=None,
-                last_check_out=None,
-                payroll_status="not payable",
-                notes="El empleado no registró entrada en el día.",
-                sumary_time=None,
-                extra_hours=None,
-                register_type=RegisterType.AUSENCIA,
-            )
+                concept = check_concept(db, "Ausente sin entrada registrada")
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="not payable",
+                    notes="El empleado no registró entrada en el día.",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA,
+                )
             continue
 
         first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
@@ -633,21 +697,43 @@ def process_night_shift_hours(
 
         if not ins:
             # No entrada
-            concept = check_concept(db, "Ausente sin entrada registrada")
-            create_employee_hours(
-                db=db,
-                employee=employee,
-                concept=concept.id,
-                day=day,
-                daily_events_count=0,
-                first_check_in=None,
-                last_check_out=None,
-                payroll_status="not payable",
-                notes="El empleado no registró entrada en el día.",
-                sumary_time=None,
-                extra_hours=None,
-                register_type=RegisterType.AUSENCIA,
-            )    
+            has_leave = validate_leave(db, employee.id, day)
+        
+            if has_leave != None:
+            # Si el empleado tiene una licencia activa, registrar como ausente con permiso
+                concept = check_concept(db, "Ausente con licencia")
+                leave_type = db.exec(select(LeaveType).where(LeaveType.id == has_leave.leave_type_id)).one_or_none()
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="payable",
+                    notes=f"El empleado se encuentra con licencia de tipo: '{leave_type.type}'",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA_JUSTIFICADA,
+                )
+            # Si no tiene licencia, registrar como ausente sin entrada
+            else:
+                concept = check_concept(db, "Ausente sin entrada registrada")
+                create_employee_hours(
+                    db=db,
+                    employee=employee,
+                    concept=concept.id,
+                    day=day,
+                    daily_events_count=0,
+                    first_check_in=None,
+                    last_check_out=None,
+                    payroll_status="not payable",
+                    notes="El empleado no registró entrada en el día.",
+                    sumary_time=None,
+                    extra_hours=None,
+                    register_type=RegisterType.AUSENCIA,
+                )    
             continue
         
         first_check = min(ins, key=lambda ev: ev.event_date).event_date.time()
