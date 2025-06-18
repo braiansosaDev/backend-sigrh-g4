@@ -75,3 +75,25 @@ class JobOpportunityResponse(JobOpportunityRequest):
     id: int = Field()
     created_at: datetime = Field()
     updated_at: datetime = Field()
+
+
+class JobOpportunityActiveCountRequest(BaseModel):
+    from_date: datetime = Field(
+        description="Fecha de inicio del rango de búsqueda."
+    )
+    to_date: datetime = Field(
+        description="Fecha de fin del rango de búsqueda."
+    )
+
+    @field_validator("from_date","to_date", mode="before")
+    def from_date_validator(cls, date: Any):
+        if isinstance(date, datetime) and date > datetime.now():
+            raise ValueError("La fecha de inicio o fin no puede ser futura.")
+        return date
+
+
+class JobOpportunityActiveCountResponse(BaseModel):
+    active_count: int = Field()
+    inactive_count: int = Field()
+    
+    

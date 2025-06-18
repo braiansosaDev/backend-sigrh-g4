@@ -7,6 +7,8 @@ from src.modules.opportunity.models.job_opportunity_models import (
 from sqlmodel import func, select
 from typing import Sequence
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
+    JobOpportunityActiveCountRequest,
+    JobOpportunityActiveCountResponse,
     JobOpportunityRequest,
     JobOpportunityResponse,
     JobOpportunityStatus,
@@ -30,6 +32,35 @@ def count_active_opportunities(db: DatabaseSession) -> int:
         .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
     )
     return result.one()
+
+def count_inactive_opportunities(db: DatabaseSession) -> int:
+    result = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.NO_ACTIVO)
+    )
+    return result.one()
+
+def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: JobOpportunityActiveCountRequest) -> JobOpportunityActiveCountResponse:
+    active_count = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
+        .where(JobOpportunityModel.created_at >= request.from_date)
+        .where(JobOpportunityModel.created_at <= request.to_date)
+    ).one()
+
+    inactive_count = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.NO_ACTIVO)
+        .where(JobOpportunityModel.created_at >= request.from_date)
+        .where(JobOpportunityModel.created_at <= request.to_date)
+    ).one()
+
+    return JobOpportunityActiveCountResponse(
+        active_count=active_count, inactive_count=inactive_count
+    )
 
 
 def get_all_opportunities_with_abilities(
