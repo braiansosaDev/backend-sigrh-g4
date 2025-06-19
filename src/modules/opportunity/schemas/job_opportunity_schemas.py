@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
-from datetime import datetime
+from datetime import date, datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 
 
@@ -97,3 +97,19 @@ class JobOpportunityActiveCountResponse(BaseModel):
     inactive_count: int = Field()
     
     
+class JobOpportunityPublic(BaseModel):
+    id: int = Field()
+    owner_employee_id: int = Field()
+    status: JobOpportunityStatus = Field()
+    work_mode: JobOpportunityWorkMode = Field()
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(min_length=1, max_length=1000)
+
+
+class GetRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    
+    oportunity_status: Optional[list[JobOpportunityStatus]] = None
+    owner_employee_id: Optional[list[int]] = None
+    from_creation_date: Optional[date] = None
+    until_creation_date: Optional[date] = None

@@ -1,10 +1,14 @@
-from fastapi import APIRouter, status
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Query, status
 from src.database.core import DatabaseSession
+from src.modules.opportunity.models.job_opportunity_models import JobOpportunityBaseModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
     JobOpportunityActiveCountRequest,
     JobOpportunityActiveCountResponse,
     JobOpportunityResponse,
     JobOpportunityRequest,
+    JobOpportunityStatus,
     JobOpportunityUpdate,
 )
 from src.modules.opportunity.services import opportunity_service
@@ -24,10 +28,15 @@ async def count_active_opportunities(db: DatabaseSession):
 
 
 @opportunity_router.get(
-    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityResponse]
+    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityBaseModel]
 )
-async def get_all_opportunities_with_abilities(db: DatabaseSession):
-    return opportunity_service.get_all_opportunities_with_abilities(db)
+async def get_all_opportunities_with_abilities(
+    db: DatabaseSession,
+    status: Optional[JobOpportunityStatus] = Query(default=None),
+    from_date: Optional[datetime] = Query(None, description="Fecha de inicio"),
+    to_date: Optional[datetime] = Query(None, description="Fecha de fin"),
+):
+    return opportunity_service.get_all_opportunities_with_abilities(db, status, from_date, to_date)
 
 
 @opportunity_router.get(
