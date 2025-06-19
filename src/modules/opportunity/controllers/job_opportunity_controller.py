@@ -1,8 +1,14 @@
-from fastapi import APIRouter, status
+from datetime import datetime
+from typing import Optional
+from fastapi import APIRouter, Query, status
 from src.database.core import DatabaseSession
+from src.modules.opportunity.models.job_opportunity_models import JobOpportunityBaseModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
+    JobOpportunityActiveCountRequest,
+    JobOpportunityActiveCountResponse,
     JobOpportunityResponse,
     JobOpportunityRequest,
+    JobOpportunityStatus,
     JobOpportunityUpdate,
 )
 from src.modules.opportunity.services import opportunity_service
@@ -22,10 +28,15 @@ async def count_active_opportunities(db: DatabaseSession):
 
 
 @opportunity_router.get(
-    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityResponse]
+    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityBaseModel]
 )
-async def get_all_opportunities_with_abilities(db: DatabaseSession):
-    return opportunity_service.get_all_opportunities_with_abilities(db)
+async def get_all_opportunities_with_abilities(
+    db: DatabaseSession,
+    status: Optional[JobOpportunityStatus] = Query(default=None),
+    from_date: Optional[datetime] = Query(None, description="Fecha de inicio"),
+    to_date: Optional[datetime] = Query(None, description="Fecha de fin"),
+):
+    return opportunity_service.get_all_opportunities_with_abilities(db, status, from_date, to_date)
 
 
 @opportunity_router.get(
@@ -72,3 +83,13 @@ async def update_opportunity(
 @opportunity_router.delete("/{opportunity_id}", status_code=status.HTTP_200_OK)
 async def delete_opportunity(db: DatabaseSession, opportunity_id: int) -> None:
     return opportunity_service.delete_opportunity(db, opportunity_id)
+
+
+@opportunity_router.post(
+    "/count-active-inactive",
+    status_code=status.HTTP_200_OK,
+    summary="Cantidad de oportunidades activas e inactivas",
+    response_model=JobOpportunityActiveCountResponse
+)
+async def get_active_opportunity_count(db: DatabaseSession, JobOpportunityActiveCountRequest: JobOpportunityActiveCountRequest):
+    return opportunity_service.get_active_inactive_opportunity_count_by_date(db, JobOpportunityActiveCountRequest)

@@ -1,7 +1,7 @@
 from typing import Optional, Any
 from pydantic import BaseModel, Field, field_validator
 from enum import Enum
-from datetime import datetime
+from datetime import date, datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 
 
@@ -75,3 +75,41 @@ class JobOpportunityResponse(JobOpportunityRequest):
     id: int = Field()
     created_at: datetime = Field()
     updated_at: datetime = Field()
+
+
+class JobOpportunityActiveCountRequest(BaseModel):
+    from_date: datetime = Field(
+        description="Fecha de inicio del rango de búsqueda."
+    )
+    to_date: datetime = Field(
+        description="Fecha de fin del rango de búsqueda."
+    )
+
+    @field_validator("from_date","to_date", mode="before")
+    def from_date_validator(cls, date: Any):
+        if isinstance(date, datetime) and date > datetime.now():
+            raise ValueError("La fecha de inicio o fin no puede ser futura.")
+        return date
+
+
+class JobOpportunityActiveCountResponse(BaseModel):
+    active_count: int = Field()
+    inactive_count: int = Field()
+    
+    
+class JobOpportunityPublic(BaseModel):
+    id: int = Field()
+    owner_employee_id: int = Field()
+    status: JobOpportunityStatus = Field()
+    work_mode: JobOpportunityWorkMode = Field()
+    title: str = Field(min_length=1, max_length=100)
+    description: str = Field(min_length=1, max_length=1000)
+
+
+class GetRequest(BaseModel):
+    model_config = {"extra": "forbid"}
+    
+    oportunity_status: Optional[list[JobOpportunityStatus]] = None
+    owner_employee_id: Optional[list[int]] = None
+    from_creation_date: Optional[date] = None
+    until_creation_date: Optional[date] = None

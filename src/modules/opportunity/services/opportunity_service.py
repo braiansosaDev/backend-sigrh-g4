@@ -1,3 +1,4 @@
+from datetime import date
 from src.database.core import DatabaseSession
 from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityModel,
@@ -5,8 +6,12 @@ from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityAbility,
 )
 from sqlmodel import func, select
-from typing import Sequence
+from typing import Any, Optional, Sequence, cast
+from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
+    GetRequest,
+    JobOpportunityActiveCountRequest,
+    JobOpportunityActiveCountResponse,
     JobOpportunityRequest,
     JobOpportunityResponse,
     JobOpportunityStatus,
@@ -31,16 +36,48 @@ def count_active_opportunities(db: DatabaseSession) -> int:
     )
     return result.one()
 
+def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: JobOpportunityActiveCountRequest) -> JobOpportunityActiveCountResponse:
+    active_count = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
+        .where(JobOpportunityModel.created_at >= request.from_date)
+        .where(JobOpportunityModel.created_at <= request.to_date)
+    ).one()
+
+    inactive_count = db.exec(
+        select(func.count())
+        .select_from(JobOpportunityModel)
+        .where(JobOpportunityModel.status == JobOpportunityStatus.NO_ACTIVO)
+        .where(JobOpportunityModel.created_at >= request.from_date)
+        .where(JobOpportunityModel.created_at <= request.to_date)
+    ).one()
+
+    return JobOpportunityActiveCountResponse(
+        active_count=active_count, inactive_count=inactive_count
+    )
+
 
 def get_all_opportunities_with_abilities(
     db: DatabaseSession,
+    status: Optional[JobOpportunityStatus] = None,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
 ) -> Sequence[JobOpportunityModel]:
-    opportunities = db.exec(select(JobOpportunityModel)).all()
-    result = []
-    for opportunity in opportunities:
-        opportunity_with_id = JobOpportunityIdModel(**opportunity.dict())
-        result.append(get_opportunity_with_abilities(db, opportunity_with_id.id))
-    return result
+
+    query = select(JobOpportunityModel)
+
+    if status:
+        query = query.where(JobOpportunityModel.status == status)
+    
+    if from_date:
+        query = query.where(JobOpportunityModel.created_at >= from_date)
+
+    if to_date:
+        query = query.where(JobOpportunityModel.created_at <= to_date)
+
+    opportunities = db.exec(query).all()
+    return opportunities
 
 
 def validate_job_opportunity_abilities(
