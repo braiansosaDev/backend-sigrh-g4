@@ -28,7 +28,7 @@ async def count_active_opportunities(db: DatabaseSession):
 
 
 @opportunity_router.get(
-    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityBaseModel]
+    "/", status_code=status.HTTP_200_OK, response_model=list[JobOpportunityResponse]
 )
 async def get_all_opportunities_with_abilities(
     db: DatabaseSession,
@@ -37,7 +37,6 @@ async def get_all_opportunities_with_abilities(
     to_date: Optional[datetime] = Query(None, description="Fecha de fin"),
 ):
     return opportunity_service.get_all_opportunities_with_abilities(db, status, from_date, to_date)
-
 
 @opportunity_router.get(
     "/{opportunity_id}",

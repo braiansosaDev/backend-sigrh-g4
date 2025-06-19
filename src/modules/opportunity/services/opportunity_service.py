@@ -80,6 +80,7 @@ def get_all_opportunities_with_abilities(
     return opportunities
 
 
+
 def validate_job_opportunity_abilities(
     db: DatabaseSession, job_opportunity_abilities: list[AbilityPublic]
 ) -> set[int]:
