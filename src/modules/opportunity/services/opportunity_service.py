@@ -1,4 +1,5 @@
 from datetime import date
+import copy
 from src.database.core import DatabaseSession
 from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityModel,
@@ -6,12 +7,12 @@ from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityAbility,
 )
 from sqlmodel import func, select
-from typing import Any, Optional, Sequence, cast
+from typing import Optional, Sequence
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.schemas.job_opportunity_schemas import (
-    GetRequest,
     JobOpportunityActiveCountRequest,
     JobOpportunityActiveCountResponse,
+    JobOpportunityAndPostulationsResponse,
     JobOpportunityRequest,
     JobOpportunityResponse,
     JobOpportunityStatus,
@@ -23,6 +24,10 @@ from src.modules.ability.schemas.ability_schemas import AbilityPublic
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 import logging
+
+from src.modules.postulation.models.postulation_models import Postulation
+from src.modules.postulation.schemas.postulation_schemas import PostulationStatus, RejectedOptions, RejectedPostulationsResponse
+from src.modules.postulation.services.postulation_service import get_all_postulations
 
 
 logger = logging.getLogger("uvicorn.error")
@@ -84,6 +89,102 @@ def get_all_opportunities_with_abilities(
         result.append(get_opportunity_with_abilities(db, opportunity_with_id.id))
     return result
 
+def get_all_opportunities_with_postulations(
+    db: DatabaseSession,
+    from_date: Optional[date] = None,
+    to_date: Optional[date] = None,
+) -> Sequence[JobOpportunityAndPostulationsResponse]:
+    query = select(JobOpportunityModel)
+
+    if from_date:
+        query = query.where(JobOpportunityModel.created_at >= from_date)
+
+    if to_date:
+        query = query.where(JobOpportunityModel.created_at <= to_date)
+
+    opportunities = db.exec(query).all()
+
+    result = []
+    for opportunity in opportunities:
+        opportunity_with_id = JobOpportunityIdModel(**opportunity.dict())
+        base_response = get_opportunity_with_abilities(db, opportunity_with_id.id)
+        postulations = get_all_postulations(db, opportunity_with_id.id)
+
+        response = JobOpportunityAndPostulationsResponse(
+            **base_response.dict(),
+            postulations=postulations
+        )
+        result.append(response)
+    return result
+
+def get_rejected_postulations_count_by_id(
+    db: DatabaseSession, opportunity_id: int
+) -> RejectedPostulationsResponse:
+    
+    # Validar que exista la oportunidad
+    opportunity = get_opportunity_by_id(db, opportunity_id)
+    if opportunity is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"La oportunidad con ID {opportunity_id} no existe."
+        )
+    
+    # Traer todas las postulaciones NO ACEPTADAS de esa oportunidad
+    rejected_postulations = db.exec(
+        select(Postulation)
+        .where(Postulation.job_opportunity_id == opportunity_id)
+        .where(Postulation.status == PostulationStatus.NO_ACEPTADA)
+    ).all()
+
+    # Inicializar todos los motivos con 0
+    conteo_motivos = {motivo.value: 0 for motivo in RejectedOptions}
+
+    # Contar los motivos reales encontrados
+    for postulation in rejected_postulations:
+        motivo = postulation.motive
+        if motivo in conteo_motivos:
+            conteo_motivos[motivo] += 1
+
+    # Devolver el schema
+    return RejectedPostulationsResponse(opportunity_id=opportunity_id, motivos=conteo_motivos)
+
+def get_rejected_postulations_count_by_date_range(
+    db: DatabaseSession, from_date: date, to_date: date
+) -> list[RejectedPostulationsResponse]:
+
+    # 1. Obtener todas las convocatorias dentro del rango de fechas
+    opportunities = db.exec(
+        select(JobOpportunityModel)
+        .where(JobOpportunityModel.created_at >= from_date)
+        .where(JobOpportunityModel.created_at <= to_date)
+    ).all()
+
+    responses = []
+
+    for opportunity in opportunities:
+        # 2. Obtener las postulaciones rechazadas de esa convocatoria
+        rejected_postulations = db.exec(
+            select(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.status == PostulationStatus.NO_ACEPTADA)
+        ).all()
+
+        # 3. Inicializar todos los motivos con 0
+        conteo_motivos = {motivo.value: 0 for motivo in RejectedOptions}
+
+        # 4. Contar motivos existentes
+        for postulation in rejected_postulations:
+            motivo = postulation.motive
+            if motivo in conteo_motivos:
+                conteo_motivos[motivo] += 1
+
+        # 5. Agregar respuesta
+        responses.append(RejectedPostulationsResponse(
+            opportunity_id=opportunity.id,
+            motivos=conteo_motivos
+        ))
+
+    return responses
 
 def validate_job_opportunity_abilities(
     db: DatabaseSession, job_opportunity_abilities: list[AbilityPublic]

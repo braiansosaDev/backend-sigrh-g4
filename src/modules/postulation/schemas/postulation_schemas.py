@@ -60,3 +60,25 @@ class PostulationUpdate(BaseModel):
     cv_file: str | None = Field(default=None)
     status: PostulationStatus = Field()
     motive: str | None
+
+
+class RejectedOptions(Enum):
+    NO_CUMPLE_CON_LOS_REQUISITOS_DEL_PUESTO = "No cumple con los requisitos del puesto"
+    FALTA_DE_EXPERIENCIA_RELEVANTE = "Falta de experiencia relevante"
+    NO_POSEE_LA_FORMACION_ACADEMICA_REQUERIDA = "No posee la formación académica requerida"
+    NO_SE_AJUSTA_AL_PERFIL_BUSCADO = "No se ajusta al perfil buscado"
+    NO_DISPONIBILIDAD_HORARIA = "No disponibilidad horaria"
+    NO_PASO_LA_ENTREVISTA_TECNICA = "No pasó la entrevista técnica"
+    NO_PASO_LA_ENTREVISTA_DE_RRHH = "No pasó la entrevista de RRHH"
+    PROCESO_CERRADO_POR_COBERTURA_INTERNA = "Proceso cerrado por cobertura interna"
+    POSTULANTE_SOLICITABA_SALARIO_ALTO = "Postulante solicitaba salario alto"
+    POSTULANTE_NO_INTERESADO_EN_LA_PROPUESTA = "Postulante no interesado en la propuesta"
+    POSTULANTE_NO_SE_PRESENTO_A_LA_ENTREVISTA = "Postulante no se presentó a la entrevista"
+    POSTULANTE_RETIRO_SU_POSTULACION = "Postulante retiró su postulación"
+    POSTULANTE_ACEPTO_OTRA_OFERTA = "Postulante aceptó otra oferta"
+    OTRO_MOTIVO = "Otro motivo"
+    NO_ESPECIFICADO = "No especificado"
+
+class RejectedPostulationsResponse(BaseModel):
+    opportunity_id: int
+    motivos: dict[str, int]
