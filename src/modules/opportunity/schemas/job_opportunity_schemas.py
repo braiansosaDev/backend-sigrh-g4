@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field, field_validator
 from enum import Enum
 from datetime import date, datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
+from src.modules.postulation.models.postulation_models import Postulation
+from src.modules.postulation.schemas.postulation_schemas import PostulationResponse
 
 
 class JobOpportunityAbilityImportance(Enum):
@@ -76,6 +78,8 @@ class JobOpportunityResponse(JobOpportunityRequest):
     created_at: datetime = Field()
     updated_at: datetime = Field()
 
+class JobOpportunityAndPostulationsResponse(JobOpportunityResponse):
+    postulations: Optional[list[Postulation]] = None
 
 class JobOpportunityActiveCountRequest(BaseModel):
     from_date: datetime = Field(
