@@ -77,8 +77,12 @@ def get_all_opportunities_with_abilities(
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
-    return opportunities
 
+    result = []
+    for opportunity in opportunities:
+        opportunity_with_id = JobOpportunityIdModel(**opportunity.dict())
+        result.append(get_opportunity_with_abilities(db, opportunity_with_id.id))
+    return result
 
 
 def validate_job_opportunity_abilities(
