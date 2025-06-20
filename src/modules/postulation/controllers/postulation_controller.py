@@ -12,7 +12,9 @@ from src.modules.postulation.services import postulation_service
 postulation_router = APIRouter(prefix="/postulations", tags=["Postulations"])
 
 
-@postulation_router.get(path="/stats/", response_model=list[dict[str, int]])
+@postulation_router.get(
+    path="/stats/suitability", response_model=list[dict[str, int]], status_code=status.HTTP_200_OK
+)
 async def get_suitability_count(
     session: DatabaseSession,
     from_date: date | None = Query(None),
@@ -20,13 +22,28 @@ async def get_suitability_count(
     job_opportunity_id: int | None = Query(None),
 ):
     return postulation_service.get_suitability_count(
-        session, from_date, to_date, job_opportunity_id # type: ignore
+        session,
+        from_date,
+        to_date,
+        job_opportunity_id,
     )
 
 
-# @postulation_router.get(path="/stats")
-# async def get_status_count():
-#     pass
+@postulation_router.get(
+    path="/stats/status", response_model=list[dict[str, int]], status_code=status.HTTP_200_OK
+)
+async def get_status_count(
+    session: DatabaseSession,
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
+    job_opportunity_id: int | None = Query(None),
+):
+    return postulation_service.get_status_count(
+        session,
+        from_date,
+        to_date,
+        job_opportunity_id,
+    )
 
 
 @postulation_router.get("/", response_model=list[PostulationResponse])

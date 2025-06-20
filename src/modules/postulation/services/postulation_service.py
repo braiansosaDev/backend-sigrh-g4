@@ -3,6 +3,7 @@ from src.database.core import DatabaseSession
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.postulation.schemas.postulation_schemas import (
     PostulationCreate,
+    PostulationStatus,
     PostulationUpdate,
 )
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
@@ -187,6 +188,62 @@ def get_suitability_count(
                 "job_opportunity_id": opportunity.id,
                 "aptos_ia": count_result.aptos_ia,
                 "no_aptos_ia": count_result.no_aptos_ia,
+            }
+        )
+    return results
+
+
+def get_status_count(
+    session: DatabaseSession, from_date: date, to_date: date, job_opportunity_id: int
+):
+    if (from_date or to_date) and job_opportunity_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot filter by both date range and job_opportunity_id",
+        )
+
+    job_query = select(JobOpportunityModel)
+
+    if from_date:
+        job_query = job_query.where(JobOpportunityModel.created_at >= from_date)
+    if to_date:
+        job_query = job_query.where(JobOpportunityModel.created_at <= to_date)
+    if job_opportunity_id:
+        if not session.exec(
+            select(JobOpportunityModel).where(
+                JobOpportunityModel.id == job_opportunity_id
+            )
+        ).first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job_opportunity_id not found",
+            )
+        job_query = job_query.where(JobOpportunityModel.id == job_opportunity_id)
+
+    opportunities = session.exec(job_query).all()
+    results: list[dict[str, int]] = []
+
+    for opportunity in opportunities:
+        stmt = select(
+            func.count().filter(Postulation.suitable).label("aptos_ia"),
+            func.count().filter(
+                Postulation.suitable,
+                Postulation.status == PostulationStatus.ACEPTADA
+            ).label("aptos_aceptada"),
+            func.count().filter(
+                Postulation.suitable,
+                Postulation.status == PostulationStatus.NO_ACEPTADA
+            ).label("aptos_no_aceptada"),
+        ).where(Postulation.job_opportunity_id == opportunity.id)
+
+        count_result = session.exec(stmt).one()
+
+        results.append(
+            {
+                "job_opportunity_id": opportunity.id,
+                "aptos_ia": count_result.aptos_ia,
+                "aptos_aceptada": count_result.aptos_aceptada,
+                "aptos_no_aceptada": count_result.aptos_no_aceptada,
             }
         )
     return results
