@@ -26,7 +26,7 @@ from sqlalchemy.exc import IntegrityError
 import logging
 
 from src.modules.postulation.models.postulation_models import Postulation
-from src.modules.postulation.schemas.postulation_schemas import PostulationStatus, RejectedOptions, RejectedPostulationsResponse
+from src.modules.postulation.schemas.postulation_schemas import IndicatorsPostulationsResponse, PostulationStatus, RejectedOptions, RejectedPostulationsResponse
 from src.modules.postulation.services.postulation_service import get_all_postulations
 
 
@@ -149,15 +149,20 @@ def get_rejected_postulations_count_by_id(
     return RejectedPostulationsResponse(opportunity_id=opportunity_id, motivos=conteo_motivos)
 
 def get_rejected_postulations_count_by_date_range(
-    db: DatabaseSession, from_date: date, to_date: date
+    db: DatabaseSession, from_date: Optional[date] = None,
+        to_date: Optional[date] = None
 ) -> list[RejectedPostulationsResponse]:
 
     # 1. Obtener todas las convocatorias dentro del rango de fechas
-    opportunities = db.exec(
-        select(JobOpportunityModel)
-        .where(JobOpportunityModel.created_at >= from_date)
-        .where(JobOpportunityModel.created_at <= to_date)
-    ).all()
+    query = select(JobOpportunityModel)
+
+    if from_date:
+        query = query.where(JobOpportunityModel.created_at >= from_date)
+
+    if to_date:
+        query = query.where(JobOpportunityModel.created_at <= to_date)
+
+    opportunities = db.exec(query).all()
 
     responses = []
 
@@ -493,3 +498,124 @@ def get_opportunity_by_id(
     return db.exec(
         select(JobOpportunityModel).where(JobOpportunityModel.id == opportunity_id)
     ).one_or_none()
+
+
+def get_indicators_by_date_range(
+        db: DatabaseSession,
+        from_date: Optional[date] = None,
+        to_date: Optional[date] = None
+) -> IndicatorsPostulationsResponse:
+    """
+    Obtiene indicadores de postulaciones por rango de fechas.
+    """
+    suitable_average: float = 0.0
+    not_suitable_average: float = 0.0
+    accepted_postulation_average: float = 0.0
+    rejected_postulation_average: float = 0.0
+    hired_postulation_average: float = 0.0
+    pending_postulation_average: float = 0.0
+    count_opportunities: int = 0
+    count_postulations: int = 0
+
+    query = select(JobOpportunityModel)
+
+    if from_date:
+        query = query.where(JobOpportunityModel.created_at >= from_date)
+
+    if to_date:
+        query = query.where(JobOpportunityModel.created_at <= to_date)
+
+    opportunities = db.exec(query).all()
+
+    count_opportunities = len(opportunities)
+
+    if count_opportunities == 0:
+        return IndicatorsPostulationsResponse(
+            suitable_average=suitable_average,
+            not_suitable_average=not_suitable_average,
+            accepted_postulation_average=accepted_postulation_average,
+            rejected_postulation_average=rejected_postulation_average,
+            hired_postulation_average=hired_postulation_average,
+            pending_postulation_average=pending_postulation_average,
+            count_opportunities=count_opportunities,
+            count_postulations=count_postulations
+        )
+    
+    # Iteramos sobre las oportunidades
+    for opportunity in opportunities:
+        # Contamos las postulaciones de la oportunidad
+        count_postulations += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+        ).one()
+        if count_postulations == 0:
+            continue
+        
+        # Contamos Aptos
+        suitable_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+        ).one()
+
+        # Contamos No aptos
+        not_suitable_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == False)
+        ).one()
+
+        # Contamos Postulaciones aceptadas
+        accepted_postulation_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.status == PostulationStatus.ACEPTADA)
+        ).one()
+
+        # Contamos Postulaciones rechazadas
+        rejected_postulation_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.status == PostulationStatus.NO_ACEPTADA)
+        ).one()
+
+        # Contamos Postulaciones contratadas
+        hired_postulation_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.status == PostulationStatus.CONTRATADO)
+        ).one()
+
+        # Contamos Postulaciones pendientes
+        pending_postulation_average += db.exec(
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.status == PostulationStatus.PENDIENTE)
+        ).one()
+
+    # Calculamos los promedios
+    if count_postulations > 0:
+        suitable_average = round(suitable_average / count_opportunities, 2)
+        not_suitable_average = round(not_suitable_average / count_opportunities, 2)
+        accepted_postulation_average = round(accepted_postulation_average / count_opportunities, 2)
+        rejected_postulation_average = round(rejected_postulation_average / count_opportunities, 2)
+        hired_postulation_average = round(hired_postulation_average / count_opportunities, 2)
+        pending_postulation_average = round(pending_postulation_average / count_opportunities, 2)
+ 
+    return IndicatorsPostulationsResponse(
+        suitable_average=suitable_average,
+            not_suitable_average=not_suitable_average,
+            accepted_postulation_average=accepted_postulation_average,
+            rejected_postulation_average=rejected_postulation_average,
+            hired_postulation_average=hired_postulation_average,
+            pending_postulation_average=pending_postulation_average,
+            count_opportunities=count_opportunities,
+            count_postulations=count_postulations
+    )

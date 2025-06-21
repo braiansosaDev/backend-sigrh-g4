@@ -13,7 +13,7 @@ from src.modules.opportunity.schemas.job_opportunity_schemas import (
 )
 from src.modules.opportunity.services import opportunity_service
 from src.modules.auth.token import TokenDependency
-from src.modules.postulation.schemas.postulation_schemas import RejectedPostulationsResponse
+from src.modules.postulation.schemas.postulation_schemas import IndicatorsPostulationsResponse, RejectedPostulationsResponse
 
 
 opportunity_router = APIRouter(prefix="/opportunities", tags=["Opportunities"])
@@ -117,7 +117,15 @@ async def get_rejected_postulations_count_by_id(db: DatabaseSession, opportunity
 @opportunity_router.get("/opportunities/rejected-postulations-count-by-dates", response_model=list[RejectedPostulationsResponse])
 async def rejected_postulations_count_by_date_range(
     db: DatabaseSession,
-    from_date: datetime = Query(..., description="Fecha desde"),
-    to_date: datetime = Query(..., description="Fecha hasta")
+    from_date: Optional[datetime] = Query(None, description="Fecha de inicio"),
+    to_date: Optional[datetime] = Query(None, description="Fecha de fin"),
 ):
     return opportunity_service.get_rejected_postulations_count_by_date_range(db, from_date, to_date)
+
+@opportunity_router.get("opportunities/indicators-by-date-range", response_model=IndicatorsPostulationsResponse)
+async def get_indicators_by_date_range(
+    db: DatabaseSession,
+    from_date: Optional[datetime] = Query(None, description="Fecha de inicio"),
+    to_date: Optional[datetime] = Query(None, description="Fecha de fin"),
+):
+    return opportunity_service.get_indicators_by_date_range(db, from_date, to_date)
