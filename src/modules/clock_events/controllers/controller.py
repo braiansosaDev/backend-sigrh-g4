@@ -16,9 +16,6 @@ async def read_attendance_resume(
     db: DatabaseSession,
     fecha: date = Query(...)
 ):
-    """
-    Devuelve resumen de asistencia por empleado activo para una fecha dada
-    """
     return services.get_attendance_resume(db, fecha)
 
 
@@ -36,9 +33,7 @@ async def read_clock_events(
     "/", response_model=schemas.ClockEventResponse, status_code=status.HTTP_201_CREATED
 )
 async def create_clock_event(db: DatabaseSession, request: schemas.ClockEventRequest):
-    """
-    docstring
-    """
+
     return services.post_clock_event(db, request)
 
 
@@ -50,15 +45,9 @@ async def create_clock_event(db: DatabaseSession, request: schemas.ClockEventReq
 async def update_clock_event(
     db: DatabaseSession, clock_event_id: int, request: schemas.ClockEventRequest
 ):
-    """
-    docstring
-    """
     return services.patch_clock_event(db, clock_event_id, request)
 
 
 @clock_events_router.delete("/{clock_event_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_clock_event(db: DatabaseSession, clock_event_id: int):
-    """
-    docstring
-    """
     return services.delete_clock_event(db, clock_event_id)
