@@ -111,15 +111,16 @@ def patch_clock_event(
                     setattr(db_clock_event, attr, value)
         db.add(db_clock_event)
         db.commit()
-        changes_str = "; ".join(changes)
-        log = log_service.create_log(db, request=log_schemas.LogCreateRequest(
-            description=changes_str,
-            entity= log_model.EntityType.NOMINA,
-            entity_id=clock_event_id,
-            user_id=request.employee_id
-        ))
-        db.add(log)
-        db.commit()
+        if len(changes) > 0:
+            changes_str = "; ".join(changes)
+            log = log_service.create_log(db, request=log_schemas.LogCreateRequest(
+                description=changes_str,
+                entity= log_model.EntityType.NOMINA,
+                entity_id=clock_event_id,
+                user_id=request.employee_id
+            ))
+            db.add(log)
+            db.commit()
         return db_clock_event
     except IntegrityError as e:
         db.rollback()

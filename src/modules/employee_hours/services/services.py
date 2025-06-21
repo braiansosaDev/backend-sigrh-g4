@@ -87,19 +87,19 @@ def patch_employee_hours(
                     setattr(db_employee_hours, attr, value)
         db.add(db_employee_hours)
         db.commit()
-
-        changes_description = "; ".join(changes)
-        log = log_service.create_log(
-            db,
-            log_schemas.LogCreateRequest(
-                description=changes_description,
-                entity=EntityType.NOMINA,
-                entity_id=employee_hours_id,
-                user_id=token.get("employee_id"),
-            ),
-        )
-        db.add(log)
-        db.commit()
+        if len(changes) > 0:
+            changes_description = "; ".join(changes)
+            log = log_service.create_log(
+                db,
+                log_schemas.LogCreateRequest(
+                    description=changes_description,
+                    entity=EntityType.NOMINA,
+                    entity_id=employee_hours_id,
+                    user_id=token.get("employee_id"),
+                ),
+            )
+            db.add(log)
+            db.commit()
         return db_employee_hours
     except IntegrityError as e:
         db.rollback()
