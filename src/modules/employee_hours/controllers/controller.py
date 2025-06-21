@@ -1,6 +1,7 @@
 from typing import List
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
+from src.modules.auth.token import TokenDependency
 from src.modules.employee_hours.schemas import schemas
 from src.modules.employee_hours.services import services
 
@@ -39,12 +40,9 @@ async def create_employee_hours(
     status_code=status.HTTP_200_OK,
 )
 async def update_employee_hours(
-    db: DatabaseSession, employee_hours_id: int, request: schemas.EmployeeHoursPatchRequest
+    db: DatabaseSession, token: TokenDependency, employee_hours_id: int, request: schemas.EmployeeHoursPatchRequest
 ):
-    """
-    docstring
-    """
-    return services.patch_employee_hours(db, employee_hours_id, request)
+    return services.patch_employee_hours(db, token, employee_hours_id, request)
 
 
 @employee_hours_router.delete(

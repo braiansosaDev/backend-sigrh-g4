@@ -82,3 +82,13 @@ class RejectedOptions(Enum):
 class RejectedPostulationsResponse(BaseModel):
     opportunity_id: int
     motivos: dict[str, int]
+
+class IndicatorsPostulationsResponse(BaseModel):
+    suitable_average: float = Field()
+    not_suitable_average: float = Field()
+    accepted_postulation_average: float = Field()
+    rejected_postulation_average: float = Field()
+    hired_postulation_average: float = Field()
+    pending_postulation_average: float = Field()
+    count_opportunities: int = Field()
+    count_postulations: int = Field()

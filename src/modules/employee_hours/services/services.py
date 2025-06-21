@@ -1,14 +1,20 @@
-from typing import Sequence
+from typing import Any, Sequence
 from fastapi import HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from src.database.core import DatabaseSession
+from src.modules.auth.token import TokenDependency
 from src.modules.concept.models.models import Concept
-from src.modules.employee_hours.schemas.schemas import EmployeeHoursRequest, EmployeeHoursPatchRequest
+from src.modules.employee_hours.schemas.schemas import (
+    EmployeeHoursRequest,
+    EmployeeHoursPatchRequest,
+)
 from src.modules.employee_hours.models.models import EmployeeHours
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.services.utils import get_employee_by_id
 from src.modules.concept.services.service import get_concept_by_id
+from src.modules.logs import log_schemas, log_service
+from src.modules.logs.log_model import EntityType
 from src.modules.shift.models.models import Shift
 from src.modules.shift.services.services import get_shift_by_id
 import logging
@@ -65,20 +71,34 @@ def post_employee_hours(
 
 
 def patch_employee_hours(
-    db: DatabaseSession, employee_hours_id: int, request: EmployeeHoursPatchRequest
+    db: DatabaseSession,
+    token: TokenDependency,
+    employee_hours_id: int,
+    request: EmployeeHoursPatchRequest,
 ) -> EmployeeHours:
     try:
-        # employee = get_employee_by_id(db, request.employee_id)
-        # concept = get_concept_by_id(db, request.concept_id)
-        # shift = get_shift_by_id(db, request.shift_id)
         db_employee_hours = get_employee_hours_by_id(db, employee_hours_id)
-
-        # validate_employee_hours(employee, concept, shift, db_employee_hours)
-
+        changes: list[Any] = []
         for attr, value in request.model_dump(exclude_unset=True).items():
             if hasattr(db_employee_hours, attr):
-                setattr(db_employee_hours, attr, value)
+                old_value = getattr(db_employee_hours, attr)
+                if old_value != value:
+                    changes.append(f"{attr}: '{old_value}' -> '{value}'")
+                    setattr(db_employee_hours, attr, value)
         db.add(db_employee_hours)
+        db.commit()
+
+        changes_description = "; ".join(changes)
+        log = log_service.create_log(
+            db,
+            log_schemas.LogCreateRequest(
+                description=changes_description,
+                entity=EntityType.NOMINA,
+                entity_id=employee_hours_id,
+                user_id=token.get("employee_id"),
+            ),
+        )
+        db.add(log)
         db.commit()
         return db_employee_hours
     except IntegrityError as e:

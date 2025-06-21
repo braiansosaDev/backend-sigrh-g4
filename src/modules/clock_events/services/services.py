@@ -9,6 +9,8 @@ from src.modules.clock_events.models.models import ClockEvents
 from src.modules.employees.services.utils import get_employee_by_id
 import logging
 
+from src.modules.logs import log_model, log_schemas, log_service
+
 
 def get_attendance_resume(db: DatabaseSession, fecha: date):
     return get_clock_event_summary_by_date_sql(db, fecha)
@@ -100,10 +102,23 @@ def patch_clock_event(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Employee id provided doesn't match",
             )
+        changes: list[str] = []
         for attr, value in request.model_dump(exclude_unset=True).items():
             if hasattr(db_clock_event, attr):
-                setattr(db_clock_event, attr, value)
+                old_value = getattr(db_clock_event, attr)
+                if old_value != value:
+                    changes.append(f"{attr}: '{old_value}' -> '{value}'")
+                    setattr(db_clock_event, attr, value)
         db.add(db_clock_event)
+        db.commit()
+        changes_str = "; ".join(changes)
+        log = log_service.create_log(db, request=log_schemas.LogCreateRequest(
+            description=changes_str,
+            entity= log_model.EntityType.NOMINA,
+            entity_id=clock_event_id,
+            user_id=request.employee_id
+        ))
+        db.add(log)
         db.commit()
         return db_clock_event
     except IntegrityError as e:

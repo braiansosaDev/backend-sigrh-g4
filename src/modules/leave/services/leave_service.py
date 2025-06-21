@@ -18,7 +18,10 @@ from src.modules.leave.schemas.leave_schemas import (
 )
 from src.modules.leave.models.leave_models import Leave, LeaveType
 from src.modules.employees.services import employee_service, sector_service
+from src.modules.logs import log_schemas, log_service
+from src.modules.logs.log_model import EntityType
 import logging
+
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -141,6 +144,8 @@ def update_leave(
     leave_author_employee = employee_service.get_employee(session, db_leave.employee_id)
     request_employee_id = token.get("employee_id")
 
+    changes: list[Any] = []  # <-- Agregado para registrar cambios
+
     if db_leave.request_status in {LeaveRequestStatus.APROBADO, LeaveRequestStatus.RECHAZADO}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -161,11 +166,15 @@ def update_leave(
             )
 
         if request.file is not None and request.file.strip():
-
+            old_value = db_leave.file
+            if old_value != request.file:
+                changes.append(f"file: '{old_value}' -> '{request.file}'")
             db_leave.file = request.file
 
             if db_leave.document_status == LeaveDocumentStatus.PENDIENTE_DE_CARGA:
+                old_status = db_leave.document_status
                 db_leave.document_status = LeaveDocumentStatus.PENDIENTE_DE_VALIDACION
+                changes.append(f"document_status: '{old_status}' -> '{db_leave.document_status}'")
 
         elif db_leave.leave_type.justification_required:
             raise HTTPException(
@@ -177,6 +186,8 @@ def update_leave(
             session.add(db_leave)
             session.commit()
             session.refresh(db_leave)
+            changes_description = "; ".join(changes)
+            logging.info(f"Campos modificados: {changes_description}")  # <-- Log de cambios
             return db_leave
         except IntegrityError:
             session.rollback()
@@ -204,17 +215,37 @@ def update_leave(
         )
 
     if request.document_status is not None:
+        old_value = db_leave.document_status
+        if old_value != request.document_status:
+            changes.append(f"document_status: '{old_value}' -> '{request.document_status}'")
         db_leave.document_status = request.document_status
 
     if request.request_status is not None:
+        old_value = db_leave.request_status
+        if old_value != request.request_status:
+            changes.append(f"request_status: '{old_value}' -> '{request.request_status}'")
         db_leave.request_status = request.request_status
         if request.request_status is LeaveRequestStatus.APROBADO:
+            old_doc_status = db_leave.document_status
             db_leave.document_status = LeaveDocumentStatus.APROBADO
+            changes.append(f"document_status: '{old_doc_status}' -> '{db_leave.document_status}'")
 
     try:
         session.add(db_leave)
         session.commit()
         session.refresh(db_leave)
+        changes_description = "; ".join(changes)
+        log = log_service.create_log(
+            session,
+            log_schemas.LogCreateRequest(
+                description=changes_description,
+                entity=EntityType.LICENCIA,
+                entity_id=leave_id,
+                user_id=request_employee_id,
+            ),
+        )
+        session.add(log)
+        session.commit()
         return db_leave
     except IntegrityError as e:
         logger.error(
