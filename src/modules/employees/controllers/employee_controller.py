@@ -1,6 +1,7 @@
 from typing import Optional
 from fastapi import APIRouter, status
 from src.database.core import DatabaseSession
+from src.modules.auth.token import TokenDependency
 from src.modules.employees.schemas import employee_models
 from src.modules.employees.services import employee_service
 from src.modules.employees.schemas.employee_models import (
@@ -107,26 +108,25 @@ async def update_employee(
 
 
 # TODO: Remplazar por el de abajo
-@employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
-async def change_password(db: DatabaseSession, model_request: ChangePasswordRequest):
-    return employee_service.change_password(
-        db, model_request.employee_id, model_request.password
-    )
-
-
-# @employee_router.post("/change_password_token", status_code=status.HTTP_204_NO_CONTENT)
-# async def change_password_token(
-#     db: DatabaseSession,
-#     token: TokenDependency,
-#     employee_id: int,
-#     password: str
-# ):
-#     return employee_service.change_password_token(
-#         db,
-#         token,
-#         employee_id,
-#         password
+# @employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
+# async def change_password(db: DatabaseSession, model_request: ChangePasswordRequest):
+#     return employee_service.change_password(
+#         db, model_request.employee_id, model_request.password
 #     )
+
+
+@employee_router.post("/change_password", status_code=status.HTTP_204_NO_CONTENT)
+async def change_password_token(
+    db: DatabaseSession,
+    token: TokenDependency,
+    request: ChangePasswordRequest,
+):
+    return employee_service.change_password_token(
+        db,
+        token,
+        request.employee_id,
+        request.password,
+    )
 
 
 """Endpoint para eliminar un empleado.

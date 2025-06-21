@@ -185,6 +185,7 @@ def change_password(db: DatabaseSession, employee_id: int, password: str) -> Non
 
     db_employee = get_employee(db, employee_id)
     db_employee.password = get_password_hash(password)
+    db_employee.must_change_password = True
 
     try:
         db.add(db_employee)
@@ -230,6 +231,11 @@ def change_password_token(
 
     db_employee = get_employee(db, employee_id)
     db_employee.password = get_password_hash(password)
+
+    if request_employee.id == employee_id:
+        db_employee.must_change_password = False
+    else:
+        db_employee.must_change_password = True
 
     try:
         db.add(db_employee)

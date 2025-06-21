@@ -162,8 +162,8 @@ SELECT setval(pg_get_serial_sequence('leave_type', 'id'), (SELECT MAX(id) FROM l
 -- Usuario: bsosa672
 -- Contraseña: 1234
 INSERT INTO public.employee
-(id, user_id, first_name, last_name, dni, type_dni, personal_email, active, role_id, password, phone, salary, job_id, birth_date, hire_date, address_street, address_city, address_cp, address_state_id, address_country_id, shift_id)
-VALUES(1, 'bsosa672', 'Braian', 'Sosa', '43022672', 'du', 'braianorlandososa@gmail.com', true, 2, '$2b$12$hTsvK48LWxRA3Cet8bHIi..SdpxgWyMyQMlfsZd24WGRcshuTXcGK', '+2131125277960', 1, 1, '2000-10-20', '2025-05-06', 'asdadsad', '123123', 'string1231231', 1, 1, 3)
+(id, user_id, first_name, last_name, dni, type_dni, personal_email, active, role_id, password, must_change_password, phone, salary, job_id, birth_date, hire_date, address_street, address_city, address_cp, address_state_id, address_country_id, shift_id)
+VALUES(1, 'bsosa672', 'Braian', 'Sosa', '43022672', 'du', 'braianorlandososa@gmail.com', true, 2, '$2b$12$hTsvK48LWxRA3Cet8bHIi..SdpxgWyMyQMlfsZd24WGRcshuTXcGK', false, '+2131125277960', 1, 1, '2000-10-20', '2025-05-06', 'asdadsad', '123123', 'string1231231', 1, 1, 3)
 ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('employee', 'id'), (SELECT MAX(id) FROM employee));
 

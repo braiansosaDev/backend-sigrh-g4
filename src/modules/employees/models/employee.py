@@ -39,6 +39,7 @@ class Employee(SQLModel, table=True):
     active: bool = Field(default=False)
     role_id: int | None = Field(foreign_key="role.id", default=None)
     password: str | None = Field(max_length=100, nullable=True)
+    must_change_password: bool = Field(default=False)
     phone: str = Field(unique=True, max_length=20)
     salary: Decimal = Field(gt=0)
     job_id: int = Field(foreign_key="job.id", nullable=True)

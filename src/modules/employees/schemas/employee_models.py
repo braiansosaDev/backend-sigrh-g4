@@ -32,6 +32,7 @@ class EmployeeResponse(BaseModel):
     personal_email: EmailStr
     active: bool
     role_id: Optional[int] = None
+    must_change_password: bool
     phone: str
     salary: Decimal
     job_id: Optional[int]
@@ -69,6 +70,7 @@ class MeResponse(BaseModel):
     personal_email: EmailStr
     active: bool
     role_id: Optional[int] = None
+    must_change_password: bool
     phone: str
     salary: Decimal
     job_id: Optional[int]
