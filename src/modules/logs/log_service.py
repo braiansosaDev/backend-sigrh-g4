@@ -4,16 +4,31 @@ from fastapi import HTTPException, status
 from sqlmodel import select
 import logging
 from datetime import datetime
-
+from src.modules.employees.models.employee import Employee  # importar el modelo
 
 def list_logs(db: DatabaseSession, entity: str | None, entity_id: int | None):
-    query = select(log_model.Log)
-    if entity:
-        query = query.where(log_model.Log.entity == entity)
-    if entity_id:
-        query = query.where(log_model.Log.entity_id == entity_id)
+    from sqlmodel import select, join
 
-    return db.exec(query).all()
+    stmt = select(log_model.Log, Employee).join(Employee, log_model.Log.user_id == Employee.id)
+
+    if entity:
+        stmt = stmt.where(log_model.Log.entity == entity)
+    if entity_id:
+        stmt = stmt.where(log_model.Log.entity_id == entity_id)
+
+    results = db.exec(stmt).all()
+
+    return [
+        {
+            **log.model_dump(),
+            "employee": {
+                "id": employee.id,
+                "first_name": employee.first_name,
+                "last_name": employee.last_name,
+            },
+        }
+        for log, employee in results
+    ]
 
 
 def get_log(db: DatabaseSession, log_id: int):
