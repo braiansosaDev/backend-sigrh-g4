@@ -81,13 +81,13 @@ class GetRequest(BaseModel):
     employee_ids: Optional[list[int]] = None
     sector_ids: Optional[list[int]] = None
     leave_type_ids: Optional[list[int]] = None
-    from_creation_date: Optional[date] = None
-    until_creation_date: Optional[date] = None
+    from_start_date: Optional[date] = None
+    until_start_date: Optional[date] = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "GetRequest":
-        if self.from_creation_date and self.until_creation_date:
-            if self.until_creation_date < self.from_creation_date:
+        if self.from_start_date and self.until_start_date:
+            if self.until_start_date < self.from_start_date:
                 raise ValueError("La fecha 'hasta' no puede ser anterior que la fecha 'desde'.")
         return self
 
@@ -95,16 +95,16 @@ class GetRequest(BaseModel):
 class ReportRequest(BaseModel):
     model_config = {"extra": "forbid"}
 
-    from_creation_date: Optional[date] = None
-    until_creation_date: Optional[date] = None
+    from_start_date: Optional[date] = None
+    until_start_date: Optional[date] = None
     sector_ids: Optional[list[int]] = None
     request_statuses: Optional[list[LeaveRequestStatus]] = None
     leave_type_ids: Optional[list[int]] = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "ReportRequest":
-        if self.from_creation_date and self.until_creation_date:
-            if self.until_creation_date < self.from_creation_date:
+        if self.from_start_date and self.until_start_date:
+            if self.until_start_date < self.from_start_date:
                 raise ValueError("La fecha 'hasta' no puede ser anterior que la fecha 'desde'.")
         return self
 

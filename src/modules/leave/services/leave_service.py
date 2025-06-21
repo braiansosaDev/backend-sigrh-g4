@@ -61,10 +61,10 @@ def get_leaves(
         stmt = stmt.where(
             cast(ColumnElement, Leave.leave_type_id).in_(request.leave_type_ids)
         )
-    if request.from_creation_date:
-        stmt = stmt.where(Leave.request_date >= request.from_creation_date)
-    if request.until_creation_date:
-        stmt = stmt.where(Leave.request_date <= request.until_creation_date)
+    if request.from_start_date:
+        stmt = stmt.where(Leave.start_date >= request.from_start_date)
+    if request.until_start_date:
+        stmt = stmt.where(Leave.start_date <= request.until_start_date)
     if request.sector_ids is not None:
         # Para dar error si no existe algún sector
         for i in request.sector_ids:
@@ -296,11 +296,11 @@ def report(
             cast(ColumnElement, Leave.leave_type_id).in_(request.leave_type_ids)
         )
 
-    if request.from_creation_date:
-        stmt = stmt.where(Leave.request_date >= request.from_creation_date)
+    if request.from_start_date:
+        stmt = stmt.where(Leave.start_date >= request.from_start_date)
 
-    if request.until_creation_date:
-        stmt = stmt.where(Leave.request_date <= request.until_creation_date)
+    if request.until_start_date:
+        stmt = stmt.where(Leave.start_date <= request.until_start_date)
 
     if request.request_statuses:
         stmt = stmt.where(
