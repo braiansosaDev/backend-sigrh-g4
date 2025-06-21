@@ -6,6 +6,7 @@ from sqlmodel import Field, SQLModel
 class EntityType(StrEnum):
     LICENCIA = "LICENCIA"
     NOMINA = "NOMINA"
+    CONVOCATORIA = "CONVOCATORIA"
 
 
 class Log(SQLModel, table=True):
