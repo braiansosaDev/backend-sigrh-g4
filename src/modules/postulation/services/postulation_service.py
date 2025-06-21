@@ -232,8 +232,8 @@ def get_status_count(
             ).label("aptos_aceptada"),
             func.count().filter(
                 Postulation.suitable,
-                Postulation.status == PostulationStatus.NO_ACEPTADA
-            ).label("aptos_no_aceptada"),
+                Postulation.status == PostulationStatus.CONTRATADO
+            ).label("aptos_contratado"),
         ).where(Postulation.job_opportunity_id == opportunity.id)
 
         count_result = session.exec(stmt).one()
@@ -243,7 +243,7 @@ def get_status_count(
                 "job_opportunity_id": opportunity.id,
                 "aptos_ia": count_result.aptos_ia,
                 "aptos_aceptada": count_result.aptos_aceptada,
-                "aptos_no_aceptada": count_result.aptos_no_aceptada,
+                "aptos_contratado": count_result.aptos_contratado,
             }
         )
     return results
