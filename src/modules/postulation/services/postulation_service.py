@@ -8,7 +8,7 @@ from src.modules.postulation.schemas.postulation_schemas import (
 )
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.services import opportunity_service
-from sqlmodel import case, select, col, func
+from sqlmodel import select, col
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -176,18 +176,25 @@ def get_suitability_count(
     results: list[dict[str, int]] = []
 
     for opportunity in opportunities:
-        stmt = select(
-            func.count(case((Postulation.suitable, 1))).label("aptos_ia"),
-            func.count(case((not Postulation.suitable, 1))).label("no_aptos_ia"),
-        ).where(Postulation.job_opportunity_id == opportunity.id)
+        suitable_amount = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+        )
 
-        count_result = session.exec(stmt).one()
+        no_suitable_amount = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == False)
+        )
 
         results.append(
             {
                 "job_opportunity_id": opportunity.id,
-                "aptos_ia": count_result.aptos_ia,
-                "no_aptos_ia": count_result.no_aptos_ia,
+                "aptos_ia": session.exec(suitable_amount).one(),
+                "no_aptos_ia": session.exec(no_suitable_amount).one(),
             }
         )
     return results
@@ -224,32 +231,33 @@ def get_status_count(
     results: list[dict[str, int]] = []
 
     for opportunity in opportunities:
-        stmt = select(
-            func.count(
-                case((Postulation.suitable, 1))
-            ).label("aptos_ia"),
-            func.count(
-                case(
-                    (Postulation.suitable, 1),
-                    (Postulation.status == PostulationStatus.ACEPTADA, 1)
-                )
-            ).label("aptos_aceptada"),
-            func.count(
-                case(
-                    (Postulation.suitable, 1),
-                    (Postulation.status == PostulationStatus.CONTRATADO, 1)
-                )
-            ).label("aptos_contratado"),
-        ).where(Postulation.job_opportunity_id == opportunity.id)
-
-        count_result = session.exec(stmt).one()
+        aptos_ia_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+        )
+        aptos_aceptada_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+            .where(Postulation.status == PostulationStatus.ACEPTADA)
+        )
+        aptos_contratado_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+            .where(Postulation.status == PostulationStatus.CONTRATADO)
+        )
 
         results.append(
             {
                 "job_opportunity_id": opportunity.id,
-                "aptos_ia": count_result.aptos_ia,
-                "aptos_aceptada": count_result.aptos_aceptada,
-                "aptos_contratado": count_result.aptos_contratado,
+                "aptos_ia": session.exec(aptos_ia_stmt).one(),
+                "aptos_aceptada": session.exec(aptos_aceptada_stmt).one(),
+                "aptos_contratado": session.exec(aptos_contratado_stmt).one(),
             }
         )
     return results
