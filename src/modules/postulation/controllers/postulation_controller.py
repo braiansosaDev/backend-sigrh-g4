@@ -1,4 +1,5 @@
-from fastapi import APIRouter, status
+from datetime import date
+from fastapi import APIRouter, Query, status
 from src.database.core import DatabaseSession
 from src.modules.postulation.schemas.postulation_schemas import (
     PostulationCreate,
@@ -11,8 +12,44 @@ from src.modules.postulation.services import postulation_service
 postulation_router = APIRouter(prefix="/postulations", tags=["Postulations"])
 
 
+@postulation_router.get(
+    path="/stats/suitability", response_model=list[dict[str, int]], status_code=status.HTTP_200_OK
+)
+async def get_suitability_count(
+    session: DatabaseSession,
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
+    job_opportunity_id: int | None = Query(None),
+):
+    return postulation_service.get_suitability_count(
+        session,
+        from_date,
+        to_date,
+        job_opportunity_id,
+    )
+
+
+@postulation_router.get(
+    path="/stats/status", response_model=list[dict[str, int]], status_code=status.HTTP_200_OK
+)
+async def get_status_count(
+    session: DatabaseSession,
+    from_date: date | None = Query(None),
+    to_date: date | None = Query(None),
+    job_opportunity_id: int | None = Query(None),
+):
+    return postulation_service.get_status_count(
+        session,
+        from_date,
+        to_date,
+        job_opportunity_id,
+    )
+
+
 @postulation_router.get("/", response_model=list[PostulationResponse])
-async def get_all_postulations(db: DatabaseSession, job_opportunity_id: int | None = None):
+async def get_all_postulations(
+    db: DatabaseSession, job_opportunity_id: int | None = None
+):
     return postulation_service.get_all_postulations(db, job_opportunity_id)
 
 
