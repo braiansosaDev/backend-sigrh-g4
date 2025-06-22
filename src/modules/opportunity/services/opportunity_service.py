@@ -1,5 +1,6 @@
-from datetime import date
+from datetime import date, datetime
 import copy
+from time import time
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
 from src.modules.logs import log_schemas, log_service
@@ -45,12 +46,13 @@ def count_active_opportunities(db: DatabaseSession) -> int:
     return result.one()
 
 def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: JobOpportunityActiveCountRequest) -> JobOpportunityActiveCountResponse:
+    to_date = request.to_date.replace(hour=23, minute=59, second=59)
     active_count = db.exec(
         select(func.count())
         .select_from(JobOpportunityModel)
         .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
         .where(JobOpportunityModel.created_at >= request.from_date)
-        .where(JobOpportunityModel.created_at <= request.to_date)
+        .where(JobOpportunityModel.created_at <= to_date)
     ).one()
 
     inactive_count = db.exec(
@@ -58,7 +60,7 @@ def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: 
         .select_from(JobOpportunityModel)
         .where(JobOpportunityModel.status == JobOpportunityStatus.NO_ACTIVO)
         .where(JobOpportunityModel.created_at >= request.from_date)
-        .where(JobOpportunityModel.created_at <= request.to_date)
+        .where(JobOpportunityModel.created_at <= to_date)
     ).one()
 
     return JobOpportunityActiveCountResponse(
@@ -69,8 +71,8 @@ def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: 
 def get_all_opportunities_with_abilities(
     db: DatabaseSession,
     status: Optional[JobOpportunityStatus] = None,
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
 ) -> Sequence[JobOpportunityModel]:
 
     query = select(JobOpportunityModel)
@@ -82,6 +84,7 @@ def get_all_opportunities_with_abilities(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -94,8 +97,8 @@ def get_all_opportunities_with_abilities(
 
 def get_all_opportunities_with_postulations(
     db: DatabaseSession,
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
 ) -> Sequence[JobOpportunityAndPostulationsResponse]:
     query = select(JobOpportunityModel)
 
@@ -103,6 +106,7 @@ def get_all_opportunities_with_postulations(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -152,8 +156,8 @@ def get_rejected_postulations_count_by_id(
     return RejectedPostulationsResponse(opportunity_id=opportunity_id, motivos=conteo_motivos)
 
 def get_rejected_postulations_count_by_date_range(
-    db: DatabaseSession, from_date: Optional[date] = None,
-        to_date: Optional[date] = None
+    db: DatabaseSession, from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
 ) -> list[RejectedPostulationsResponse]:
 
     # 1. Obtener todas las convocatorias dentro del rango de fechas
@@ -163,6 +167,7 @@ def get_rejected_postulations_count_by_date_range(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -504,8 +509,8 @@ def get_opportunity_by_id(
 
 def get_indicators_by_date_range(
         db: DatabaseSession,
-        from_date: Optional[date] = None,
-        to_date: Optional[date] = None
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
 ) -> IndicatorsPostulationsResponse:
     """
     Obtiene indicadores de postulaciones por rango de fechas.
@@ -525,6 +530,7 @@ def get_indicators_by_date_range(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
