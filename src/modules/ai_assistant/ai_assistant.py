@@ -87,7 +87,9 @@ def consultar_ollama(pregunta: str, model: str = OLLAMA_MODEL) -> str:
                 {"role": "system", "content": SISTEMA_CONTEXTUAL},
                 {"role": "user", "content": pregunta}
             ],
-            "stream": False
+            "stream": False,
+            "temperature": 0.7,      # Parámetro de creatividad
+            "max_tokens": 512        # Límite de tokens en la respuesta
         }
     )
     data = response.json()
@@ -102,7 +104,9 @@ def stream_ollama(pregunta: str, model: str = OLLAMA_MODEL):
                 {"role": "system", "content": SISTEMA_CONTEXTUAL},
                 {"role": "user", "content": pregunta}
             ],
-            "stream": True
+            "stream": True,
+            "temperature": 0.7,      # Parámetro de creatividad
+            "max_tokens": 512        # Límite de tokens en la respuesta
         },
         stream=True
     )
