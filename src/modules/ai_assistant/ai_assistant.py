@@ -25,7 +25,6 @@ def consultar_ollama(pregunta: str, model: str = OLLAMA_MODEL) -> str:
             ],
             "stream": False,
             "temperature": 0.7,      # Parámetro de creatividad
-            "max_tokens": 512        # Límite de tokens en la respuesta
         }
     )
     data = response.json()
@@ -42,7 +41,6 @@ def stream_ollama(pregunta: str, model: str = OLLAMA_MODEL):
             ],
             "stream": True,
             "temperature": 0.7,      # Parámetro de creatividad
-            "max_tokens": 512        # Límite de tokens en la respuesta
         },
         stream=True
     )
