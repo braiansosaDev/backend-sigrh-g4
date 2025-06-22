@@ -8,7 +8,7 @@ from src.modules.postulation.schemas.postulation_schemas import (
 )
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
 from src.modules.opportunity.services import opportunity_service
-from sqlmodel import select, col, func
+from sqlmodel import case, select, col, func
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -177,8 +177,8 @@ def get_suitability_count(
 
     for opportunity in opportunities:
         stmt = select(
-            func.count().filter(Postulation.suitable).label("aptos_ia"),
-            func.count().filter(not Postulation.suitable).label("no_aptos_ia"),
+            func.count(case((Postulation.suitable, 1))).label("aptos_ia"),
+            func.count(case((not Postulation.suitable, 1))).label("no_aptos_ia"),
         ).where(Postulation.job_opportunity_id == opportunity.id)
 
         count_result = session.exec(stmt).one()
@@ -225,14 +225,20 @@ def get_status_count(
 
     for opportunity in opportunities:
         stmt = select(
-            func.count().filter(Postulation.suitable).label("aptos_ia"),
-            func.count().filter(
-                Postulation.suitable,
-                Postulation.status == PostulationStatus.ACEPTADA
+            func.count(
+                case((Postulation.suitable, 1))
+            ).label("aptos_ia"),
+            func.count(
+                case(
+                    (Postulation.suitable, 1),
+                    (Postulation.status == PostulationStatus.ACEPTADA, 1)
+                )
             ).label("aptos_aceptada"),
-            func.count().filter(
-                Postulation.suitable,
-                Postulation.status == PostulationStatus.CONTRATADO
+            func.count(
+                case(
+                    (Postulation.suitable, 1),
+                    (Postulation.status == PostulationStatus.CONTRATADO, 1)
+                )
             ).label("aptos_contratado"),
         ).where(Postulation.job_opportunity_id == opportunity.id)
 
