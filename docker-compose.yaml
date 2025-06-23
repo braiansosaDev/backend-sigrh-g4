@@ -34,7 +34,7 @@ services:
     image: docker.io/ollama/ollama
     volumes:
       - type: volume
-        source: ollama
+        source: ollama-data
         target: /root/.ollama
         volume:
           nocopy: false
