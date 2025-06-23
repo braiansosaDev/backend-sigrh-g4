@@ -338,7 +338,7 @@ def update_opportunity(
         if hasattr(opportunity, field):
             old_val = getattr(opportunity, field)
             if old_val != new_val:
-                changes.append(f"{field}: '{old_val}' -> '{new_val}'")
+                changes.append(f"El atributo {field}: pasó de '{old_val}' a '{new_val}'")
                 setattr(opportunity, field, new_val)
 
     if "required_abilities" in request.model_dump(exclude_unset=True):
@@ -399,9 +399,18 @@ def process_abilities(
     prev_ids = [a.ability_id for a in prev_objs]
     new_ids = [a.id for a in new_list]
 
+    # Obtener nombres de habilidades previas y nuevas
+    prev_names = []
+    if prev_ids:
+        prev_names = [
+            db.exec(select(AbilityModel.name).where(AbilityModel.id == aid)).one()
+            for aid in prev_ids
+        ]
+    new_names = [a.name for a in new_list]
+
     if set(prev_ids) != set(new_ids):
         changes.append(
-            f"{ability_type.name.lower()}_abilities: {prev_ids} -> {new_ids}"
+            f"Las habilidades {ability_type.name.lower()}: pasaron de {prev_names} a {new_names}"
         )
 
     # borrar antiguas y agregar nuevas

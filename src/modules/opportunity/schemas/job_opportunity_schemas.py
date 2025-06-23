@@ -1,23 +1,23 @@
 from typing import Optional, Any
 from pydantic import BaseModel, Field, field_validator
-from enum import Enum
+from enum import Enum, StrEnum
 from datetime import date, datetime
 from src.modules.ability.schemas.ability_schemas import AbilityPublic
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.postulation.schemas.postulation_schemas import PostulationResponse
 
 
-class JobOpportunityAbilityImportance(Enum):
+class JobOpportunityAbilityImportance(StrEnum):
     REQUERIDA = "requerida"
     DESEADA = "deseada"
 
 
-class JobOpportunityStatus(Enum):
+class JobOpportunityStatus(StrEnum):
     ACTIVO = "activo"
     NO_ACTIVO = "no_activo"
 
 
-class JobOpportunityWorkMode(Enum):
+class JobOpportunityWorkMode(StrEnum):
     REMOTO = "remoto"
     HIBRIDO = "hibrido"
     PRESENCIAL = "presencial"
