@@ -11,7 +11,7 @@ class ChatRequest(BaseModel):
     pregunta: str
     historial: list[dict] = []
 
-OLLAMA_URL = f"http://{get_str("OLLAMA_HOST")}:{get_str("OLLAMA_PORT")}/api/chat"
+OLLAMA_URL = f"http://{get_str('OLLAMA_HOST')}:{get_str('OLLAMA_PORT')}/api/chat"
 OLLAMA_MODEL = get_str("OLLAMA_MODEL")
 
 SISTEMA_CONTEXTUAL = prompt
