@@ -83,7 +83,7 @@ def patch_employee_hours(
             if hasattr(db_employee_hours, attr):
                 old_value = getattr(db_employee_hours, attr)
                 if old_value != value:
-                    changes.append(f"{attr}: '{old_value}' -> '{value}'")
+                    changes.append(f"El Atributo {attr}: pasó de '{old_value}' a '{value}'")
                     setattr(db_employee_hours, attr, value)
         db.add(db_employee_hours)
         db.commit()
