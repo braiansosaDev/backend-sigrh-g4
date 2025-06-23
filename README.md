@@ -4,7 +4,11 @@ Plataforma web pensada para automatizar y optimizar procesos clave de RRHH como 
 
 ## Requisitos
 
-Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pueden instalar utilizando el archivo `requirements.txt`.
+Este proyecto requiere 
+- Python 3.10 o superior.
+- PostgreSQL 16 o superior.
+- Ollama instalado
+- Docker [**recomendado**]
 
 ## Instalación en máquina local
 
@@ -15,7 +19,7 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
     cd <nombre-del-repositorio>
     ```
 
-2. Recomendado: Crear un entorno virtual
+2. Recomendado: Crear un entorno virtual para descargar las librerías
 
     ```bash
     python -m venv .venv
@@ -46,17 +50,32 @@ Este proyecto requiere Python 3.10 o superior. Las dependencias necesarias se pu
     ```bash
     pip install -r requirements.txt
     ```
-4. Instalar los modelos nlp de spacy:
-    ```bash
-    python -m spacy download es_core_news_lg
-    python -m spacy download en_core_web_lg
-    ```
 
-5. Instalar PostgreSQL, configurar usuario/contraseña y crear base de datos `sigrh`. Opcionalmente se puede instalar DBEAVER (recomendado), si no desde la SQL Shell se puede trabajar.
+4. Instalar PostgreSQL, configurar usuario/contraseña y crear base de datos `sigrh`.
 
-6. Agregar `.env` utilizando de copia `.env.example`, modificar según datos de inicio de sesión y base de datos de máquina local.
+5. Crear `.env` en la raiz del proyecto utilizando de copia `.env.example`. Se deben modificar los siguientes campos:
+    - SECRET_KEY
+        - Una key secreta.
+    - DATABASE_URL
+        - La URL de la base de datos `sigrh` que fue creada en el paso anterior.
+    - MAIL_USERNAME
+    - MAIL_PASSWORD
 
-7. Levantar el servidor por defecto en el puerto 8000
+6. Descargar el modelo `gemma:2b` utilizando Ollama
+    - Para esto hay que tener instalado Ollama. Ver instalación según OS en [La web oficial de Ollama](https://ollama.com/)
+    - Una vez instalado Ollama, iniciar el servicio.    
+        - Abrir una terminal, PowerShell, CMD, etc. Y ejecutar el siguiente comando:
+        ```bash
+        ollama serve
+        ```
+        **Importante**: Asegurarse que el comando `ollama` está registrado en la variable de entorno PATH. Si esto no es asi y existe algún error al realizar el comando, probablemente no reiniciaste tu máquina luego de la instalación.
+    - Descargar el modelo `gemma:2b`
+        - Abrir otra terminal, PowerShell, CMD, etc. Y ejecutar el siguiente comando:
+        ```
+        ollama run gemma:2b
+        ```
+
+7. Levantar el servidor. Por defecto se levanta en el puerto 8000. Para dejar de correr el servidor realizar CTRL+C
 
     ```bash
     uvicorn src.main:app --reload
