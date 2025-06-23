@@ -1,8 +1,9 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
-import requests
 from .prompt import prompt
+from src.modules.config.services.config_service import get_str
+import requests
 
 router = APIRouter(prefix="/assistant", tags=["Asistente del sistema"])
 
@@ -10,8 +11,8 @@ class ChatRequest(BaseModel):
     pregunta: str
     historial: list[dict] = []
 
-OLLAMA_URL = "http://localhost:11434/api/chat"
-OLLAMA_MODEL = "gemma:2b"
+OLLAMA_URL = f"http://{get_str("OLLAMA_HOST")}:{get_str("OLLAMA_PORT")}/api/chat"
+OLLAMA_MODEL = get_str("OLLAMA_MODEL")
 
 SISTEMA_CONTEXTUAL = prompt
 
@@ -47,6 +48,8 @@ def stream_ollama(pregunta: str, historial: list[dict], model: str = OLLAMA_MODE
         stream=True
     )
 
+
+
     def generate():
         for line in response.iter_lines():
             if line:
@@ -67,4 +70,4 @@ def chat_stream(req: ChatRequest):
         stream = stream_ollama(req.pregunta, req.historial)
         return StreamingResponse(stream(), media_type="text/plain")
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

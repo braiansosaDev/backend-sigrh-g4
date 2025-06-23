@@ -30,6 +30,16 @@ services:
         target: /data
         volume:
           nocopy: false
+  ollama:
+    image: docker.io/ollama/ollama
+    volumes:
+      - type: volume
+        source: ollama
+        target: /root/.ollama
+        volume:
+          nocopy: false
+    entrypoint: /bin/bash
+    command: -c 'sleep 5 && /bin/ollama run ${OLLAMA_MODEL} & exec /bin/ollama serve'
   dev:
     build:
       context: .
@@ -55,4 +65,5 @@ volumes:
   dev-data:
   postgres-data:
   mailpit-data:
+  ollama:
 
