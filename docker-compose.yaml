@@ -16,6 +16,20 @@ services:
     volumes:
       - './.postgres-password:/run/secrets/postgres-password:ro'
       - 'postgres-data:/var/lib/postgresql/data'
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    ports:
+      - '8005:8025'
+    environment:
+      MP_DATABASE: /data/mailpit.db
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    volumes:
+      - type: volume
+        source: mailpit-data
+        target: /data
+        volume:
+          nocopy: false
   dev:
     build:
       context: .
@@ -40,4 +54,5 @@ services:
 volumes:
   dev-data:
   postgres-data:
+  mailpit-data:
 

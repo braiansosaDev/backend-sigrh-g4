@@ -17,6 +17,10 @@ class ChangePasswordRequest(BaseModel):
     password: str
 
 
+class ResetPasswordRequest(BaseModel):
+    employee_id: int
+
+
 class EmployeeResponse(BaseModel):
     """
     Modelo de empleado para la respuesta de un empleado.

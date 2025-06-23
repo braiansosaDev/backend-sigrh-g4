@@ -1,6 +1,8 @@
 from typing import Sequence, Optional
-from fastapi import HTTPException, status
+from fastapi import BackgroundTasks, HTTPException, status
 from src.modules.auth.token import TokenDependency
+from src.modules.email.schemas.email_schemas import EmailSchema
+from src.modules.email.services import email_service
 from src.modules.employees.models.employee import Employee
 from src.modules.employees.models.job import Job
 from src.modules.employees.models.sector import Sector
@@ -10,15 +12,17 @@ from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeCountByJob,
     EmployeeResponse,
+    ResetPasswordRequest,
     UpdateEmployee,
     EmployeeCountBySector,
 )
 from src.database.core import DatabaseSession
 from sqlalchemy.exc import IntegrityError
-from src.modules.auth.crypt import get_password_hash
+from src.modules.auth.crypt import get_password_hash, generate_secure_random_password
 from src.modules.employees.services import utils
 from sqlmodel import func, select
 import logging
+import html
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -245,6 +249,49 @@ def change_password_token(
         logger.info(
             f"An unexpected IntegrityError has occurred while changing password of employee {employee_id}"
         )
+        raise
+
+
+async def reset_password(session: DatabaseSession, token: TokenDependency, background_tasks: BackgroundTasks, request: ResetPasswordRequest) -> None:
+    requester_token_id = token.get("employee_id")
+    if requester_token_id is None:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
+    requester_employee = get_employee(session, requester_token_id)
+
+    # Role administrador root
+    if not requester_employee.role or not requester_employee.role.id == 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="No tenés permiso para realizar esta acción."
+        )
+
+    target_employee = get_employee(session, request.employee_id)
+
+    new_password = generate_secure_random_password()
+
+    try:
+        target_employee.password = get_password_hash(new_password)
+        target_employee.must_change_password = True
+        session.add(target_employee)
+        session.commit()
+
+        await email_service.send_mail(
+            background_tasks,
+            EmailSchema(
+                subject="Restablecimiento de contraseña - SIGRH",
+                recipients=[target_employee.personal_email],
+                body=f"""
+                <p>Se solicitó el restablecimiento de tu contraseña en el sistema SIGRH.<br>
+                Tu nueva contraseña temporal es: <strong><code>{html.escape(new_password)}</code></strong><br>
+                Debes iniciar sesión y cambiarla inmediatamente.</p>
+
+                <h5>Sistema Integral de Gestión de Recursos Humanos - SIGRH</h5>
+            """
+            ),
+        )
+    except Exception as e:
+        logger.error(f"Unexpected exception occurred while resetting password of employee {target_employee.id}")
+        logger.error(e)
         raise
 
 

@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import APIRouter, status
+from fastapi import APIRouter, BackgroundTasks, status
 from src.database.core import DatabaseSession
 from src.modules.auth.token import TokenDependency
 from src.modules.employees.schemas import employee_models
@@ -8,6 +8,7 @@ from src.modules.employees.schemas.employee_models import (
     ChangePasswordRequest,
     CreateEmployee,
     EmployeeResponse,
+    ResetPasswordRequest,
     UpdateEmployee,
 )
 
@@ -127,6 +128,11 @@ async def change_password_token(
         request.employee_id,
         request.password,
     )
+
+
+@employee_router.post("/reset_password", status_code=status.HTTP_204_NO_CONTENT)
+async def reset_password(session: DatabaseSession, token: TokenDependency, background_tasks: BackgroundTasks, request: ResetPasswordRequest) -> None:
+    return await employee_service.reset_password(session, token, background_tasks, request)
 
 
 """Endpoint para eliminar un empleado.
