@@ -12,7 +12,7 @@ logs_router = APIRouter(prefix="/logs", tags=["Logs"])
 )
 async def list_logs(
     db: DatabaseSession,
-    entity: str | None = Query(default=None, regex="^(LICENCIA|NOMINA)$"),
+    entity: str | None = Query(default=None, regex="^(LICENCIA|NOMINA|CONVOCATORIA)$"),
     entity_id: int | None = Query(default=None),
 ):
     return log_service.list_logs(db, entity, entity_id)

@@ -85,9 +85,12 @@ async def create_opportunity(
     response_model=JobOpportunityResponse,
 )
 async def update_opportunity(
-    db: DatabaseSession, opportunity_id: int, patch: JobOpportunityUpdate
+    db: DatabaseSession, 
+    opportunity_id: int, 
+    patch: JobOpportunityUpdate,
+    payload: TokenDependency,  # ⬅️ obtenemos el token decodificado
 ):
-    return opportunity_service.update_opportunity(db, opportunity_id, patch)
+    return opportunity_service.update_opportunity(db, payload, opportunity_id, patch)
 
 
 @opportunity_router.delete("/{opportunity_id}", status_code=status.HTTP_200_OK)
