@@ -1,8 +1,9 @@
 from jose import jwt
 from typing import Annotated
 from dotenv import load_dotenv
-from fastapi import Depends
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose.exceptions import ExpiredSignatureError
 from src.database.core import DatabaseSession
 import os
 
@@ -57,11 +58,14 @@ def decode_token(
     """
     load_dotenv()
 
-    data = jwt.decode(
-        token=token,
-        key=get_env_var("SECRET_KEY"),
-        algorithms=[get_env_var("ALGORITHM")],
-    )
+    try:
+        data = jwt.decode(
+            token=token,
+            key=get_env_var("SECRET_KEY"),
+            algorithms=[get_env_var("ALGORITHM")],
+        )
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="El token ha expirado")
     return data
 
 

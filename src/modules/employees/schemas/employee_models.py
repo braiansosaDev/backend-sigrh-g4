@@ -21,6 +21,14 @@ class ResetPasswordRequest(BaseModel):
     employee_id: int
 
 
+class ForgotPasswordRequest(BaseModel):
+    employee_user_id: str
+
+
+class ForgotPasswordChangeRequest(BaseModel):
+    password: str = Field(min_length=1)
+
+
 class EmployeeResponse(BaseModel):
     """
     Modelo de empleado para la respuesta de un empleado.

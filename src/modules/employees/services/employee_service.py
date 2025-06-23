@@ -1,6 +1,8 @@
+from datetime import datetime, timedelta
 from typing import Sequence, Optional
 from fastapi import BackgroundTasks, HTTPException, status
-from src.modules.auth.token import TokenDependency
+from src.modules.auth.token import TokenDependency, encode_token
+from src.modules.config.services.config_service import get_str
 from src.modules.email.schemas.email_schemas import EmailSchema
 from src.modules.email.services import email_service
 from src.modules.employees.models.employee import Employee
@@ -12,6 +14,8 @@ from src.modules.employees.schemas.employee_models import (
     CreateEmployee,
     EmployeeCountByJob,
     EmployeeResponse,
+    ForgotPasswordChangeRequest,
+    ForgotPasswordRequest,
     ResetPasswordRequest,
     UpdateEmployee,
     EmployeeCountBySector,
@@ -293,6 +297,58 @@ async def reset_password(session: DatabaseSession, token: TokenDependency, backg
         logger.error(f"Unexpected exception occurred while resetting password of employee {target_employee.id}")
         logger.error(e)
         raise
+
+
+async def forgot_password(session: DatabaseSession, background_tasks: BackgroundTasks, request: ForgotPasswordRequest) -> None:
+    target_employee: Employee = utils.get_employee_by_user_id(session, request.employee_user_id)
+
+    now = datetime.now()
+    exp_timestamp = int((now + timedelta(minutes=60)).timestamp())
+
+    encoded_token: str = encode_token({
+        "iat": int(now.timestamp()),
+        "exp": exp_timestamp,
+        "type": "forgot-password",
+        "employee_user_id": target_employee.user_id
+    })
+
+    await email_service.send_mail(
+        background_tasks,
+        EmailSchema(
+            subject="Restablecimiento de contraseña - SIGRH",
+            recipients=[target_employee.personal_email],
+            body=f"""
+            <p>Se solicitó el restablecimiento de su contraseña en el sistema SIGRH.<br>
+            Si fue usted, ingrese al siguiente enlace para cambiar su contraseña:</p>
+            <a href=\"http://{html.escape(get_str('API_URL'))}/forgot-password-change/?token={html.escape(encoded_token)}\">Cambiar contraseña</a>
+            <p>El enlace expirará dentro de una hora.</p>
+
+            <h5>Sistema Integral de Gestión de Recursos Humanos - SIGRH</h5>
+            """
+        )
+    )
+
+
+def forgot_password_change(session: DatabaseSession, token: TokenDependency, request: ForgotPasswordChangeRequest):
+    token_type: str | None = token.get("type")
+    employee_user_id: str | None = token.get("employee_user_id")
+    if token_type != "forgot-password" or employee_user_id is None or not employee_user_id.strip():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+
+    employee_user_id = str(employee_user_id)
+
+    target_employee: Employee = utils.get_employee_by_user_id(session, employee_user_id)
+
+    try:
+        target_employee.password = get_password_hash(request.password)
+        target_employee.must_change_password = False
+        session.add(target_employee)
+        session.commit()
+    except Exception as e:
+        logger.error(f"Unexpected exception ocurrred while changing forgot password for user {target_employee.id}")
+        logger.error(e)
+        raise
+
 
 
 def delete_employee(db: DatabaseSession, employee_id: int) -> None:

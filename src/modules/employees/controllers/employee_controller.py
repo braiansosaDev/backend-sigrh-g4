@@ -8,6 +8,8 @@ from src.modules.employees.schemas.employee_models import (
     ChangePasswordRequest,
     CreateEmployee,
     EmployeeResponse,
+    ForgotPasswordChangeRequest,
+    ForgotPasswordRequest,
     ResetPasswordRequest,
     UpdateEmployee,
 )
@@ -133,6 +135,16 @@ async def change_password_token(
 @employee_router.post("/reset_password", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_password(session: DatabaseSession, token: TokenDependency, background_tasks: BackgroundTasks, request: ResetPasswordRequest) -> None:
     return await employee_service.reset_password(session, token, background_tasks, request)
+
+
+@employee_router.post("/forgot-password", status_code=status.HTTP_204_NO_CONTENT)
+async def forgot_password(session: DatabaseSession, background_tasks: BackgroundTasks, request: ForgotPasswordRequest) -> None:
+    return await employee_service.forgot_password(session, background_tasks, request)
+
+
+@employee_router.post("/forgot-password-change", status_code=status.HTTP_204_NO_CONTENT)
+async def forgot_password_change(session: DatabaseSession, token: TokenDependency, request: ForgotPasswordChangeRequest) -> None:
+    return employee_service.forgot_password_change(session, token, request)
 
 
 """Endpoint para eliminar un empleado.
