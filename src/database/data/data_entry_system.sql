@@ -88,7 +88,11 @@ los empleados'),
 la nomina de empleados'),
 (12, 'Asignacion de Roles - Aprobaciones', 'El usuario puede Aprobar las asignaciones de
 Roles a los empleados'),
-(13, 'ABM Fichadas', 'El usuario puede acceder a la pestania de asistencia')
+(13, 'ABM Fichadas', 'El usuario puede acceder a la pestania de asistencia'),
+(14, 'REPORTES Empleados', 'El usuario puede acceder a los reportes de empleados'),
+(15, 'REPORTES Licencias', 'El usuario puede acceder a los reportes de licencias'),
+(16, 'REPORTES Convocatorias', 'El usuario puede acceder a los reportes de convocatorias'),
+(17, 'Acceso reportes', 'El usuario puede acceder a almenos un reporte')
 ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
 description = EXCLUDED.description;
@@ -111,15 +115,15 @@ SELECT setval(pg_get_serial_sequence('role', 'id'), (SELECT MAX(id) FROM role));
 
 -- Cargar permisos de roles
 INSERT INTO role_permission (role_id, permission_id) VALUES
-(1,1), (1,7), (1,5), (1,9), (1,5), (1, 10), (1, 13),
+(1,1), (1,7), (1,5), (1,9), (1,5), (1, 10), (1, 13), (1, 14), (1, 15), (1, 17),
 (2,8), (2,1), (2,2), (2,6), (2,5),
-(3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4), (3, 13),
+(3,1), (3,7), (3,11), (3,5), (3,12), (3,9), (3,10), (3,3), (3,4), (3, 13), (3, 14), (3, 15), (3, 16), (3, 17),
 (4,9),
 (5,11), (5,9),(5,10),
-(6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4), (6, 13),
+(6,1), (6,7), (6,11), (6,5), (6,12), (6,9), (6,10), (6,3), (6,4), (6, 13), (6, 14), (6, 15), (6, 16), (6, 17),
 (7,3),
 -- Nuevo rol: Developer
-(8,1), (8,2), (8,3), (8,4), (8,5), (8,6), (8,7), (8,8), (8,9), (8,10), (8,11), (8,12), (8,13)
+(8,1), (8,2), (8,3), (8,4), (8,5), (8,6), (8,7), (8,8), (8,9), (8,10), (8,11), (8,12), (8,13), (8,14), (8,15), (8,16), (8,17)
 ON CONFLICT DO NOTHING;
 
 -- Cargar shifts
