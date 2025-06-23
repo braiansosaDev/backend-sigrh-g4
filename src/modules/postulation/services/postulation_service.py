@@ -1,7 +1,9 @@
+from datetime import date
 from src.database.core import DatabaseSession
 from src.modules.postulation.models.postulation_models import Postulation
 from src.modules.postulation.schemas.postulation_schemas import (
     PostulationCreate,
+    PostulationStatus,
     PostulationUpdate,
 )
 from src.modules.opportunity.models.job_opportunity_models import JobOpportunityModel
@@ -46,9 +48,7 @@ def get_all_postulations(
     query = select(Postulation)
     if job_opportunity_id is not None:
         query = query.where(Postulation.job_opportunity_id == job_opportunity_id)
-    return db.exec(
-        query.order_by(cast(Any, Postulation.id))
-    ).all()
+    return db.exec(query.order_by(cast(Any, Postulation.id))).all()
 
 
 def get_postulation_by_id(
@@ -143,3 +143,121 @@ def update_postulation(
         )
         logger.error(e)
         raise
+
+
+def get_suitability_count(
+    session: DatabaseSession, from_date: date, to_date: date, job_opportunity_id: int
+):
+    if (from_date or to_date) and job_opportunity_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot filter by both date range and job_opportunity_id",
+        )
+
+    job_query = select(JobOpportunityModel)
+
+    if from_date:
+        job_query = job_query.where(JobOpportunityModel.created_at >= from_date)
+    if to_date:
+        job_query = job_query.where(JobOpportunityModel.created_at <= to_date)
+    if job_opportunity_id:
+        if not session.exec(
+            select(JobOpportunityModel).where(
+                JobOpportunityModel.id == job_opportunity_id
+            )
+        ).first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job_opportunity_id not found",
+            )
+        job_query = job_query.where(JobOpportunityModel.id == job_opportunity_id)
+
+    opportunities = session.exec(job_query).all()
+    results: list[dict[str, int]] = []
+
+    for opportunity in opportunities:
+        suitable_amount = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+        )
+
+        no_suitable_amount = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == False)
+        )
+
+        results.append(
+            {
+                "job_opportunity_id": opportunity.id,
+                "aptos_ia": session.exec(suitable_amount).one(),
+                "no_aptos_ia": session.exec(no_suitable_amount).one(),
+            }
+        )
+    return results
+
+
+def get_status_count(
+    session: DatabaseSession, from_date: date, to_date: date, job_opportunity_id: int
+):
+    if (from_date or to_date) and job_opportunity_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot filter by both date range and job_opportunity_id",
+        )
+
+    job_query = select(JobOpportunityModel)
+
+    if from_date:
+        job_query = job_query.where(JobOpportunityModel.created_at >= from_date)
+    if to_date:
+        job_query = job_query.where(JobOpportunityModel.created_at <= to_date)
+    if job_opportunity_id:
+        if not session.exec(
+            select(JobOpportunityModel).where(
+                JobOpportunityModel.id == job_opportunity_id
+            )
+        ).first():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Job_opportunity_id not found",
+            )
+        job_query = job_query.where(JobOpportunityModel.id == job_opportunity_id)
+
+    opportunities = session.exec(job_query).all()
+    results: list[dict[str, int]] = []
+
+    for opportunity in opportunities:
+        aptos_ia_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+        )
+        aptos_aceptada_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+            .where(Postulation.status == PostulationStatus.ACEPTADA)
+        )
+        aptos_contratado_stmt = (
+            select(func.count())
+            .select_from(Postulation)
+            .where(Postulation.job_opportunity_id == opportunity.id)
+            .where(Postulation.suitable == True)
+            .where(Postulation.status == PostulationStatus.CONTRATADO)
+        )
+
+        results.append(
+            {
+                "job_opportunity_id": opportunity.id,
+                "aptos_ia": session.exec(aptos_ia_stmt).one(),
+                "aptos_aceptada": session.exec(aptos_aceptada_stmt).one(),
+                "aptos_contratado": session.exec(aptos_contratado_stmt).one(),
+            }
+        )
+    return results

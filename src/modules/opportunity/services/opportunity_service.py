@@ -1,6 +1,10 @@
-from datetime import date
+from datetime import date, datetime
 import copy
+from time import time
 from src.database.core import DatabaseSession
+from src.modules.auth.token import TokenDependency
+from src.modules.logs import log_schemas, log_service
+from src.modules.logs.log_model import EntityType
 from src.modules.opportunity.models.job_opportunity_models import (
     JobOpportunityModel,
     JobOpportunityIdModel,
@@ -42,12 +46,13 @@ def count_active_opportunities(db: DatabaseSession) -> int:
     return result.one()
 
 def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: JobOpportunityActiveCountRequest) -> JobOpportunityActiveCountResponse:
+    to_date = request.to_date.replace(hour=23, minute=59, second=59)
     active_count = db.exec(
         select(func.count())
         .select_from(JobOpportunityModel)
         .where(JobOpportunityModel.status == JobOpportunityStatus.ACTIVO)
         .where(JobOpportunityModel.created_at >= request.from_date)
-        .where(JobOpportunityModel.created_at <= request.to_date)
+        .where(JobOpportunityModel.created_at <= to_date)
     ).one()
 
     inactive_count = db.exec(
@@ -55,7 +60,7 @@ def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: 
         .select_from(JobOpportunityModel)
         .where(JobOpportunityModel.status == JobOpportunityStatus.NO_ACTIVO)
         .where(JobOpportunityModel.created_at >= request.from_date)
-        .where(JobOpportunityModel.created_at <= request.to_date)
+        .where(JobOpportunityModel.created_at <= to_date)
     ).one()
 
     return JobOpportunityActiveCountResponse(
@@ -66,8 +71,8 @@ def get_active_inactive_opportunity_count_by_date(db: DatabaseSession, request: 
 def get_all_opportunities_with_abilities(
     db: DatabaseSession,
     status: Optional[JobOpportunityStatus] = None,
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
 ) -> Sequence[JobOpportunityModel]:
 
     query = select(JobOpportunityModel)
@@ -79,6 +84,7 @@ def get_all_opportunities_with_abilities(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -91,8 +97,8 @@ def get_all_opportunities_with_abilities(
 
 def get_all_opportunities_with_postulations(
     db: DatabaseSession,
-    from_date: Optional[date] = None,
-    to_date: Optional[date] = None,
+    from_date: Optional[datetime] = None,
+    to_date: Optional[datetime] = None,
 ) -> Sequence[JobOpportunityAndPostulationsResponse]:
     query = select(JobOpportunityModel)
 
@@ -100,6 +106,7 @@ def get_all_opportunities_with_postulations(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -149,8 +156,8 @@ def get_rejected_postulations_count_by_id(
     return RejectedPostulationsResponse(opportunity_id=opportunity_id, motivos=conteo_motivos)
 
 def get_rejected_postulations_count_by_date_range(
-    db: DatabaseSession, from_date: Optional[date] = None,
-        to_date: Optional[date] = None
+    db: DatabaseSession, from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
 ) -> list[RejectedPostulationsResponse]:
 
     # 1. Obtener todas las convocatorias dentro del rango de fechas
@@ -160,6 +167,7 @@ def get_rejected_postulations_count_by_date_range(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()
@@ -305,109 +313,108 @@ def create_opportunity(
 
 
 def update_opportunity(
-    db: DatabaseSession, opportunity_id: int, request: JobOpportunityUpdate
+    db: DatabaseSession,
+    token: TokenDependency,
+    opportunity_id: int,
+    request: JobOpportunityUpdate,
 ):
+    # 1. Obtener oportunidad y permisos
     opportunity = get_opportunity_by_id(db, opportunity_id)
-
     if opportunity is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,
-            detail=f"The opportunity with id {opportunity_id} does not exist.",
+            detail=f"La oportunidad con id {opportunity_id} no existe.",
         )
 
-    try:
-        required_abilities_attr = "required_abilities"
-        desirable_abilities_attr = "desirable_abilities"
-        for attr, value in request.model_dump(
-            exclude_unset=True,
-            exclude=set([required_abilities_attr, desirable_abilities_attr]),
-        ).items():
-            if hasattr(opportunity, attr):
-                setattr(opportunity, attr, value)
+    # (Opcional) podés validar aquí token/permiso, como hacés en Leave
 
-        all_abilities_ids: set[int] = set()
-        has_required_abilities: bool = False
-        has_desirable_abilities: bool = False
-        if required_abilities_attr in request.model_dump(exclude_unset=True):
-            has_required_abilities = True
-            all_abilities_ids = all_abilities_ids.union(
-                validate_job_opportunity_abilities(db, request.required_abilities)
-            )
+    changes: list[str] = []  # <-- donde guardamos los cambios
 
-        if desirable_abilities_attr in request.model_dump(exclude_unset=True):
-            has_desirable_abilities = True
-            all_abilities_ids = all_abilities_ids.union(
-                validate_job_opportunity_abilities(db, request.desirable_abilities)
-            )
+    # 2. Actualizar atributos simples
+    data = request.model_dump(
+        exclude_unset=True, exclude={"required_abilities", "desirable_abilities"}
+    )
+    for field, new_val in data.items():
+        if hasattr(opportunity, field):
+            old_val = getattr(opportunity, field)
+            if old_val != new_val:
+                changes.append(f"{field}: '{old_val}' -> '{new_val}'")
+                setattr(opportunity, field, new_val)
 
-        received_abilities_count = 0
-        if has_required_abilities:
-            received_abilities_count += len(request.required_abilities)
-        if has_desirable_abilities:
-            received_abilities_count += len(request.desirable_abilities)
+    if "required_abilities" in request.model_dump(exclude_unset=True):
+        process_abilities(
+            db,
+            JobOpportunityAbilityImportance.REQUERIDA,
+            request.required_abilities,
+            opportunity_id,
+            changes,
+        )
 
-        if len(all_abilities_ids) != received_abilities_count:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="There are duplicated abilities",
-            )
+    if "desirable_abilities" in request.model_dump(exclude_unset=True):
+        process_abilities(
+            db,
+            JobOpportunityAbilityImportance.DESEADA,
+            request.desirable_abilities,
+            opportunity_id,
+            changes,
+        )
 
-        if has_required_abilities:
-            previous_abilities = db.exec(
-                select(JobOpportunityAbility)
-                .where(JobOpportunityAbility.job_opportunity_id == opportunity_id)
-                .where(
-                    JobOpportunityAbility.ability_type
-                    == JobOpportunityAbilityImportance.REQUERIDA
-                )
-            ).all()
+    # 4. Commit y refrescar
+    db.add(opportunity)
+    db.commit()
+    db.refresh(opportunity)
 
-            for previous_ability in previous_abilities:
-                db.delete(previous_ability)
-
-            for ability in request.required_abilities:
-                db.add(
-                    JobOpportunityAbility(
-                        job_opportunity_id=opportunity_id,
-                        ability_id=ability.id,
-                        ability_type=JobOpportunityAbilityImportance.REQUERIDA,
-                    )
-                )
-
-        if has_desirable_abilities:
-            previous_abilities = db.exec(
-                select(JobOpportunityAbility)
-                .where(JobOpportunityAbility.job_opportunity_id == opportunity_id)
-                .where(
-                    JobOpportunityAbility.ability_type
-                    == JobOpportunityAbilityImportance.DESEADA
-                )
-            ).all()
-
-            for previous_ability in previous_abilities:
-                db.delete(previous_ability)
-
-            for ability in request.desirable_abilities:
-                db.add(
-                    JobOpportunityAbility(
-                        job_opportunity_id=opportunity_id,
-                        ability_id=ability.id,
-                        ability_type=JobOpportunityAbilityImportance.DESEADA,
-                    )
-                )
-
-        db.add(opportunity)
+    # 5. Crear el log en tu tabla de auditoría
+    if changes:
+        description = "; ".join(changes)
+        log = log_service.create_log(
+            db,
+            log_schemas.LogCreateRequest(
+                description=description,
+                entity=EntityType.CONVOCATORIA,
+                entity_id=opportunity_id,
+                user_id=token.get("employee_id"),  # o el que corresponda
+            ),
+        )
+        db.add(log)
         db.commit()
-        db.refresh(opportunity)
 
-        return get_opportunity_with_abilities(db, opportunity.id)
+    # 6. Retornar la oportunidad con las habilidades cargadas
+    return get_opportunity_with_abilities(db, opportunity_id)
 
-    except IntegrityError:
-        db.rollback()
-        logger.error(
-            f"Unexpected error while updating opportunity with id {opportunity_id}"
+
+def process_abilities(
+    db: DatabaseSession,
+    ability_type: JobOpportunityAbilityImportance,
+    new_list: list[AbilityPublic],
+    opportunity_id: int,
+    changes: list[str],
+):
+    """Elimina viejas, añade nuevas y registra cambio si difieren."""
+    prev_objs = db.exec(
+        select(JobOpportunityAbility)
+        .where(JobOpportunityAbility.job_opportunity_id == opportunity_id)
+        .where(JobOpportunityAbility.ability_type == ability_type)
+    ).all()
+    prev_ids = [a.ability_id for a in prev_objs]
+    new_ids = [a.id for a in new_list]
+
+    if set(prev_ids) != set(new_ids):
+        changes.append(
+            f"{ability_type.name.lower()}_abilities: {prev_ids} -> {new_ids}"
         )
-        raise
+
+    # borrar antiguas y agregar nuevas
+    for obj in prev_objs:
+        db.delete(obj)
+    for aid in new_ids:
+        db.add(
+            JobOpportunityAbility(
+                job_opportunity_id=opportunity_id,
+                ability_id=aid,
+                ability_type=ability_type,
+            )
+        )
 
 
 def delete_opportunity(db: DatabaseSession, opportunity_id: int):
@@ -502,8 +509,8 @@ def get_opportunity_by_id(
 
 def get_indicators_by_date_range(
         db: DatabaseSession,
-        from_date: Optional[date] = None,
-        to_date: Optional[date] = None
+        from_date: Optional[datetime] = None,
+        to_date: Optional[datetime] = None
 ) -> IndicatorsPostulationsResponse:
     """
     Obtiene indicadores de postulaciones por rango de fechas.
@@ -523,6 +530,7 @@ def get_indicators_by_date_range(
         query = query.where(JobOpportunityModel.created_at >= from_date)
 
     if to_date:
+        to_date = to_date.replace(hour=23, minute=59, second=59)
         query = query.where(JobOpportunityModel.created_at <= to_date)
 
     opportunities = db.exec(query).all()

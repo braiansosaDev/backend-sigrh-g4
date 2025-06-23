@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date, datetime
 from typing import Optional
 from fastapi import APIRouter, Query, status
 from src.database.core import DatabaseSession
@@ -85,9 +85,12 @@ async def create_opportunity(
     response_model=JobOpportunityResponse,
 )
 async def update_opportunity(
-    db: DatabaseSession, opportunity_id: int, patch: JobOpportunityUpdate
+    db: DatabaseSession, 
+    opportunity_id: int, 
+    patch: JobOpportunityUpdate,
+    payload: TokenDependency,  # ⬅️ obtenemos el token decodificado
 ):
-    return opportunity_service.update_opportunity(db, opportunity_id, patch)
+    return opportunity_service.update_opportunity(db, payload, opportunity_id, patch)
 
 
 @opportunity_router.delete("/{opportunity_id}", status_code=status.HTTP_200_OK)
@@ -99,7 +102,7 @@ async def delete_opportunity(db: DatabaseSession, opportunity_id: int) -> None:
     "/count-active-inactive",
     status_code=status.HTTP_200_OK,
     summary="Cantidad de oportunidades activas e inactivas",
-    response_model=JobOpportunityActiveCountResponse
+    response_model=JobOpportunityActiveCountResponse,
 )
 async def get_active_opportunity_count(db: DatabaseSession, JobOpportunityActiveCountRequest: JobOpportunityActiveCountRequest):
     return opportunity_service.get_active_inactive_opportunity_count_by_date(db, JobOpportunityActiveCountRequest)

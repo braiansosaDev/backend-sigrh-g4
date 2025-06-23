@@ -186,8 +186,19 @@ def update_leave(
             session.add(db_leave)
             session.commit()
             session.refresh(db_leave)
-            changes_description = "; ".join(changes)
-            logging.info(f"Campos modificados: {changes_description}")  # <-- Log de cambios
+            if len(changes) > 0:
+                changes_description = "; ".join(changes)
+                log = log_service.create_log(
+                    session,
+                    log_schemas.LogCreateRequest(
+                        description=changes_description,
+                        entity=EntityType.LICENCIA,
+                        entity_id=leave_id,
+                        user_id=request_employee_id,
+                    ),
+                )
+                session.add(log)
+                session.commit()
             return db_leave
         except IntegrityError:
             session.rollback()
@@ -234,18 +245,19 @@ def update_leave(
         session.add(db_leave)
         session.commit()
         session.refresh(db_leave)
-        changes_description = "; ".join(changes)
-        log = log_service.create_log(
-            session,
-            log_schemas.LogCreateRequest(
-                description=changes_description,
-                entity=EntityType.LICENCIA,
-                entity_id=leave_id,
-                user_id=request_employee_id,
-            ),
-        )
-        session.add(log)
-        session.commit()
+        if len(changes) > 0:
+            changes_description = "; ".join(changes)
+            log = log_service.create_log(
+                session,
+                log_schemas.LogCreateRequest(
+                    description=changes_description,
+                    entity=EntityType.LICENCIA,
+                    entity_id=leave_id,
+                    user_id=request_employee_id,
+                ),
+            )
+            session.add(log)
+            session.commit()
         return db_leave
     except IntegrityError as e:
         logger.error(
