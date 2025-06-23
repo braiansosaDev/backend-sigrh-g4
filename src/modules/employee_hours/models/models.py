@@ -1,6 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel
 from datetime import time, date
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 from typing import TYPE_CHECKING
 
@@ -10,13 +10,13 @@ if TYPE_CHECKING:
     from src.modules.shift.models.models import Shift
 
 
-class RegisterType(str, Enum):
+class RegisterType(StrEnum):
     AUSENCIA = "AUSENCIA"
     AUSENCIA_JUSTIFICADA = "AUSENCIA JUSTIFICADA"
     PRESENCIA = "PRESENCIA"
     DIA_NO_HABIL = "DIA NO HABIL"
 
-class payType(str, Enum):
+class payType(StrEnum):
     PAYABLE = "payable"
     NOT_PAYABLE = "not payable"
     ARCHIVED = "archived"
