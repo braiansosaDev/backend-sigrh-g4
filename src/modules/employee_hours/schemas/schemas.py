@@ -1,10 +1,10 @@
 from typing import Optional
 from pydantic import BaseModel
 from datetime import date, time
-from enum import Enum
+from enum import StrEnum
 
 
-class RegisterType(str, Enum):
+class RegisterType(StrEnum):
     AUSENCIA = "AUSENCIA"
     PRESENCIA = "PRESENCIA"
     DIA_NO_HABIL = "DIA NO HABIL"
