@@ -98,9 +98,14 @@ def evaluate_candidates(
     response: list[matcher_schema.MatcherResponse] = []
 
     for postulation in postulations:
-        normalized_text = normalize(
-            extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
-        )
+        try:
+            normalized_text = normalize(
+                extract_text_from_pdf(postulation.cv_file.replace("\n", "").strip())
+            )
+        except ValueError as e:
+            logger.error(f"Error while extracting text from PDF of postulation {postulation.id}")
+            logger.error(e)
+            continue
         logger.info(f"Normalized PDF text:\n{normalized_text}")
         required_words_match = match_abilities(
             normalized_text,
