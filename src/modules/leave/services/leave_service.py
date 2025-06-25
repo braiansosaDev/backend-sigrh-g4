@@ -336,7 +336,7 @@ def report(
         cast(ColumnElement, Leave.leave_type_id)
     )
 
-    result_count: Sequence[tuple[int, int]] = session.exec(stmt).all()
+    result_count: Sequence[tuple[int, int]] = sorted(session.exec(stmt).all())
 
     found_leave_type_ids = set()
     for id, count in result_count:
@@ -355,6 +355,8 @@ def report(
     temp: Sequence[tuple[int, str]] | Sequence[tuple[None, str]] = session.exec(stmt).all()
     result_names: Sequence[tuple[int, str]] = cast(Sequence[tuple[int, str]], temp)
     del temp
+
+    result_names = sorted(result_names)
 
     report: dict[int, tuple[str, int]] = {}
     for tuple_id_count, tuple_id_type in zip(result_count, result_names):
