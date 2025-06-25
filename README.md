@@ -95,7 +95,10 @@ Se recomienda utilizar Python 3.12.10 o la última versión menor disponible. No
     ```bash
     docker-compose up -d backend db ollama mailpit
     ```
-    Se accede de la misma forma que si corre en local.
+
+    Se accede al backend en http://localhost:8000.
+
+    Se accede a la interfaz web de Mailpit con http://localhost:8005.
 
 5. **Obligatorio:** Ejecutar en la base de datos `sigrh` el archivo SQL `data_entry_system.sql` que está en la carpeta `database/data/` con DBeaver o de alguna otra forma, si no se hace el sistema no tendrá los datos por defecto para trabajar y **no funcionará**.
 
